@@ -1,0 +1,604 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<title>Final Review - FormFill Mitra</title>
+
+<style>
+*{
+    box-sizing:border-box;
+    margin:0;
+    padding:0;
+    font-family:Arial,sans-serif;
+}
+
+body{
+    background:#f4f7fb;
+    color:#172033;
+}
+
+.header{
+    background:#0d47a1;
+    color:white;
+    padding:18px 22px;
+}
+
+.header h1{
+    font-size:24px;
+}
+
+.header p{
+    margin-top:5px;
+    opacity:.9;
+}
+
+.container{
+    max-width:950px;
+    margin:30px auto;
+    padding:0 18px;
+}
+
+.card{
+    background:white;
+    border-radius:14px;
+    padding:25px;
+    margin-bottom:20px;
+    box-shadow:0 5px 20px rgba(0,0,0,.08);
+}
+
+.form-title{
+    color:#0d47a1;
+    margin-bottom:8px;
+}
+
+.subtitle{
+    color:#666;
+    margin-bottom:20px;
+}
+
+.status{
+    display:flex;
+    align-items:center;
+    gap:10px;
+    background:#eaf8ef;
+    border:1px solid #b8e5c5;
+    color:#176b32;
+    padding:13px;
+    border-radius:9px;
+    margin-bottom:20px;
+}
+
+.section-title{
+    font-size:19px;
+    color:#0d47a1;
+    margin-bottom:18px;
+}
+
+.info-grid{
+    display:grid;
+    grid-template-columns:1fr 1fr;
+    gap:14px;
+}
+
+.info{
+    background:#f7f9fc;
+    padding:13px;
+    border-radius:8px;
+    border:1px solid #e3e8ef;
+}
+
+.info.full{
+    grid-column:1/-1;
+}
+
+.label{
+    font-size:12px;
+    color:#777;
+    margin-bottom:5px;
+}
+
+.value{
+    font-weight:bold;
+    word-break:break-word;
+}
+
+.documents{
+    display:flex;
+    flex-direction:column;
+    gap:10px;
+}
+
+.document{
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    background:#f7f9fc;
+    border:1px solid #e1e6ed;
+    border-radius:9px;
+    padding:13px;
+}
+
+.document-name{
+    font-weight:bold;
+}
+
+.ready{
+    color:#16833b;
+    font-weight:bold;
+    font-size:13px;
+}
+
+.warning{
+    background:#fff8e6;
+    border:1px solid #f1d58b;
+    padding:15px;
+    border-radius:9px;
+    line-height:1.5;
+    color:#735400;
+}
+
+.actions{
+    display:flex;
+    justify-content:space-between;
+    gap:15px;
+    margin-top:20px;
+}
+
+button{
+    border:none;
+    border-radius:8px;
+    padding:13px 22px;
+    font-size:15px;
+    font-weight:bold;
+    cursor:pointer;
+}
+
+.back{
+    background:#e7ecf2;
+    color:#333;
+}
+
+.continue{
+    background:#0d47a1;
+    color:white;
+}
+
+.edit{
+    background:#eef4ff;
+    color:#0d47a1;
+    padding:8px 12px;
+    font-size:13px;
+}
+
+.empty{
+    color:#777;
+    padding:10px 0;
+}
+
+@media(max-width:650px){
+
+    .info-grid{
+        grid-template-columns:1fr;
+    }
+
+    .info.full{
+        grid-column:auto;
+    }
+
+    .document{
+        flex-direction:column;
+        align-items:flex-start;
+        gap:7px;
+    }
+
+    .actions{
+        flex-direction:column;
+    }
+
+    button{
+        width:100%;
+    }
+}
+</style>
+</head>
+
+<body>
+
+<header class="header">
+    <h1>FormFill Mitra</h1>
+    <p>Application Review</p>
+</header>
+
+<div class="container">
+
+    <!-- FORM INFORMATION -->
+
+    <div class="card">
+
+        <h2 class="form-title" id="formName">
+            Application Form
+        </h2>
+
+        <p class="subtitle" id="formDescription">
+            Review your application information before continuing.
+        </p>
+
+        <div class="status">
+            ✓ Applicant information verified
+        </div>
+
+    </div>
+
+
+    <!-- APPLICANT DETAILS -->
+
+    <div class="card">
+
+        <h2 class="section-title">
+            Applicant Details
+        </h2>
+
+        <div class="info-grid">
+
+            <div class="info">
+                <div class="label">Full Name</div>
+                <div class="value" id="fullName">—</div>
+            </div>
+
+            <div class="info">
+                <div class="label">Date of Birth</div>
+                <div class="value" id="dob">—</div>
+            </div>
+
+            <div class="info">
+                <div class="label">Gender</div>
+                <div class="value" id="gender">—</div>
+            </div>
+
+            <div class="info">
+                <div class="label">Mobile Number</div>
+                <div class="value" id="mobile">—</div>
+            </div>
+
+            <div class="info">
+                <div class="label">Email</div>
+                <div class="value" id="email">—</div>
+            </div>
+
+            <div class="info">
+                <div class="label">State</div>
+                <div class="value" id="state">—</div>
+            </div>
+
+            <div class="info">
+                <div class="label">District</div>
+                <div class="value" id="district">—</div>
+            </div>
+
+            <div class="info">
+                <div class="label">Village / City</div>
+                <div class="value" id="city">—</div>
+            </div>
+
+            <div class="info">
+                <div class="label">PIN Code</div>
+                <div class="value" id="pin">—</div>
+            </div>
+
+            <div class="info full">
+                <div class="label">Full Address</div>
+                <div class="value" id="address">—</div>
+            </div>
+
+        </div>
+
+        <div style="margin-top:18px;">
+            <button class="edit" onclick="editApplicant()">
+                ✎ Edit Applicant Details
+            </button>
+        </div>
+
+    </div>
+
+
+    <!-- DOCUMENTS -->
+
+    <div class="card">
+
+        <h2 class="section-title">
+            Uploaded Documents
+        </h2>
+
+        <div class="documents" id="documentsList">
+            <div class="empty">
+                No document information found.
+            </div>
+        </div>
+
+    </div>
+
+
+    <!-- IMPORTANT NOTICE -->
+
+    <div class="card">
+
+        <div class="warning">
+
+            <strong>⚠ Final Verification</strong>
+
+            <p style="margin-top:8px;">
+                आगे बढ़ने से पहले सभी जानकारी और documents को
+                official documents से मिलाकर verify करें।
+                CAPTCHA और OTP जैसी security verification
+                applicant/operator को स्वयं पूरी करनी होगी।
+            </p>
+
+        </div>
+
+        <div class="actions">
+
+            <button class="back" onclick="goBack()">
+                ← Back
+            </button>
+
+            <button class="continue" onclick="continueToForm()">
+                Proceed to Form →
+            </button>
+
+        </div>
+
+    </div>
+
+</div>
+
+
+<script>
+
+/* -----------------------------
+   LOAD SELECTED FORM
+----------------------------- */
+
+const selectedForm =
+    JSON.parse(localStorage.getItem("selectedForm")) || null;
+
+
+/* -----------------------------
+   LOAD APPLICANT
+----------------------------- */
+
+const applicant =
+    JSON.parse(localStorage.getItem("currentApplicant")) || null;
+
+
+/* -----------------------------
+   LOAD DOCUMENTS
+----------------------------- */
+
+const uploadedDocuments =
+    JSON.parse(localStorage.getItem("uploadedDocuments")) || {};
+
+
+/* -----------------------------
+   FORM INFORMATION
+----------------------------- */
+
+if(selectedForm){
+
+    document.getElementById("formName").textContent =
+        selectedForm.name || "Application Form";
+
+    document.getElementById("formDescription").textContent =
+        selectedForm.description ||
+        "Review your application information before continuing.";
+}
+
+
+/* -----------------------------
+   APPLICANT INFORMATION
+----------------------------- */
+
+if(applicant){
+
+    document.getElementById("fullName").textContent =
+        applicant.fullName || "—";
+
+    document.getElementById("dob").textContent =
+        applicant.dob || "—";
+
+    document.getElementById("gender").textContent =
+        applicant.gender || "—";
+
+    document.getElementById("mobile").textContent =
+        applicant.mobile || "—";
+
+    document.getElementById("email").textContent =
+        applicant.email || "—";
+
+    document.getElementById("state").textContent =
+        applicant.state || "—";
+
+    document.getElementById("district").textContent =
+        applicant.district || "—";
+
+    document.getElementById("city").textContent =
+        applicant.city || "—";
+
+    document.getElementById("pin").textContent =
+        applicant.pin || "—";
+
+    document.getElementById("address").textContent =
+        applicant.address || "—";
+}
+
+
+/* -----------------------------
+   DOCUMENT NAME MAP
+----------------------------- */
+
+const documentNames = {
+
+    identity:
+        "Identity Document",
+
+    education:
+        "Educational Document",
+
+    photograph:
+        "Photograph",
+
+    signature:
+        "Signature",
+
+    address:
+        "Address Proof",
+
+    caste:
+        "Caste Certificate"
+};
+
+
+/* -----------------------------
+   SHOW DOCUMENTS
+----------------------------- */
+
+function renderDocuments(){
+
+    const container =
+        document.getElementById("documentsList");
+
+    container.innerHTML = "";
+
+    if(
+        !selectedForm ||
+        !selectedForm.documents ||
+        selectedForm.documents.length === 0
+    ){
+
+        container.innerHTML =
+            '<div class="empty">No required documents configured.</div>';
+
+        return;
+    }
+
+
+    selectedForm.documents.forEach(doc => {
+
+        const div =
+            document.createElement("div");
+
+        div.className = "document";
+
+
+        const name =
+            documentNames[doc] || doc;
+
+
+        const uploaded =
+            uploadedDocuments[doc];
+
+
+        div.innerHTML = `
+
+            <div class="document-name">
+                📄 ${escapeHTML(name)}
+            </div>
+
+            <div class="ready">
+                ${uploaded ? "✓ Ready" : "⚠ Not Uploaded"}
+            </div>
+
+        `;
+
+
+        container.appendChild(div);
+
+    });
+}
+
+
+/* -----------------------------
+   SECURITY HELPER
+----------------------------- */
+
+function escapeHTML(value){
+
+    return String(value)
+        .replace(/&/g,"&amp;")
+        .replace(/</g,"&lt;")
+        .replace(/>/g,"&gt;")
+        .replace(/"/g,"&quot;")
+        .replace(/'/g,"&#039;");
+}
+
+
+/* -----------------------------
+   EDIT APPLICANT
+----------------------------- */
+
+function editApplicant(){
+
+    window.location.href =
+        "applicant-details.html";
+}
+
+
+/* -----------------------------
+   BACK
+----------------------------- */
+
+function goBack(){
+
+    window.location.href =
+        "applicant-details.html";
+}
+
+
+/* -----------------------------
+   CONTINUE
+----------------------------- */
+
+function continueToForm(){
+
+    if(!applicant){
+
+        alert(
+            "Applicant details नहीं मिले। पहले applicant details पूरा करें।"
+        );
+
+        return;
+    }
+
+
+    if(!selectedForm){
+
+        alert(
+            "Selected form नहीं मिला। पहले form select करें।"
+        );
+
+        return;
+    }
+
+
+    localStorage.setItem(
+        "reviewCompleted",
+        "true"
+    );
+
+
+    window.location.href =
+        "form-filling.html";
+}
+
+
+/* -----------------------------
+   INITIALIZE
+----------------------------- */
+
+renderDocuments();
+
+</script>
+
+</body>
+</html>

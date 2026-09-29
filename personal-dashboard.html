@@ -1,0 +1,1105 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Personal Dashboard - FormFill Mitra</title>
+
+<style>
+*{
+    box-sizing:border-box;
+    margin:0;
+    padding:0;
+    font-family:Arial,Helvetica,sans-serif;
+}
+
+body{
+    background:#f4f7fb;
+    color:#172033;
+}
+
+.header{
+    background:#0d47a1;
+    color:white;
+    padding:16px 20px;
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    position:sticky;
+    top:0;
+    z-index:100;
+    box-shadow:0 2px 10px rgba(0,0,0,.15);
+}
+
+.brand{
+    display:flex;
+    align-items:center;
+    gap:10px;
+}
+
+.logo{
+    width:42px;
+    height:42px;
+    border-radius:10px;
+    background:white;
+    color:#0d47a1;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    font-weight:bold;
+    font-size:18px;
+}
+
+.brand h2{
+    font-size:20px;
+}
+
+.brand small{
+    display:block;
+    opacity:.85;
+    font-size:11px;
+    margin-top:2px;
+}
+
+.header-right{
+    display:flex;
+    align-items:center;
+    gap:10px;
+}
+
+.profile-name{
+    font-size:14px;
+    background:rgba(255,255,255,.12);
+    padding:8px 12px;
+    border-radius:20px;
+}
+
+.logout-btn{
+    border:none;
+    background:white;
+    color:#0d47a1;
+    padding:9px 13px;
+    border-radius:8px;
+    cursor:pointer;
+    font-weight:bold;
+}
+
+.container{
+    max-width:1200px;
+    margin:auto;
+    padding:22px 16px 50px;
+}
+
+.welcome{
+    background:linear-gradient(135deg,#0d47a1,#1565c0);
+    color:white;
+    border-radius:16px;
+    padding:25px;
+    margin-bottom:20px;
+}
+
+.welcome h1{
+    font-size:25px;
+    margin-bottom:7px;
+}
+
+.welcome p{
+    opacity:.92;
+    font-size:14px;
+}
+
+.stats{
+    display:grid;
+    grid-template-columns:repeat(4,1fr);
+    gap:14px;
+    margin-bottom:22px;
+}
+
+.stat{
+    background:white;
+    border-radius:13px;
+    padding:18px;
+    box-shadow:0 3px 12px rgba(0,0,0,.06);
+    border:1px solid #e5eaf1;
+}
+
+.stat-title{
+    color:#697386;
+    font-size:13px;
+    margin-bottom:7px;
+}
+
+.stat-value{
+    font-size:25px;
+    font-weight:bold;
+    color:#0d47a1;
+}
+
+.quick-grid{
+    display:grid;
+    grid-template-columns:repeat(4,1fr);
+    gap:14px;
+    margin-bottom:25px;
+}
+
+.quick-card{
+    background:white;
+    border:1px solid #e5eaf1;
+    border-radius:13px;
+    padding:18px;
+    cursor:pointer;
+    transition:.2s;
+}
+
+.quick-card:hover{
+    transform:translateY(-2px);
+    box-shadow:0 7px 20px rgba(0,0,0,.08);
+}
+
+.quick-icon{
+    font-size:25px;
+    margin-bottom:10px;
+}
+
+.quick-card h3{
+    font-size:15px;
+    margin-bottom:5px;
+}
+
+.quick-card p{
+    color:#697386;
+    font-size:12px;
+}
+
+.section{
+    background:white;
+    border:1px solid #e5eaf1;
+    border-radius:15px;
+    padding:20px;
+    margin-bottom:20px;
+    box-shadow:0 3px 12px rgba(0,0,0,.05);
+}
+
+.section-head{
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    gap:15px;
+    margin-bottom:17px;
+}
+
+.section-head h2{
+    font-size:19px;
+    color:#172033;
+}
+
+.search-box{
+    width:270px;
+    max-width:100%;
+    border:1px solid #d7dde7;
+    padding:10px 13px;
+    border-radius:9px;
+    outline:none;
+}
+
+.search-box:focus{
+    border-color:#0d47a1;
+}
+
+.categories{
+    display:flex;
+    gap:8px;
+    overflow-x:auto;
+    padding-bottom:8px;
+    margin-bottom:18px;
+}
+
+.category{
+    border:1px solid #d8dee8;
+    background:white;
+    padding:8px 13px;
+    border-radius:20px;
+    white-space:nowrap;
+    cursor:pointer;
+    color:#465268;
+    font-size:13px;
+}
+
+.category.active,
+.category:hover{
+    background:#0d47a1;
+    color:white;
+    border-color:#0d47a1;
+}
+
+.forms-grid{
+    display:grid;
+    grid-template-columns:repeat(3,1fr);
+    gap:15px;
+}
+
+.form-card{
+    border:1px solid #e0e5ec;
+    border-radius:13px;
+    padding:17px;
+    background:#fff;
+    transition:.2s;
+    display:flex;
+    flex-direction:column;
+}
+
+.form-card:hover{
+    border-color:#90caf9;
+    box-shadow:0 5px 18px rgba(13,71,161,.09);
+}
+
+.form-category{
+    display:inline-block;
+    background:#e3f2fd;
+    color:#0d47a1;
+    padding:5px 9px;
+    border-radius:6px;
+    font-size:11px;
+    font-weight:bold;
+    width:max-content;
+    margin-bottom:11px;
+}
+
+.form-card h3{
+    font-size:16px;
+    margin-bottom:7px;
+}
+
+.form-card p{
+    color:#697386;
+    font-size:12px;
+    line-height:1.5;
+    min-height:38px;
+    margin-bottom:13px;
+}
+
+.form-meta{
+    color:#697386;
+    font-size:11px;
+    margin-bottom:13px;
+}
+
+.open-btn{
+    border:none;
+    background:#0d47a1;
+    color:white;
+    padding:10px;
+    border-radius:8px;
+    cursor:pointer;
+    font-weight:bold;
+    width:100%;
+    margin-top:auto;
+}
+
+.open-btn:hover{
+    background:#083b8a;
+}
+
+.empty{
+    text-align:center;
+    padding:35px 15px;
+    color:#697386;
+}
+
+.empty strong{
+    display:block;
+    color:#354052;
+    margin-bottom:5px;
+}
+
+.subscription{
+    display:none;
+    background:#fff;
+    border:1px solid #e5eaf1;
+    border-radius:15px;
+    padding:20px;
+    margin-bottom:20px;
+}
+
+.subscription.active{
+    display:block;
+}
+
+.subscription-box{
+    background:#f7faff;
+    border:1px solid #d8e8ff;
+    border-radius:12px;
+    padding:18px;
+}
+
+.subscription-status{
+    color:#0d47a1;
+    font-weight:bold;
+    margin-bottom:7px;
+}
+
+.subscription p{
+    color:#657084;
+    font-size:13px;
+    line-height:1.5;
+}
+
+.payment-btn{
+    margin-top:14px;
+    border:none;
+    background:#0d47a1;
+    color:white;
+    padding:11px 18px;
+    border-radius:8px;
+    font-weight:bold;
+    cursor:pointer;
+}
+
+.footer{
+    text-align:center;
+    color:#8993a4;
+    font-size:12px;
+    margin-top:25px;
+}
+
+@media(max-width:900px){
+    .stats{
+        grid-template-columns:repeat(2,1fr);
+    }
+
+    .quick-grid{
+        grid-template-columns:repeat(2,1fr);
+    }
+
+    .forms-grid{
+        grid-template-columns:repeat(2,1fr);
+    }
+}
+
+@media(max-width:600px){
+    .header{
+        padding:12px;
+    }
+
+    .brand h2{
+        font-size:17px;
+    }
+
+    .profile-name{
+        display:none;
+    }
+
+    .welcome{
+        padding:20px;
+    }
+
+    .welcome h1{
+        font-size:21px;
+    }
+
+    .stats{
+        grid-template-columns:repeat(2,1fr);
+    }
+
+    .quick-grid{
+        grid-template-columns:repeat(2,1fr);
+    }
+
+    .forms-grid{
+        grid-template-columns:1fr;
+    }
+
+    .section{
+        padding:15px;
+    }
+
+    .section-head{
+        align-items:flex-start;
+        flex-direction:column;
+    }
+
+    .search-box{
+        width:100%;
+    }
+}
+</style>
+</head>
+
+<body>
+
+<header class="header">
+
+    <div class="brand">
+        <div class="logo">FM</div>
+        <div>
+            <h2>FormFill Mitra</h2>
+            <small>Personal Dashboard</small>
+        </div>
+    </div>
+
+    <div class="header-right">
+        <div class="profile-name" id="profileName">Personal User</div>
+        <button class="logout-btn" onclick="logout()">Logout</button>
+    </div>
+
+</header>
+
+
+<main class="container">
+
+    <section class="welcome">
+        <h1>Welcome to FormFill Mitra 👋</h1>
+        <p>Forms भरना बनेगा Simple, Organized और Fast.</p>
+    </section>
+
+
+    <section class="stats">
+
+        <div class="stat">
+            <div class="stat-title">Available Forms</div>
+            <div class="stat-value" id="formsCount">0</div>
+        </div>
+
+        <div class="stat">
+            <div class="stat-title">My Applications</div>
+            <div class="stat-value" id="applicationsCount">0</div>
+        </div>
+
+        <div class="stat">
+            <div class="stat-title">Documents</div>
+            <div class="stat-value" id="documentsCount">0</div>
+        </div>
+
+        <div class="stat">
+            <div class="stat-title">Completed</div>
+            <div class="stat-value" id="completedCount">0</div>
+        </div>
+
+    </section>
+
+
+    <section class="quick-grid">
+
+        <div class="quick-card" onclick="goApplications()">
+            <div class="quick-icon">📋</div>
+            <h3>My Applications</h3>
+            <p>अपने applications देखें</p>
+        </div>
+
+        <div class="quick-card" onclick="goDocuments()">
+            <div class="quick-icon">📁</div>
+            <h3>Document Vault</h3>
+            <p>अपने documents manage करें</p>
+        </div>
+
+        <div class="quick-card" onclick="goForms()">
+            <div class="quick-icon">📝</div>
+            <h3>Browse Forms</h3>
+            <p>Available forms देखें</p>
+        </div>
+
+        <div class="quick-card" onclick="goProfile()">
+            <div class="quick-icon">👤</div>
+            <h3>My Profile</h3>
+            <p>Applicant information</p>
+        </div>
+
+    </section>
+
+
+    <!-- Payment / Subscription section.
+         यह केवल तब दिखाई देगा जब Admin इसे ON करेगा. -->
+    <section class="subscription" id="subscriptionSection">
+
+        <div class="section-head">
+            <h2>Subscription</h2>
+        </div>
+
+        <div class="subscription-box">
+
+            <div class="subscription-status">
+                Subscription system is active
+            </div>
+
+            <p id="subscriptionText">
+                Your subscription and payment options will appear here.
+            </p>
+
+            <button class="payment-btn" onclick="openPayment()">
+                View Subscription
+            </button>
+
+        </div>
+
+    </section>
+
+
+    <section class="section" id="formsSection">
+
+        <div class="section-head">
+            <h2>Available Forms</h2>
+
+            <input
+                type="search"
+                id="searchInput"
+                class="search-box"
+                placeholder="Search form..."
+                oninput="renderForms()"
+            >
+        </div>
+
+        <div class="categories" id="categories"></div>
+
+        <div class="forms-grid" id="formsGrid"></div>
+
+    </section>
+
+
+    <div class="footer">
+        FormFill Mitra • Personal Account
+    </div>
+
+</main>
+
+
+<script>
+
+(function(){
+
+    /*
+       Personal dashboard protection.
+       User must come through personal login.
+    */
+
+    const isLoggedIn = localStorage.getItem("isLoggedIn");
+    const loginType = localStorage.getItem("loginType");
+
+    if(isLoggedIn !== "true" || loginType !== "personal"){
+        window.location.replace("personal-login.html");
+        return;
+    }
+
+})();
+
+
+let allForms = [];
+let selectedCategory = "All";
+
+
+function safeParse(key, fallback){
+
+    try{
+        const data = JSON.parse(localStorage.getItem(key));
+        return data ?? fallback;
+    }catch(e){
+        return fallback;
+    }
+
+}
+
+
+function escapeHTML(value){
+
+    return String(value ?? "")
+        .replace(/&/g,"&amp;")
+        .replace(/</g,"&lt;")
+        .replace(/>/g,"&gt;")
+        .replace(/"/g,"&quot;")
+        .replace(/'/g,"&#039;");
+
+}
+
+
+function getForms(){
+
+    const forms = safeParse("ffm_admin_forms", []);
+
+    if(!Array.isArray(forms)){
+        return [];
+    }
+
+    return forms;
+
+}
+
+
+function getApplications(){
+
+    const applications = safeParse("ffm_applications", []);
+
+    return Array.isArray(applications)
+        ? applications
+        : [];
+
+}
+
+
+function getDocuments(){
+
+    const docs = safeParse("uploadedDocuments", []);
+
+    if(Array.isArray(docs)){
+        return docs;
+    }
+
+    if(docs && typeof docs === "object"){
+        return Object.values(docs);
+    }
+
+    return [];
+
+}
+
+
+function loadProfile(){
+
+    const applicant = safeParse("currentApplicant", {});
+
+    let name =
+        applicant.fullName ||
+        applicant.name ||
+        localStorage.getItem("personalName") ||
+        localStorage.getItem("userName") ||
+        "Personal User";
+
+    document.getElementById("profileName").textContent = name;
+
+}
+
+
+function updateStats(){
+
+    allForms = getForms();
+
+    const applications = getApplications();
+
+    const documents = getDocuments();
+
+    const completed = applications.filter(function(app){
+
+        return String(app.status || "").toLowerCase() === "completed";
+
+    }).length;
+
+
+    document.getElementById("formsCount").textContent =
+        allForms.length;
+
+    document.getElementById("applicationsCount").textContent =
+        applications.length;
+
+    document.getElementById("documentsCount").textContent =
+        documents.length;
+
+    document.getElementById("completedCount").textContent =
+        completed;
+
+}
+
+
+function getCategories(){
+
+    const categories = ["All"];
+
+    allForms.forEach(function(form){
+
+        const category =
+            form.category ||
+            "Other";
+
+        if(!categories.includes(category)){
+            categories.push(category);
+        }
+
+    });
+
+    return categories;
+
+}
+
+
+function renderCategories(){
+
+    const box = document.getElementById("categories");
+
+    const categories = getCategories();
+
+    box.innerHTML = categories.map(function(category){
+
+        const active =
+            category === selectedCategory
+                ? "active"
+                : "";
+
+        return `
+            <button
+                class="category ${active}"
+                onclick="selectCategory('${escapeHTML(category).replace(/'/g,"&#39;")}')"
+            >
+                ${escapeHTML(category)}
+            </button>
+        `;
+
+    }).join("");
+
+}
+
+
+function selectCategory(category){
+
+    selectedCategory = category;
+
+    renderCategories();
+    renderForms();
+
+}
+
+
+function renderForms(){
+
+    const grid = document.getElementById("formsGrid");
+
+    const search =
+        document.getElementById("searchInput")
+        .value
+        .trim()
+        .toLowerCase();
+
+
+    let forms = allForms.filter(function(form){
+
+        const name =
+            String(form.name || "").toLowerCase();
+
+        const description =
+            String(form.description || "").toLowerCase();
+
+        const category =
+            String(form.category || "").toLowerCase();
+
+
+        const matchesSearch =
+            !search ||
+            name.includes(search) ||
+            description.includes(search) ||
+            category.includes(search);
+
+
+        const matchesCategory =
+            selectedCategory === "All" ||
+            String(form.category || "Other") === selectedCategory;
+
+
+        return matchesSearch && matchesCategory;
+
+    });
+
+
+    if(forms.length === 0){
+
+        grid.innerHTML = `
+            <div class="empty" style="grid-column:1/-1">
+                <strong>No forms found</strong>
+                <span>
+                    अभी इस category/search में कोई form उपलब्ध नहीं है।
+                </span>
+            </div>
+        `;
+
+        return;
+
+    }
+
+
+    grid.innerHTML = forms.map(function(form){
+
+        const originalIndex =
+            allForms.indexOf(form);
+
+        const name =
+            form.name || "Unnamed Form";
+
+        const category =
+            form.category || "Other";
+
+        const description =
+            form.description ||
+            "इस form की application यहाँ से शुरू करें।";
+
+
+        const fieldCount =
+            Array.isArray(form.fields)
+                ? form.fields.length
+                : 0;
+
+
+        const documentCount =
+            Array.isArray(form.documents)
+                ? form.documents.length
+                : 0;
+
+
+        return `
+            <div class="form-card">
+
+                <span class="form-category">
+                    ${escapeHTML(category)}
+                </span>
+
+                <h3>
+                    ${escapeHTML(name)}
+                </h3>
+
+                <p>
+                    ${escapeHTML(description)}
+                </p>
+
+                <div class="form-meta">
+                    ${fieldCount > 0
+                        ? fieldCount + " fields"
+                        : "Standard fields"}
+                    •
+                    ${documentCount} documents
+                </div>
+
+                <button
+                    class="open-btn"
+                    onclick="openForm(${originalIndex})"
+                >
+                    Open Form
+                </button>
+
+            </div>
+        `;
+
+    }).join("");
+
+}
+
+
+function openForm(index){
+
+    const form = allForms[index];
+
+    if(!form){
+        alert("Form information not found.");
+        return;
+    }
+
+
+    /*
+       Keep the existing FormFill Mitra flow.
+    */
+
+    localStorage.setItem(
+        "selectedForm",
+        JSON.stringify(form)
+    );
+
+    localStorage.setItem(
+        "formName",
+        form.name || "Application Form"
+    );
+
+    localStorage.setItem(
+        "loginType",
+        "personal"
+    );
+
+
+    /*
+       Clear only temporary form-flow flags.
+       Existing profile/documents remain safe.
+    */
+
+    localStorage.removeItem("reviewCompleted");
+    localStorage.removeItem("formFillingCompleted");
+    localStorage.removeItem("finalReviewCompleted");
+
+
+    window.location.href = "form-details.html";
+
+}
+
+
+function goApplications(){
+
+    window.location.href = "my-applications.html";
+
+}
+
+
+function goDocuments(){
+
+    /*
+       If a dedicated Document Vault page is later connected,
+       this route can be changed without changing the dashboard.
+    */
+
+    const selectedForm =
+        localStorage.getItem("selectedForm");
+
+    if(selectedForm){
+        window.location.href = "form-details.html";
+    }else{
+        alert("Document Vault will be available after starting an application.");
+    }
+
+}
+
+
+function goForms(){
+
+    document.getElementById("formsSection")
+        .scrollIntoView({
+            behavior:"smooth"
+        });
+
+}
+
+
+function goProfile(){
+
+    const applicant =
+        safeParse("currentApplicant", {});
+
+
+    if(
+        applicant &&
+        Object.keys(applicant).length > 0
+    ){
+
+        alert(
+            "Applicant Profile\n\n" +
+            "Name: " +
+            (applicant.fullName || "-") +
+            "\nDOB: " +
+            (applicant.dob || "-") +
+            "\nMobile: " +
+            (applicant.mobile || "-")
+        );
+
+    }else{
+
+        alert(
+            "Applicant profile अभी create नहीं हुआ है। " +
+            "पहले कोई application शुरू करें।"
+        );
+
+    }
+
+}
+
+
+function checkSubscription(){
+
+    /*
+       Current frontend control.
+
+       Admin panel saves:
+       ffm_subscription_settings
+
+       Example:
+       {
+          enabled: true,
+          trialDays: 180
+       }
+
+       When enabled = false, subscription remains completely hidden.
+    */
+
+    const settings =
+        safeParse(
+            "ffm_subscription_settings",
+            {
+                enabled:false,
+                trialDays:180
+            }
+        );
+
+
+    const section =
+        document.getElementById("subscriptionSection");
+
+
+    if(
+        settings &&
+        settings.enabled === true
+    ){
+
+        section.classList.add("active");
+
+
+        const days =
+            Number(settings.trialDays || 180);
+
+
+        document.getElementById("subscriptionText").textContent =
+            "Subscription is enabled by the administrator. " +
+            "Payment integration can be connected when required.";
+
+    }else{
+
+        section.classList.remove("active");
+
+    }
+
+}
+
+
+function openPayment(){
+
+    /*
+       Stripe is intentionally NOT connected here.
+
+       Later this function can open the real Stripe
+       checkout/backend payment endpoint.
+
+       Until then it does not collect payment.
+    */
+
+    alert(
+        "Payment system is enabled, but Stripe payment gateway is not connected yet."
+    );
+
+}
+
+
+function logout(){
+
+    if(!confirm("Are you sure you want to logout?")){
+        return;
+    }
+
+
+    localStorage.removeItem("isLoggedIn");
+    localStorage.removeItem("loginType");
+
+    window.location.href =
+        "personal-login.html";
+
+}
+
+
+/*
+   Initial load
+*/
+
+document.addEventListener("DOMContentLoaded", function(){
+
+    loadProfile();
+
+    updateStats();
+
+    renderCategories();
+
+    renderForms();
+
+    checkSubscription();
+
+});
+
+</script>
+
+</body>
+</html>

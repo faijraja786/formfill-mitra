@@ -1,0 +1,930 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<title>FormFill Mitra - OCR Processing</title>
+
+<!-- Tesseract.js -->
+<script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
+
+<style>
+*{
+    box-sizing:border-box;
+    margin:0;
+    padding:0;
+    font-family:Arial,sans-serif;
+}
+
+body{
+    background:#f4f7fb;
+    color:#1f2937;
+}
+
+header{
+    background:#172554;
+    color:white;
+    padding:18px 20px;
+}
+
+.logo{
+    font-size:22px;
+    font-weight:bold;
+}
+
+.container{
+    max-width:900px;
+    margin:25px auto;
+    padding:0 15px;
+}
+
+.card{
+    background:white;
+    padding:24px;
+    border-radius:16px;
+    margin-bottom:20px;
+    box-shadow:0 5px 20px rgba(0,0,0,.06);
+}
+
+h1{
+    margin-bottom:8px;
+}
+
+.description{
+    color:#64748b;
+    line-height:1.6;
+    margin-bottom:20px;
+}
+
+.progress-box{
+    margin-top:20px;
+}
+
+.progress-bar{
+    width:100%;
+    height:16px;
+    background:#e5e7eb;
+    border-radius:20px;
+    overflow:hidden;
+}
+
+.progress{
+    width:0%;
+    height:100%;
+    background:#2563eb;
+    transition:width .3s;
+}
+
+.progress-text{
+    margin-top:10px;
+    font-weight:bold;
+}
+
+.file-list{
+    margin-top:15px;
+}
+
+.file-item{
+    padding:13px;
+    border:1px solid #e2e8f0;
+    border-radius:9px;
+    margin-top:8px;
+    background:#fafafa;
+}
+
+.result{
+    margin-top:20px;
+}
+
+.result-item{
+    border:1px solid #e2e8f0;
+    border-radius:12px;
+    padding:15px;
+    margin-top:12px;
+}
+
+.result-item h3{
+    margin-bottom:8px;
+}
+
+.result-item textarea{
+    width:100%;
+    min-height:150px;
+    padding:12px;
+    border:1px solid #cbd5e1;
+    border-radius:8px;
+    resize:vertical;
+}
+
+.status{
+    display:inline-block;
+    padding:5px 10px;
+    border-radius:15px;
+    font-size:12px;
+    font-weight:bold;
+    margin-top:8px;
+}
+
+.success{
+    background:#dcfce7;
+    color:#166534;
+}
+
+.warning{
+    background:#fef3c7;
+    color:#92400e;
+}
+
+.error{
+    background:#fee2e2;
+    color:#991b1b;
+}
+
+.info{
+    background:#eff6ff;
+    color:#1e40af;
+    padding:14px;
+    border-radius:9px;
+    margin-top:18px;
+    line-height:1.5;
+}
+
+.buttons{
+    display:flex;
+    gap:10px;
+    flex-wrap:wrap;
+    margin-top:22px;
+}
+
+button{
+    border:0;
+    padding:12px 18px;
+    border-radius:9px;
+    font-weight:bold;
+    cursor:pointer;
+}
+
+.primary{
+    background:#2563eb;
+    color:white;
+}
+
+.secondary{
+    background:#e5e7eb;
+    color:#111827;
+}
+
+button:disabled{
+    opacity:.5;
+    cursor:not-allowed;
+}
+
+.empty{
+    text-align:center;
+    padding:25px;
+    color:#64748b;
+}
+</style>
+</head>
+
+<body>
+
+<header>
+    <div class="logo">
+        FormFill Mitra
+    </div>
+</header>
+
+<main class="container">
+
+    <section class="card">
+
+        <h1>
+            🔎 OCR Processing
+        </h1>
+
+        <div
+            id="formName"
+            class="description">
+            Loading...
+        </div>
+
+        <div
+            id="fileList"
+            class="file-list">
+        </div>
+
+        <div class="progress-box">
+
+            <div class="progress-bar">
+
+                <div
+                    id="progress"
+                    class="progress">
+                </div>
+
+            </div>
+
+            <div
+                id="progressText"
+                class="progress-text">
+                Preparing OCR...
+            </div>
+
+        </div>
+
+        <div
+            id="results"
+            class="result">
+        </div>
+
+        <div
+            id="infoBox"
+            class="info">
+            OCR extracted text को applicant details में
+            इस्तेमाल करने से पहले verify करना जरूरी है।
+        </div>
+
+        <div class="buttons">
+
+            <button
+                class="secondary"
+                onclick="goBack()">
+                ← Back
+            </button>
+
+            <button
+                id="continueButton"
+                class="primary"
+                onclick="continueToApplicant()"
+                disabled>
+                Continue →
+            </button>
+
+        </div>
+
+    </section>
+
+</main>
+
+<script>
+
+const DB_NAME = "FormFillMitraDB";
+const DB_VERSION = 1;
+const STORE_NAME = "documents";
+
+const selectedForm =
+    JSON.parse(
+        localStorage.getItem("selectedForm")
+    );
+
+const uploadedDocuments =
+    JSON.parse(
+        localStorage.getItem("uploadedDocuments")
+    ) || {};
+
+let ocrResults = {};
+
+
+/* ==============================
+   DATABASE
+============================== */
+
+function openDatabase(){
+
+    return new Promise(function(resolve,reject){
+
+        const request =
+            indexedDB.open(
+                DB_NAME,
+                DB_VERSION
+            );
+
+        request.onsuccess = function(){
+
+            resolve(request.result);
+
+        };
+
+        request.onerror = function(){
+
+            reject(request.error);
+
+        };
+
+    });
+
+}
+
+
+/* ==============================
+   GET DOCUMENT
+============================== */
+
+async function getDocument(key){
+
+    const db =
+        await openDatabase();
+
+    return new Promise(function(resolve,reject){
+
+        const transaction =
+            db.transaction(
+                STORE_NAME,
+                "readonly"
+            );
+
+        const store =
+            transaction.objectStore(
+                STORE_NAME
+            );
+
+        const request =
+            store.get("current_" + key);
+
+        request.onsuccess = function(){
+
+            resolve(request.result);
+
+        };
+
+        request.onerror = function(){
+
+            reject(request.error);
+
+        };
+
+    });
+
+}
+
+
+/* ==============================
+   UI
+============================== */
+
+function setProgress(value,text){
+
+    document.getElementById("progress")
+        .style.width = value + "%";
+
+    document.getElementById("progressText")
+        .textContent = text;
+
+}
+
+
+/* ==============================
+   LOAD FILE LIST
+============================== */
+
+function loadFileList(){
+
+    const container =
+        document.getElementById("fileList");
+
+    const keys =
+        Object.keys(uploadedDocuments);
+
+
+    if(keys.length === 0){
+
+        container.innerHTML = `
+            <div class="empty">
+                कोई uploaded document नहीं मिला।
+            </div>
+        `;
+
+        return;
+
+    }
+
+
+    container.innerHTML =
+        keys.map(function(key){
+
+            const file =
+                uploadedDocuments[key];
+
+            return `
+
+                <div class="file-item">
+
+                    📄
+                    <strong>
+                        ${escapeHTML(file.name)}
+                    </strong>
+
+                    <br>
+
+                    <small>
+                        ${escapeHTML(file.type || "Unknown type")}
+                        •
+                        ${formatSize(file.size)}
+                    </small>
+
+                </div>
+
+            `;
+
+        }).join("");
+
+}
+
+
+/* ==============================
+   START OCR
+============================== */
+
+async function startOCR(){
+
+    if(!selectedForm){
+
+        setProgress(
+            100,
+            "Form selected नहीं है।"
+        );
+
+        return;
+
+    }
+
+
+    document.getElementById("formName")
+        .textContent =
+        selectedForm.name || "Selected Form";
+
+
+    loadFileList();
+
+
+    const keys =
+        Object.keys(uploadedDocuments);
+
+
+    if(keys.length === 0){
+
+        setProgress(
+            100,
+            "No documents available."
+        );
+
+        enableContinue();
+
+        return;
+
+    }
+
+
+    try{
+
+        /*
+        One worker can process multiple images.
+        */
+
+        let worker = null;
+
+
+        for(
+            let i = 0;
+            i < keys.length;
+            i++
+        ){
+
+            const key = keys[i];
+
+            const fileRecord =
+                await getDocument(key);
+
+
+            if(!fileRecord){
+
+                continue;
+
+            }
+
+
+            const file =
+                fileRecord.file;
+
+
+            const percentStart =
+                Math.round(
+                    (i / keys.length) * 90
+                );
+
+
+            setProgress(
+                percentStart,
+                "Preparing " +
+                fileRecord.name +
+                "..."
+            );
+
+
+            /*
+            PDF cannot be directly processed
+            by Tesseract.js.
+            */
+
+            if(
+                file.type === "application/pdf" ||
+                fileRecord.name
+                    .toLowerCase()
+                    .endsWith(".pdf")
+            ){
+
+                ocrResults[key] = {
+
+                    name:fileRecord.name,
+
+                    status:"manual",
+
+                    text:"PDF document requires manual review or server-side PDF OCR."
+
+                };
+
+                continue;
+
+            }
+
+
+            /*
+            Only image OCR in this frontend version.
+            */
+
+            if(
+                !file.type.startsWith("image/")
+            ){
+
+                ocrResults[key] = {
+
+                    name:fileRecord.name,
+
+                    status:"unsupported",
+
+                    text:"Unsupported file type."
+
+                };
+
+                continue;
+
+            }
+
+
+            if(!worker){
+
+                setProgress(
+                    percentStart,
+                    "Loading OCR engine..."
+                );
+
+                worker =
+                    await Tesseract.createWorker(
+                        "eng"
+                    );
+
+            }
+
+
+            setProgress(
+                percentStart + 5,
+                "Reading " +
+                fileRecord.name +
+                "..."
+            );
+
+
+            const result =
+                await worker.recognize(
+                    file
+                );
+
+
+            const text =
+                result.data.text || "";
+
+
+            ocrResults[key] = {
+
+                name:fileRecord.name,
+
+                status:"success",
+
+                text:text
+
+            };
+
+
+            const percentDone =
+                Math.round(
+                    ((i + 1) / keys.length) * 90
+                );
+
+
+            setProgress(
+                percentDone,
+                "Completed " +
+                fileRecord.name
+            );
+
+        }
+
+
+        if(worker){
+
+            await worker.terminate();
+
+        }
+
+
+        /*
+        Save OCR output
+        */
+
+        localStorage.setItem(
+            "ocrResults",
+            JSON.stringify(
+                ocrResults
+            )
+        );
+
+
+        localStorage.setItem(
+            "ocrCompleted",
+            "true"
+        );
+
+
+        setProgress(
+            100,
+            "OCR processing completed."
+        );
+
+
+        renderResults();
+
+        enableContinue();
+
+
+    }catch(error){
+
+        console.error(error);
+
+        setProgress(
+            100,
+            "OCR में error आया।"
+        );
+
+
+        document.getElementById("results")
+            .innerHTML = `
+                <div class="status error">
+                    OCR processing failed.
+                </div>
+
+                <p style="margin-top:10px;color:#64748b;">
+                    Document को verify करके manual entry जारी रख सकते हैं।
+                </p>
+            `;
+
+        /*
+        Manual fallback
+        */
+
+        localStorage.setItem(
+            "ocrCompleted",
+            "true"
+        );
+
+        enableContinue();
+
+    }
+
+}
+
+
+/* ==============================
+   RESULTS
+============================== */
+
+function renderResults(){
+
+    const container =
+        document.getElementById("results");
+
+
+    const keys =
+        Object.keys(ocrResults);
+
+
+    if(keys.length === 0){
+
+        container.innerHTML = "";
+
+        return;
+
+    }
+
+
+    container.innerHTML = `
+
+        <h2 style="margin-bottom:10px;">
+            OCR Results
+        </h2>
+
+    `;
+
+
+    keys.forEach(function(key){
+
+        const item =
+            ocrResults[key];
+
+
+        const wrapper =
+            document.createElement("div");
+
+        wrapper.className =
+            "result-item";
+
+
+        const title =
+            document.createElement("h3");
+
+        title.textContent =
+            item.name;
+
+
+        wrapper.appendChild(title);
+
+
+        if(item.status === "success"){
+
+            const badge =
+                document.createElement("span");
+
+            badge.className =
+                "status success";
+
+            badge.textContent =
+                "OCR completed";
+
+            wrapper.appendChild(badge);
+
+
+            const textarea =
+                document.createElement("textarea");
+
+            textarea.value =
+                item.text;
+
+
+            textarea.oninput =
+                function(){
+
+                    ocrResults[key].text =
+                        textarea.value;
+
+                    localStorage.setItem(
+                        "ocrResults",
+                        JSON.stringify(
+                            ocrResults
+                        )
+                    );
+
+                };
+
+
+            wrapper.appendChild(textarea);
+
+        }else{
+
+            const badge =
+                document.createElement("span");
+
+            badge.className =
+                "status warning";
+
+            badge.textContent =
+                "Manual Review Required";
+
+            wrapper.appendChild(badge);
+
+
+            const p =
+                document.createElement("p");
+
+            p.style.marginTop =
+                "10px";
+
+            p.textContent =
+                item.text;
+
+
+            wrapper.appendChild(p);
+
+        }
+
+
+        container.appendChild(wrapper);
+
+    });
+
+}
+
+
+/* ==============================
+   ENABLE CONTINUE
+============================== */
+
+function enableContinue(){
+
+    document.getElementById(
+        "continueButton"
+    ).disabled = false;
+
+}
+
+
+/* ==============================
+   CONTINUE
+============================== */
+
+function continueToApplicant(){
+
+    localStorage.setItem(
+        "ocrCompleted",
+        "true"
+    );
+
+    location.href =
+        "applicant-details.html";
+
+}
+
+
+/* ==============================
+   BACK
+============================== */
+
+function goBack(){
+
+    location.href =
+        "form-details.html";
+
+}
+
+
+/* ==============================
+   SIZE
+============================== */
+
+function formatSize(bytes){
+
+    if(!bytes){
+        return "0 KB";
+    }
+
+    const mb =
+        bytes /
+        (1024 * 1024);
+
+    if(mb >= 1){
+
+        return mb.toFixed(2) + " MB";
+
+    }
+
+    return (
+        bytes / 1024
+    ).toFixed(1) + " KB";
+
+}
+
+
+/* ==============================
+   ESCAPE
+============================== */
+
+function escapeHTML(value){
+
+    return String(value || "")
+        .replace(/&/g,"&amp;")
+        .replace(/</g,"&lt;")
+        .replace(/>/g,"&gt;")
+        .replace(/"/g,"&quot;")
+        .replace(/'/g,"&#039;");
+
+}
+
+
+/* START */
+
+startOCR();
+
+</script>
+
+</body>
+</html>

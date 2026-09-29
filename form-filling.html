@@ -1,0 +1,1557 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Form Filling - FormFill Mitra</title>
+
+<style>
+*{
+    box-sizing:border-box;
+}
+
+body{
+    margin:0;
+    font-family:Arial,Helvetica,sans-serif;
+    background:#f4f7fb;
+    color:#222;
+}
+
+.header{
+    background:#0d47a1;
+    color:white;
+    padding:16px 20px;
+    position:sticky;
+    top:0;
+    z-index:10;
+    box-shadow:0 2px 8px rgba(0,0,0,.15);
+}
+
+.header-inner{
+    max-width:1100px;
+    margin:auto;
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    gap:15px;
+}
+
+.header h1{
+    margin:0;
+    font-size:21px;
+}
+
+.header small{
+    opacity:.85;
+}
+
+.container{
+    max-width:1100px;
+    margin:25px auto;
+    padding:0 15px;
+}
+
+.progress-box{
+    background:white;
+    border-radius:12px;
+    padding:18px;
+    margin-bottom:20px;
+    box-shadow:0 2px 10px rgba(0,0,0,.06);
+}
+
+.progress-title{
+    display:flex;
+    justify-content:space-between;
+    font-weight:bold;
+    margin-bottom:10px;
+}
+
+.progress{
+    height:9px;
+    background:#e4e8ee;
+    border-radius:10px;
+    overflow:hidden;
+}
+
+.progress-bar{
+    width:75%;
+    height:100%;
+    background:#0d47a1;
+    border-radius:10px;
+}
+
+.card{
+    background:white;
+    border-radius:14px;
+    padding:22px;
+    margin-bottom:20px;
+    box-shadow:0 2px 10px rgba(0,0,0,.06);
+}
+
+.card h2{
+    margin-top:0;
+    color:#0d47a1;
+    font-size:20px;
+}
+
+.form-info{
+    background:#eef5ff;
+    border-left:4px solid #0d47a1;
+    padding:13px;
+    border-radius:8px;
+    margin-bottom:20px;
+}
+
+.grid{
+    display:grid;
+    grid-template-columns:repeat(2,1fr);
+    gap:18px;
+}
+
+.field{
+    display:flex;
+    flex-direction:column;
+}
+
+.field.full{
+    grid-column:1/-1;
+}
+
+label{
+    font-weight:bold;
+    margin-bottom:7px;
+    font-size:14px;
+}
+
+.required{
+    color:#d32f2f;
+}
+
+input,
+select,
+textarea{
+    width:100%;
+    padding:12px;
+    border:1px solid #ccd4df;
+    border-radius:8px;
+    font-size:15px;
+    outline:none;
+    background:white;
+}
+
+input:focus,
+select:focus,
+textarea:focus{
+    border-color:#0d47a1;
+    box-shadow:0 0 0 2px rgba(13,71,161,.08);
+}
+
+textarea{
+    min-height:100px;
+    resize:vertical;
+}
+
+input.autofilled,
+select.autofilled,
+textarea.autofilled{
+    border-color:#2e7d32;
+    background:#f3fff4;
+}
+
+.help{
+    font-size:12px;
+    color:#667085;
+    margin-top:5px;
+}
+
+.autofill-badge{
+    display:inline-block;
+    font-size:11px;
+    color:#2e7d32;
+    margin-top:5px;
+}
+
+.empty{
+    text-align:center;
+    padding:30px 10px;
+    color:#666;
+}
+
+.notice{
+    background:#fff8e1;
+    border-left:4px solid #f9a825;
+    padding:15px;
+    border-radius:8px;
+    line-height:1.6;
+}
+
+.security-notice{
+    background:#f1f8ff;
+    border-left:4px solid #1976d2;
+    padding:15px;
+    border-radius:8px;
+    line-height:1.6;
+}
+
+.actions{
+    display:flex;
+    justify-content:space-between;
+    gap:12px;
+    margin-top:25px;
+}
+
+button{
+    border:0;
+    border-radius:8px;
+    padding:12px 20px;
+    font-size:15px;
+    font-weight:bold;
+    cursor:pointer;
+}
+
+.btn-primary{
+    background:#0d47a1;
+    color:white;
+}
+
+.btn-primary:hover{
+    background:#08377d;
+}
+
+.btn-secondary{
+    background:#e8eef7;
+    color:#0d47a1;
+}
+
+.btn-save{
+    background:#2e7d32;
+    color:white;
+}
+
+.btn-warning{
+    background:#f9a825;
+    color:#111;
+}
+
+.status{
+    margin-top:12px;
+    padding:10px;
+    border-radius:7px;
+    display:none;
+}
+
+.status.success{
+    display:block;
+    background:#e8f5e9;
+    color:#2e7d32;
+}
+
+.status.error{
+    display:block;
+    background:#ffebee;
+    color:#c62828;
+}
+
+.captcha-box{
+    margin-top:15px;
+    padding:15px;
+    border:1px dashed #b0bec5;
+    border-radius:9px;
+    background:#fafafa;
+}
+
+.footer{
+    text-align:center;
+    color:#777;
+    padding:25px;
+    font-size:13px;
+}
+
+@media(max-width:700px){
+    .grid{
+        grid-template-columns:1fr;
+    }
+
+    .field.full{
+        grid-column:auto;
+    }
+
+    .actions{
+        flex-direction:column;
+    }
+
+    button{
+        width:100%;
+    }
+
+    .header-inner{
+        flex-direction:column;
+        align-items:flex-start;
+    }
+}
+</style>
+</head>
+
+<body>
+
+<header class="header">
+    <div class="header-inner">
+        <div>
+            <h1>FormFill Mitra</h1>
+            <small>Smart Form Filling</small>
+        </div>
+
+        <div id="modeText">
+            Form Filling
+        </div>
+    </div>
+</header>
+
+<div class="container">
+
+    <!-- Progress -->
+    <div class="progress-box">
+        <div class="progress-title">
+            <span>Application Progress</span>
+            <span>75%</span>
+        </div>
+
+        <div class="progress">
+            <div class="progress-bar"></div>
+        </div>
+    </div>
+
+
+    <!-- Form information -->
+    <div class="card">
+        <h2 id="formTitle">Form Filling</h2>
+
+        <div class="form-info">
+            <strong>Selected Form:</strong>
+            <span id="selectedFormName">Loading...</span>
+            <br><br>
+
+            <span id="selectedFormDescription">
+                Please verify all information before continuing.
+            </span>
+        </div>
+    </div>
+
+
+    <!-- Dynamic form -->
+    <div class="card">
+
+        <h2>Application Details</h2>
+
+        <div id="dynamicForm" class="grid">
+            <div class="empty">
+                Loading form fields...
+            </div>
+        </div>
+
+        <div id="formStatus" class="status"></div>
+
+        <div class="actions">
+
+            <button
+                type="button"
+                class="btn-secondary"
+                onclick="goBack()">
+                ← Back
+            </button>
+
+            <button
+                type="button"
+                class="btn-save"
+                onclick="saveChanges()">
+                Save Changes
+            </button>
+
+        </div>
+
+    </div>
+
+
+    <!-- CAPTCHA / OTP -->
+    <div class="card">
+
+        <h2>Security Verification</h2>
+
+        <div class="notice">
+
+            <strong>Important:</strong><br>
+
+            CAPTCHA और OTP जैसी security verification को
+            FormFill Mitra automatically bypass नहीं करेगा।
+
+            अगर official portal पर CAPTCHA या OTP आए,
+            तो उसे manually complete करना होगा।
+
+        </div>
+
+        <div class="captcha-box">
+
+            <strong>Manual Verification</strong>
+
+            <p>
+                CAPTCHA / OTP verification official website
+                पर manually complete करें।
+            </p>
+
+            <label>
+                Verification Status
+            </label>
+
+            <select id="verificationStatus">
+                <option value="pending">
+                    Pending
+                </option>
+
+                <option value="completed">
+                    Completed
+                </option>
+            </select>
+
+        </div>
+
+    </div>
+
+
+    <!-- Security -->
+    <div class="card">
+
+        <div class="security-notice">
+
+            <strong>Data & Security Notice</strong>
+
+            <br><br>
+
+            • FormFill Mitra केवल उपलब्ध applicant information
+            को form fields में map/autofill करता है।
+
+            <br>
+
+            • Official portal की CAPTCHA/OTP/security को bypass
+            नहीं किया जाएगा।
+
+            <br>
+
+            • Submit करने से पहले सभी information को manually
+            verify करें।
+
+        </div>
+
+    </div>
+
+
+    <!-- Continue -->
+    <div class="card">
+
+        <h2>Final Verification</h2>
+
+        <p>
+            सभी information check करने के बाद Final Review पर जाएँ।
+        </p>
+
+        <div class="actions">
+
+            <button
+                type="button"
+                class="btn-secondary"
+                onclick="saveChanges()">
+                Save
+            </button>
+
+            <button
+                type="button"
+                class="btn-primary"
+                onclick="continueToFinalReview()">
+                Continue to Final Review →
+            </button>
+
+        </div>
+
+    </div>
+
+</div>
+
+<div class="footer">
+    FormFill Mitra © 2026
+</div>
+
+
+<script>
+
+/* =========================================================
+   FORM FILLING ENGINE
+   ========================================================= */
+
+let selectedForm = null;
+let applicant = {};
+let fields = [];
+
+
+/* ---------------------------------------------------------
+   Safe JSON
+--------------------------------------------------------- */
+
+function getJSON(key, fallback){
+
+    try{
+
+        const value = localStorage.getItem(key);
+
+        if(!value){
+            return fallback;
+        }
+
+        return JSON.parse(value);
+
+    }catch(error){
+
+        console.error(
+            "JSON Error:",
+            key,
+            error
+        );
+
+        return fallback;
+    }
+}
+
+
+/* ---------------------------------------------------------
+   Escape HTML
+--------------------------------------------------------- */
+
+function escapeHTML(value){
+
+    return String(value ?? "")
+        .replace(/&/g,"&amp;")
+        .replace(/</g,"&lt;")
+        .replace(/>/g,"&gt;")
+        .replace(/"/g,"&quot;")
+        .replace(/'/g,"&#039;");
+}
+
+
+/* ---------------------------------------------------------
+   Normalize key
+--------------------------------------------------------- */
+
+function normalizeKey(value){
+
+    return String(value || "")
+        .toLowerCase()
+        .trim()
+        .replace(/[^a-z0-9]+/g,"_")
+        .replace(/^_+|_+$/g,"");
+}
+
+
+/* ---------------------------------------------------------
+   Applicant aliases
+--------------------------------------------------------- */
+
+const aliases = {
+
+    full_name:[
+        "full_name",
+        "fullname",
+        "name",
+        "applicant_name",
+        "candidate_name"
+    ],
+
+    dob:[
+        "dob",
+        "date_of_birth",
+        "birth_date",
+        "dateofbirth"
+    ],
+
+    gender:[
+        "gender",
+        "sex"
+    ],
+
+    mobile:[
+        "mobile",
+        "mobile_number",
+        "phone",
+        "phone_number",
+        "contact_number"
+    ],
+
+    email:[
+        "email",
+        "email_address"
+    ],
+
+    state:[
+        "state",
+        "state_name"
+    ],
+
+    district:[
+        "district",
+        "district_name"
+    ],
+
+    village_city:[
+        "village_city",
+        "village",
+        "city",
+        "town",
+        "village_or_city"
+    ],
+
+    pin:[
+        "pin",
+        "pincode",
+        "pin_code",
+        "postal_code",
+        "zip"
+    ],
+
+    full_address:[
+        "full_address",
+        "address",
+        "complete_address",
+        "permanent_address",
+        "present_address"
+    ],
+
+    aadhaar:[
+        "aadhaar",
+        "aadhaar_number",
+        "aadhar",
+        "aadhar_number"
+    ],
+
+    father_name:[
+        "father_name",
+        "father",
+        "fathers_name",
+        "guardian_name"
+    ],
+
+    mother_name:[
+        "mother_name",
+        "mother",
+        "mothers_name"
+    ],
+
+    category:[
+        "category",
+        "caste_category",
+        "reservation_category"
+    ],
+
+    religion:[
+        "religion"
+    ]
+};
+
+
+/* ---------------------------------------------------------
+   Find applicant value
+--------------------------------------------------------- */
+
+function findApplicantValue(fieldKey){
+
+    const key = normalizeKey(fieldKey);
+
+    if(
+        applicant[key] !== undefined &&
+        applicant[key] !== null &&
+        String(applicant[key]).trim() !== ""
+    ){
+        return applicant[key];
+    }
+
+
+    for(const group in aliases){
+
+        if(aliases[group].includes(key)){
+
+            for(const possibleKey of aliases[group]){
+
+                if(
+                    applicant[possibleKey] !== undefined &&
+                    applicant[possibleKey] !== null &&
+                    String(applicant[possibleKey]).trim() !== ""
+                ){
+
+                    return applicant[possibleKey];
+                }
+            }
+        }
+    }
+
+
+    return "";
+}
+
+
+/* ---------------------------------------------------------
+   Format date for input[type=date]
+--------------------------------------------------------- */
+
+function normalizeDateForInput(value){
+
+    if(!value){
+        return "";
+    }
+
+    const text = String(value).trim();
+
+    /*
+       Already YYYY-MM-DD
+    */
+
+    if(/^\d{4}-\d{2}-\d{2}$/.test(text)){
+        return text;
+    }
+
+
+    /*
+       DD/MM/YYYY
+    */
+
+    let match = text.match(
+        /^(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{4})$/
+    );
+
+    if(match){
+
+        const day = match[1].padStart(2,"0");
+        const month = match[2].padStart(2,"0");
+        const year = match[3];
+
+        return `${year}-${month}-${day}`;
+    }
+
+
+    /*
+       YYYY/MM/DD
+    */
+
+    match = text.match(
+        /^(\d{4})[\/\-](\d{1,2})[\/\-](\d{1,2})$/
+    );
+
+    if(match){
+
+        const year = match[1];
+        const month = match[2].padStart(2,"0");
+        const day = match[3].padStart(2,"0");
+
+        return `${year}-${month}-${day}`;
+    }
+
+
+    return "";
+}
+
+
+/* ---------------------------------------------------------
+   Create field HTML
+--------------------------------------------------------- */
+
+function createField(field, index){
+
+    const key = normalizeKey(
+        field.key || field.name || `field_${index}`
+    );
+
+    const label =
+        field.label ||
+        field.name ||
+        key.replace(/_/g," ");
+
+    const type =
+        field.type ||
+        "text";
+
+    const required =
+        field.required === true ||
+        field.required === "true";
+
+    const placeholder =
+        field.placeholder ||
+        "";
+
+    const help =
+        field.help ||
+        "";
+
+    const value =
+        findApplicantValue(key);
+
+
+    let finalValue = value;
+
+
+    if(type === "date"){
+
+        finalValue =
+            normalizeDateForInput(value);
+    }
+
+
+    const requiredMark =
+        required
+        ? `<span class="required">*</span>`
+        : "";
+
+
+    const safeKey =
+        escapeHTML(key);
+
+    const safeLabel =
+        escapeHTML(label);
+
+    const safePlaceholder =
+        escapeHTML(placeholder);
+
+    const safeValue =
+        escapeHTML(finalValue);
+
+
+    let control = "";
+
+
+    /* SELECT */
+
+    if(type === "select"){
+
+        let options = [];
+
+        if(Array.isArray(field.options)){
+            options = field.options;
+        }
+        else if(typeof field.options === "string"){
+
+            options =
+                field.options
+                .split(",")
+                .map(x => x.trim())
+                .filter(Boolean);
+        }
+
+
+        control = `
+            <select
+                id="field_${safeKey}"
+                name="${safeKey}"
+                data-field-key="${safeKey}"
+                ${required ? "required" : ""}
+                ${finalValue ? "class='autofilled'" : ""}
+            >
+
+                <option value="">
+                    Select ${safeLabel}
+                </option>
+
+                ${options.map(option => {
+
+                    const selected =
+                        String(option).trim().toLowerCase() ===
+                        String(finalValue).trim().toLowerCase();
+
+                    return `
+                        <option
+                            value="${escapeHTML(option)}"
+                            ${selected ? "selected" : ""}
+                        >
+                            ${escapeHTML(option)}
+                        </option>
+                    `;
+
+                }).join("")}
+
+            </select>
+        `;
+    }
+
+
+    /* TEXTAREA */
+
+    else if(type === "textarea"){
+
+        control = `
+            <textarea
+                id="field_${safeKey}"
+                name="${safeKey}"
+                data-field-key="${safeKey}"
+                placeholder="${safePlaceholder}"
+                ${required ? "required" : ""}
+                class="${finalValue ? "autofilled" : ""}"
+            >${safeValue}</textarea>
+        `;
+    }
+
+
+    /* NORMAL INPUT */
+
+    else{
+
+        let inputType =
+            ["text","date","email","tel","number"]
+            .includes(type)
+            ? type
+            : "text";
+
+
+        control = `
+            <input
+                type="${inputType}"
+                id="field_${safeKey}"
+                name="${safeKey}"
+                data-field-key="${safeKey}"
+                value="${safeValue}"
+                placeholder="${safePlaceholder}"
+                ${required ? "required" : ""}
+                ${finalValue ? 'class="autofilled"' : ""}
+            >
+        `;
+    }
+
+
+    return `
+        <div class="field ${type === "textarea" ? "full" : ""}">
+
+            <label for="field_${safeKey}">
+                ${safeLabel}
+                ${requiredMark}
+            </label>
+
+            ${control}
+
+            ${
+                finalValue
+                ?
+                `<span class="autofill-badge">
+                    ✓ Autofilled from applicant information
+                </span>`
+                :
+                ""
+            }
+
+            ${
+                help
+                ?
+                `<div class="help">
+                    ${escapeHTML(help)}
+                </div>`
+                :
+                ""
+            }
+
+        </div>
+    `;
+}
+
+
+/* ---------------------------------------------------------
+   Load form
+--------------------------------------------------------- */
+
+function loadForm(){
+
+    selectedForm =
+        getJSON("selectedForm", null);
+
+    applicant =
+        getJSON("currentApplicant", {});
+
+
+    if(!selectedForm){
+
+        document.getElementById(
+            "dynamicForm"
+        ).innerHTML = `
+            <div class="empty">
+                <strong>No form selected.</strong>
+                <br><br>
+                Please go back and select a form.
+            </div>
+        `;
+
+        return;
+    }
+
+
+    document.getElementById(
+        "formTitle"
+    ).textContent =
+        selectedForm.name ||
+        "Form Filling";
+
+
+    document.getElementById(
+        "selectedFormName"
+    ).textContent =
+        selectedForm.name ||
+        "Unnamed Form";
+
+
+    document.getElementById(
+        "selectedFormDescription"
+    ).textContent =
+        selectedForm.description ||
+        "Please verify all information before continuing.";
+
+
+    /*
+       Read Admin-created fields
+    */
+
+    fields =
+        Array.isArray(selectedForm.fields)
+        ? selectedForm.fields
+        : [];
+
+
+    /*
+       If admin hasn't created fields yet,
+       create fallback fields so the old
+       workflow doesn't break.
+    */
+
+    if(fields.length === 0){
+
+        fields = [
+
+            {
+                key:"full_name",
+                label:"Full Name",
+                type:"text",
+                required:true,
+                autofill:true
+            },
+
+            {
+                key:"dob",
+                label:"Date of Birth",
+                type:"date",
+                required:true,
+                autofill:true
+            },
+
+            {
+                key:"gender",
+                label:"Gender",
+                type:"select",
+                required:true,
+                autofill:true,
+                options:[
+                    "Male",
+                    "Female",
+                    "Other"
+                ]
+            },
+
+            {
+                key:"mobile",
+                label:"Mobile Number",
+                type:"tel",
+                required:true,
+                autofill:true
+            },
+
+            {
+                key:"email",
+                label:"Email",
+                type:"email",
+                required:false,
+                autofill:true
+            },
+
+            {
+                key:"state",
+                label:"State",
+                type:"text",
+                required:true,
+                autofill:true
+            },
+
+            {
+                key:"district",
+                label:"District",
+                type:"text",
+                required:true,
+                autofill:true
+            },
+
+            {
+                key:"village_city",
+                label:"Village / City",
+                type:"text",
+                required:true,
+                autofill:true
+            },
+
+            {
+                key:"pin",
+                label:"PIN Code",
+                type:"number",
+                required:true,
+                autofill:true
+            },
+
+            {
+                key:"full_address",
+                label:"Full Address",
+                type:"textarea",
+                required:true,
+                autofill:true
+            }
+
+        ];
+    }
+
+
+    const html =
+        fields
+        .map(createField)
+        .join("");
+
+
+    document.getElementById(
+        "dynamicForm"
+    ).innerHTML =
+        html;
+
+
+    /*
+       Remove autofill visual marker
+       after user manually edits field.
+    */
+
+    document
+        .querySelectorAll(
+            "#dynamicForm input, #dynamicForm select, #dynamicForm textarea"
+        )
+        .forEach(element => {
+
+            element.addEventListener(
+                "input",
+                function(){
+
+                    this.classList.remove(
+                        "autofilled"
+                    );
+                }
+            );
+
+            element.addEventListener(
+                "change",
+                function(){
+
+                    this.classList.remove(
+                        "autofilled"
+                    );
+                }
+            );
+
+        });
+}
+
+
+/* ---------------------------------------------------------
+   Collect form data
+--------------------------------------------------------- */
+
+function collectFormData(){
+
+    const data = {};
+
+    document
+        .querySelectorAll(
+            "#dynamicForm [data-field-key]"
+        )
+        .forEach(element => {
+
+            const key =
+                element.dataset.fieldKey;
+
+            data[key] =
+                element.value.trim();
+        });
+
+
+    return data;
+}
+
+
+/* ---------------------------------------------------------
+   Validate fields
+--------------------------------------------------------- */
+
+function validateForm(){
+
+    const errors = [];
+
+
+    fields.forEach(field => {
+
+        const key =
+            normalizeKey(
+                field.key ||
+                field.name
+            );
+
+        const required =
+            field.required === true ||
+            field.required === "true";
+
+
+        if(!required){
+            return;
+        }
+
+
+        const element =
+            document.querySelector(
+                `[data-field-key="${CSS.escape(key)}"]`
+            );
+
+
+        if(!element){
+            return;
+        }
+
+
+        const value =
+            element.value.trim();
+
+
+        if(!value){
+
+            errors.push(
+                field.label ||
+                key.replace(/_/g," ")
+            );
+        }
+
+    });
+
+
+    /*
+       Mobile validation
+    */
+
+    const mobileElement =
+        document.querySelector(
+            '[data-field-key="mobile"]'
+        );
+
+
+    if(mobileElement){
+
+        const mobile =
+            mobileElement.value.trim();
+
+
+        if(
+            mobile &&
+            !/^\d{10}$/.test(mobile)
+        ){
+
+            errors.push(
+                "Mobile Number must contain 10 digits"
+            );
+        }
+    }
+
+
+    /*
+       PIN validation
+    */
+
+    const pinElement =
+        document.querySelector(
+            '[data-field-key="pin"]'
+        );
+
+
+    if(pinElement){
+
+        const pin =
+            pinElement.value.trim();
+
+
+        if(
+            pin &&
+            !/^\d{6}$/.test(pin)
+        ){
+
+            errors.push(
+                "PIN Code must contain 6 digits"
+            );
+        }
+    }
+
+
+    return errors;
+}
+
+
+/* ---------------------------------------------------------
+   Save
+--------------------------------------------------------- */
+
+function saveChanges(){
+
+    const data =
+        collectFormData();
+
+
+    /*
+       Preserve old applicant structure
+       and update new dynamic values.
+    */
+
+    applicant = {
+        ...applicant,
+        ...data
+    };
+
+
+    localStorage.setItem(
+        "currentApplicant",
+        JSON.stringify(applicant)
+    );
+
+
+    localStorage.setItem(
+        "formData",
+        JSON.stringify(data)
+    );
+
+
+    localStorage.setItem(
+        "formFillingSaved",
+        "true"
+    );
+
+
+    showStatus(
+        "Information successfully saved.",
+        "success"
+    );
+}
+
+
+/* ---------------------------------------------------------
+   Continue
+--------------------------------------------------------- */
+
+function continueToFinalReview(){
+
+    const errors =
+        validateForm();
+
+
+    if(errors.length > 0){
+
+        showStatus(
+            "Please complete: " +
+            errors.join(", "),
+            "error"
+        );
+
+        window.scrollTo({
+            top:0,
+            behavior:"smooth"
+        });
+
+        return;
+    }
+
+
+    /*
+       Save before continuing
+    */
+
+    const data =
+        collectFormData();
+
+
+    applicant = {
+        ...applicant,
+        ...data
+    };
+
+
+    localStorage.setItem(
+        "currentApplicant",
+        JSON.stringify(applicant)
+    );
+
+
+    localStorage.setItem(
+        "formData",
+        JSON.stringify(data)
+    );
+
+
+    localStorage.setItem(
+        "formFillingCompleted",
+        "true"
+    );
+
+
+    const verification =
+        document.getElementById(
+            "verificationStatus"
+        ).value;
+
+
+    localStorage.setItem(
+        "verificationStatus",
+        verification
+    );
+
+
+    /*
+       Final Review
+    */
+
+    window.location.href =
+        "final-review.html";
+}
+
+
+/* ---------------------------------------------------------
+   Status message
+--------------------------------------------------------- */
+
+function showStatus(message,type){
+
+    const box =
+        document.getElementById(
+            "formStatus"
+        );
+
+
+    box.textContent =
+        message;
+
+
+    box.className =
+        "status " + type;
+
+
+    setTimeout(() => {
+
+        box.className =
+            "status";
+
+    },5000);
+}
+
+
+/* ---------------------------------------------------------
+   Back
+--------------------------------------------------------- */
+
+function goBack(){
+
+    const loginType =
+        localStorage.getItem(
+            "loginType"
+        );
+
+
+    if(loginType === "professional"){
+
+        window.location.href =
+            "review.html";
+
+    }
+    else{
+
+        window.location.href =
+            "review.html";
+    }
+}
+
+
+/* ---------------------------------------------------------
+   Mode display
+--------------------------------------------------------- */
+
+function loadMode(){
+
+    const loginType =
+        localStorage.getItem(
+            "loginType"
+        );
+
+
+    const modeText =
+        document.getElementById(
+            "modeText"
+        );
+
+
+    if(loginType === "professional"){
+
+        modeText.textContent =
+            "Professional Mode";
+
+    }
+    else{
+
+        modeText.textContent =
+            "Personal Mode";
+    }
+}
+
+
+/* ---------------------------------------------------------
+   Restore verification status
+--------------------------------------------------------- */
+
+function loadVerification(){
+
+    const saved =
+        localStorage.getItem(
+            "verificationStatus"
+        );
+
+
+    if(saved){
+
+        document.getElementById(
+            "verificationStatus"
+        ).value =
+            saved;
+    }
+}
+
+
+/* ---------------------------------------------------------
+   Initial load
+--------------------------------------------------------- */
+
+document.addEventListener(
+    "DOMContentLoaded",
+    function(){
+
+        loadMode();
+
+        loadForm();
+
+        loadVerification();
+
+    }
+);
+
+</script>
+
+</body>
+</html>

@@ -1,0 +1,905 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<title>FormFill Mitra - Task Management</title>
+
+<style>
+*{
+    box-sizing:border-box;
+    margin:0;
+    padding:0;
+    font-family:Arial,sans-serif;
+}
+
+body{
+    background:#f4f7fb;
+    color:#1f2937;
+}
+
+header{
+    background:#172554;
+    color:white;
+    padding:18px 20px;
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    flex-wrap:wrap;
+    gap:10px;
+}
+
+.logo{
+    font-size:22px;
+    font-weight:bold;
+}
+
+.badge{
+    background:#334155;
+    padding:8px 13px;
+    border-radius:20px;
+    font-size:13px;
+}
+
+.nav{
+    background:white;
+    padding:14px;
+    display:flex;
+    gap:10px;
+    flex-wrap:wrap;
+    box-shadow:0 2px 10px rgba(0,0,0,.08);
+}
+
+.nav button{
+    border:0;
+    padding:11px 15px;
+    border-radius:8px;
+    background:#eef2ff;
+    font-weight:bold;
+    cursor:pointer;
+}
+
+.container{
+    max-width:1100px;
+    margin:25px auto;
+    padding:0 15px;
+}
+
+.card{
+    background:white;
+    padding:22px;
+    border-radius:16px;
+    margin-bottom:20px;
+    box-shadow:0 5px 20px rgba(0,0,0,.06);
+}
+
+h2{
+    margin-bottom:15px;
+}
+
+.form-grid{
+    display:grid;
+    grid-template-columns:1fr 1fr;
+    gap:15px;
+}
+
+.full{
+    grid-column:1/-1;
+}
+
+label{
+    display:block;
+    font-weight:bold;
+    margin-bottom:6px;
+}
+
+input,
+select,
+textarea{
+    width:100%;
+    padding:12px;
+    border:1px solid #cbd5e1;
+    border-radius:9px;
+    font-size:15px;
+}
+
+textarea{
+    min-height:90px;
+    resize:vertical;
+}
+
+.btn{
+    border:0;
+    padding:11px 16px;
+    border-radius:8px;
+    font-weight:bold;
+    cursor:pointer;
+}
+
+.primary{
+    background:#2563eb;
+    color:white;
+}
+
+.secondary{
+    background:#e5e7eb;
+}
+
+.success{
+    background:#16a34a;
+    color:white;
+}
+
+.warning{
+    background:#f59e0b;
+    color:white;
+}
+
+.danger{
+    background:#dc2626;
+    color:white;
+}
+
+.buttons{
+    display:flex;
+    gap:10px;
+    flex-wrap:wrap;
+    margin-top:18px;
+}
+
+.task{
+    border:1px solid #e2e8f0;
+    border-radius:12px;
+    padding:18px;
+    margin-top:12px;
+    background:#fafafa;
+}
+
+.task h3{
+    margin-bottom:8px;
+}
+
+.meta{
+    color:#64748b;
+    font-size:14px;
+    line-height:1.7;
+}
+
+.status{
+    display:inline-block;
+    padding:5px 10px;
+    border-radius:15px;
+    font-size:12px;
+    font-weight:bold;
+    margin:8px 0;
+}
+
+.pending{
+    background:#fef3c7;
+    color:#92400e;
+}
+
+.processing{
+    background:#dbeafe;
+    color:#1d4ed8;
+}
+
+.completed{
+    background:#dcfce7;
+    color:#166534;
+}
+
+.error{
+    background:#fee2e2;
+    color:#991b1b;
+}
+
+.empty{
+    text-align:center;
+    padding:30px;
+    color:#64748b;
+}
+
+@media(max-width:700px){
+    .form-grid{
+        grid-template-columns:1fr;
+    }
+
+    .full{
+        grid-column:auto;
+    }
+
+    .nav button{
+        width:100%;
+    }
+}
+</style>
+</head>
+
+<body>
+
+<header>
+    <div class="logo">FormFill Mitra</div>
+    <div class="badge">Admin • Task Management</div>
+</header>
+
+<nav class="nav">
+
+    <button onclick="go('admin-panel.html')">
+        📝 Forms
+    </button>
+
+    <button onclick="go('staff-management.html')">
+        👥 Staff
+    </button>
+
+    <button onclick="go('activity-monitoring.html')">
+        📊 Activity
+    </button>
+
+    <button onclick="go('ai-assistant.html')">
+        🤖 AI Assistant
+    </button>
+
+</nav>
+
+<main class="container">
+
+    <section class="card">
+
+        <h2>➕ Create Application Task</h2>
+
+        <div class="form-grid">
+
+            <div>
+                <label>Applicant Name</label>
+                <input
+                    id="applicantName"
+                    type="text"
+                    placeholder="Applicant का नाम">
+            </div>
+
+            <div>
+                <label>Application ID</label>
+                <input
+                    id="applicationId"
+                    type="text"
+                    placeholder="जैसे FFM-1001">
+            </div>
+
+            <div>
+                <label>Select Form</label>
+                <select id="formSelect">
+                    <option value="">Select Form</option>
+                </select>
+            </div>
+
+            <div>
+                <label>Assign Staff</label>
+                <select id="staffSelect">
+                    <option value="">Select Staff</option>
+                </select>
+            </div>
+
+            <div class="full">
+                <label>Task Note</label>
+                <textarea
+                    id="taskNote"
+                    placeholder="Task के बारे में instructions..."></textarea>
+            </div>
+
+        </div>
+
+        <div class="buttons">
+
+            <button
+                class="btn primary"
+                onclick="createTask()">
+                Create & Assign Task
+            </button>
+
+            <button
+                class="btn secondary"
+                onclick="clearTaskForm()">
+                Clear
+            </button>
+
+        </div>
+
+    </section>
+
+
+    <section class="card">
+
+        <h2>📋 Application Tasks</h2>
+
+        <div id="tasksContainer"></div>
+
+    </section>
+
+</main>
+
+<script>
+    
+    // 🔐 ADMIN ACCESS GUARD
+if (localStorage.getItem("ffm_admin_logged_in") !== "true") {
+    window.location.replace("admin-login.html");
+}
+    
+const TASK_KEY = "ffm_tasks";
+const STAFF_KEY = "ffm_staff";
+const FORM_KEY = "ffm_admin_forms";
+
+
+function go(page){
+    location.href = page;
+}
+
+
+function getTasks(){
+    return JSON.parse(
+        localStorage.getItem(TASK_KEY)
+    ) || [];
+}
+
+
+function saveTasks(tasks){
+    localStorage.setItem(
+        TASK_KEY,
+        JSON.stringify(tasks)
+    );
+}
+
+
+function getStaff(){
+    return JSON.parse(
+        localStorage.getItem(STAFF_KEY)
+    ) || [];
+}
+
+
+function getForms(){
+    return JSON.parse(
+        localStorage.getItem(FORM_KEY)
+    ) || [];
+}
+
+
+/* LOAD FORMS */
+
+function loadForms(){
+
+    const select =
+        document.getElementById("formSelect");
+
+    const forms = getForms();
+
+    select.innerHTML =
+        '<option value="">Select Form</option>';
+
+    forms.forEach(function(form,index){
+
+        const option =
+            document.createElement("option");
+
+        option.value = index;
+
+        option.textContent = form.name;
+
+        select.appendChild(option);
+
+    });
+}
+
+
+/* LOAD AVAILABLE STAFF */
+
+function loadStaff(){
+
+    const select =
+        document.getElementById("staffSelect");
+
+    const staff = getStaff();
+
+    const tasks = getTasks();
+
+    select.innerHTML =
+        '<option value="">Select Staff</option>';
+
+    staff.forEach(function(person,index){
+
+        if(person.active === false){
+            return;
+        }
+
+        /*
+        एक staff का active task check
+        */
+
+        const hasActiveTask =
+            tasks.some(function(task){
+
+                return (
+                    task.staffId === person.id &&
+                    task.status !== "Completed" &&
+                    task.status !== "Error"
+                );
+
+            });
+
+        const option =
+            document.createElement("option");
+
+        option.value = index;
+
+        if(hasActiveTask){
+
+            option.textContent =
+                person.name +
+                " — Busy (Active Task)";
+
+            option.disabled = true;
+
+        }else{
+
+            option.textContent =
+                person.name +
+                " — Available";
+
+        }
+
+        select.appendChild(option);
+
+    });
+}
+
+
+/* CREATE TASK */
+
+function createTask(){
+
+    const applicantName =
+        document.getElementById("applicantName")
+        .value.trim();
+
+    const applicationId =
+        document.getElementById("applicationId")
+        .value.trim();
+
+    const formIndex =
+        document.getElementById("formSelect")
+        .value;
+
+    const staffIndex =
+        document.getElementById("staffSelect")
+        .value;
+
+    const note =
+        document.getElementById("taskNote")
+        .value.trim();
+
+
+    if(!applicantName){
+        alert("Applicant Name डालें।");
+        return;
+    }
+
+    if(!applicationId){
+        alert("Application ID डालें।");
+        return;
+    }
+
+    if(formIndex === ""){
+        alert("Form select करें।");
+        return;
+    }
+
+    if(staffIndex === ""){
+        alert("Staff select करें।");
+        return;
+    }
+
+
+    const forms = getForms();
+    const staff = getStaff();
+    const tasks = getTasks();
+
+    const form = forms[formIndex];
+    const person = staff[staffIndex];
+
+
+    if(!form || !person){
+        alert("Form या Staff नहीं मिला।");
+        return;
+    }
+
+
+    /*
+    Final safety check:
+    एक staff के पास एक active task ही हो सकता है।
+    */
+
+    const busy =
+        tasks.some(function(task){
+
+            return (
+                task.staffId === person.id &&
+                task.status !== "Completed" &&
+                task.status !== "Error"
+            );
+
+        });
+
+
+    if(busy){
+
+        alert(
+            "यह staff अभी दूसरे active task पर काम कर रहा है।"
+        );
+
+        loadStaff();
+
+        return;
+    }
+
+
+    const task = {
+
+        id:"TASK-" + Date.now(),
+
+        applicantName:applicantName,
+
+        applicationId:applicationId,
+
+        formId:form.id,
+
+        formName:form.name,
+
+        staffId:person.id,
+
+        staffName:person.name,
+
+        note:note,
+
+        status:"Pending",
+
+        createdAt:
+            new Date().toLocaleString(),
+
+        updatedAt:
+            new Date().toLocaleString()
+
+    };
+
+
+    tasks.unshift(task);
+
+    saveTasks(tasks);
+
+
+    /*
+    Activity log
+    */
+
+    addActivity(
+        "Task Created",
+        person.name +
+        " को " +
+        form.name +
+        " का task assign किया गया।",
+        "Pending"
+    );
+
+
+    alert(
+        "Task successfully created और staff को assign हो गया।"
+    );
+
+
+    clearTaskForm();
+
+    renderTasks();
+
+    loadStaff();
+
+}
+
+
+/* CLEAR */
+
+function clearTaskForm(){
+
+    document.getElementById("applicantName")
+        .value = "";
+
+    document.getElementById("applicationId")
+        .value = "";
+
+    document.getElementById("formSelect")
+        .value = "";
+
+    document.getElementById("staffSelect")
+        .value = "";
+
+    document.getElementById("taskNote")
+        .value = "";
+
+}
+
+
+/* CHANGE STATUS */
+
+function changeStatus(id,status){
+
+    const tasks = getTasks();
+
+    const task =
+        tasks.find(function(item){
+            return item.id === id;
+        });
+
+    if(!task) return;
+
+
+    task.status = status;
+
+    task.updatedAt =
+        new Date().toLocaleString();
+
+
+    saveTasks(tasks);
+
+
+    addActivity(
+        "Task Status Updated",
+        task.id +
+        " status changed to " +
+        status,
+        status
+    );
+
+
+    renderTasks();
+
+    loadStaff();
+
+}
+
+
+/* DELETE TASK */
+
+function deleteTask(id){
+
+    const confirmed =
+        confirm(
+            "क्या आप यह task delete करना चाहते हैं?"
+        );
+
+    if(!confirmed) return;
+
+
+    const tasks =
+        getTasks().filter(function(task){
+
+            return task.id !== id;
+
+        });
+
+
+    saveTasks(tasks);
+
+    renderTasks();
+
+    loadStaff();
+
+}
+
+
+/* ACTIVITY */
+
+function addActivity(action,details,status){
+
+    const key = "ffm_activity";
+
+    const activities =
+        JSON.parse(
+            localStorage.getItem(key)
+        ) || [];
+
+
+    activities.unshift({
+
+        id:Date.now(),
+
+        action:action,
+
+        details:details,
+
+        status:status,
+
+        time:
+            new Date().toLocaleString()
+
+    });
+
+
+    localStorage.setItem(
+        key,
+        JSON.stringify(activities)
+    );
+
+}
+
+
+/* ESCAPE */
+
+function escapeHTML(value){
+
+    return String(value || "")
+        .replace(/&/g,"&amp;")
+        .replace(/</g,"&lt;")
+        .replace(/>/g,"&gt;")
+        .replace(/"/g,"&quot;")
+        .replace(/'/g,"&#039;");
+
+}
+
+
+/* RENDER */
+
+function renderTasks(){
+
+    const container =
+        document.getElementById("tasksContainer");
+
+    const tasks = getTasks();
+
+
+    if(tasks.length === 0){
+
+        container.innerHTML = `
+            <div class="empty">
+                अभी कोई application task नहीं है।
+            </div>
+        `;
+
+        return;
+    }
+
+
+    container.innerHTML =
+        tasks.map(function(task){
+
+            let statusClass =
+                "pending";
+
+            if(task.status === "Processing"){
+                statusClass = "processing";
+            }
+
+            if(task.status === "Completed"){
+                statusClass = "completed";
+            }
+
+            if(task.status === "Error"){
+                statusClass = "error";
+            }
+
+
+            return `
+
+                <div class="task">
+
+                    <h3>
+                        ${escapeHTML(task.applicantName)}
+                    </h3>
+
+                    <div class="meta">
+
+                        Application ID:
+                        <strong>
+                            ${escapeHTML(task.applicationId)}
+                        </strong>
+                        <br>
+
+                        Form:
+                        ${escapeHTML(task.formName)}
+                        <br>
+
+                        Assigned Staff:
+                        ${escapeHTML(task.staffName)}
+                        <br>
+
+                        Created:
+                        ${escapeHTML(task.createdAt)}
+
+                    </div>
+
+
+                    <span class="status ${statusClass}">
+                        ${escapeHTML(task.status)}
+                    </span>
+
+
+                    ${
+                        task.note
+                        ?
+                        `
+                        <p style="margin-top:8px;">
+                            <strong>Note:</strong>
+                            ${escapeHTML(task.note)}
+                        </p>
+                        `
+                        :
+                        ""
+                    }
+
+
+                    <div class="buttons">
+
+                        ${
+                            task.status === "Pending"
+                            ?
+                            `
+                            <button
+                                class="btn primary"
+                                onclick="changeStatus('${task.id}','Processing')">
+                                ▶ Start Processing
+                            </button>
+                            `
+                            :
+                            ""
+                        }
+
+
+                        ${
+                            task.status === "Processing"
+                            ?
+                            `
+                            <button
+                                class="btn success"
+                                onclick="changeStatus('${task.id}','Completed')">
+                                ✓ Complete
+                            </button>
+
+                            <button
+                                class="btn danger"
+                                onclick="changeStatus('${task.id}','Error')">
+                                ⚠ Mark Error
+                            </button>
+                            `
+                            :
+                            ""
+                        }
+
+
+                        <button
+                            class="btn secondary"
+                            onclick="deleteTask('${task.id}')">
+                            🗑 Delete
+                        </button>
+
+                    </div>
+
+                </div>
+
+            `;
+
+        }).join("");
+
+}
+
+
+/* INITIALIZE */
+
+loadForms();
+
+loadStaff();
+
+renderTasks();
+
+</script>
+
+</body>
+</html>

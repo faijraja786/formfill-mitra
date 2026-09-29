@@ -1,0 +1,1794 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Professional Dashboard - FormFill Mitra</title>
+
+<style>
+*{
+    box-sizing:border-box;
+    margin:0;
+    padding:0;
+    font-family:Arial,Helvetica,sans-serif;
+}
+
+body{
+    background:#f4f7fb;
+    color:#172033;
+}
+
+.header{
+    background:#0d47a1;
+    color:white;
+    padding:15px 20px;
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    position:sticky;
+    top:0;
+    z-index:100;
+    box-shadow:0 2px 10px rgba(0,0,0,.15);
+}
+
+.brand{
+    display:flex;
+    align-items:center;
+    gap:10px;
+}
+
+.logo{
+    width:42px;
+    height:42px;
+    border-radius:10px;
+    background:white;
+    color:#0d47a1;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    font-size:18px;
+    font-weight:bold;
+}
+
+.brand h2{
+    font-size:20px;
+}
+
+.brand small{
+    display:block;
+    font-size:11px;
+    opacity:.85;
+    margin-top:2px;
+}
+
+.header-right{
+    display:flex;
+    align-items:center;
+    gap:10px;
+}
+
+.user-name{
+    background:rgba(255,255,255,.12);
+    padding:8px 12px;
+    border-radius:20px;
+    font-size:13px;
+}
+
+.logout{
+    border:none;
+    background:white;
+    color:#0d47a1;
+    padding:9px 13px;
+    border-radius:8px;
+    cursor:pointer;
+    font-weight:bold;
+}
+
+.container{
+    max-width:1250px;
+    margin:auto;
+    padding:22px 16px 50px;
+}
+
+.welcome{
+    background:linear-gradient(135deg,#0d47a1,#1565c0);
+    color:white;
+    padding:25px;
+    border-radius:16px;
+    margin-bottom:20px;
+}
+
+.welcome h1{
+    font-size:25px;
+    margin-bottom:7px;
+}
+
+.welcome p{
+    font-size:14px;
+    opacity:.92;
+}
+
+.stats{
+    display:grid;
+    grid-template-columns:repeat(5,1fr);
+    gap:13px;
+    margin-bottom:22px;
+}
+
+.stat{
+    background:white;
+    border:1px solid #e5eaf1;
+    border-radius:13px;
+    padding:17px;
+    box-shadow:0 3px 12px rgba(0,0,0,.05);
+}
+
+.stat-title{
+    color:#697386;
+    font-size:12px;
+    margin-bottom:7px;
+}
+
+.stat-value{
+    color:#0d47a1;
+    font-size:24px;
+    font-weight:bold;
+}
+
+.quick-grid{
+    display:grid;
+    grid-template-columns:repeat(5,1fr);
+    gap:13px;
+    margin-bottom:22px;
+}
+
+.quick-card{
+    background:white;
+    border:1px solid #e5eaf1;
+    border-radius:13px;
+    padding:17px;
+    cursor:pointer;
+    transition:.2s;
+}
+
+.quick-card:hover{
+    transform:translateY(-2px);
+    box-shadow:0 7px 20px rgba(0,0,0,.08);
+}
+
+.quick-icon{
+    font-size:24px;
+    margin-bottom:9px;
+}
+
+.quick-card h3{
+    font-size:14px;
+    margin-bottom:5px;
+}
+
+.quick-card p{
+    font-size:11px;
+    color:#697386;
+    line-height:1.4;
+}
+
+.section{
+    background:white;
+    border:1px solid #e5eaf1;
+    border-radius:15px;
+    padding:20px;
+    margin-bottom:20px;
+    box-shadow:0 3px 12px rgba(0,0,0,.05);
+}
+
+.section-head{
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    gap:15px;
+    margin-bottom:16px;
+}
+
+.section-head h2{
+    font-size:19px;
+}
+
+.search{
+    width:270px;
+    max-width:100%;
+    border:1px solid #d7dde7;
+    border-radius:9px;
+    padding:10px 13px;
+    outline:none;
+}
+
+.search:focus{
+    border-color:#0d47a1;
+}
+
+.categories{
+    display:flex;
+    gap:8px;
+    overflow-x:auto;
+    margin-bottom:17px;
+    padding-bottom:5px;
+}
+
+.category{
+    border:1px solid #d8dee8;
+    background:white;
+    color:#465268;
+    padding:8px 13px;
+    border-radius:20px;
+    cursor:pointer;
+    white-space:nowrap;
+    font-size:12px;
+}
+
+.category.active,
+.category:hover{
+    background:#0d47a1;
+    color:white;
+    border-color:#0d47a1;
+}
+
+.forms-grid{
+    display:grid;
+    grid-template-columns:repeat(3,1fr);
+    gap:15px;
+}
+
+.form-card{
+    border:1px solid #e0e5ec;
+    border-radius:13px;
+    padding:17px;
+    display:flex;
+    flex-direction:column;
+    transition:.2s;
+}
+
+.form-card:hover{
+    border-color:#90caf9;
+    box-shadow:0 5px 18px rgba(13,71,161,.09);
+}
+
+.form-category{
+    background:#e3f2fd;
+    color:#0d47a1;
+    border-radius:6px;
+    padding:5px 9px;
+    font-size:10px;
+    font-weight:bold;
+    width:max-content;
+    margin-bottom:10px;
+}
+
+.form-card h3{
+    font-size:16px;
+    margin-bottom:7px;
+}
+
+.form-card p{
+    color:#697386;
+    font-size:12px;
+    line-height:1.5;
+    min-height:38px;
+    margin-bottom:12px;
+}
+
+.form-meta{
+    font-size:11px;
+    color:#697386;
+    margin-bottom:13px;
+}
+
+.primary-btn{
+    border:none;
+    background:#0d47a1;
+    color:white;
+    border-radius:8px;
+    padding:10px;
+    cursor:pointer;
+    font-weight:bold;
+    width:100%;
+}
+
+.primary-btn:hover{
+    background:#083b8a;
+}
+
+.task-list{
+    display:flex;
+    flex-direction:column;
+    gap:10px;
+}
+
+.task{
+    border:1px solid #e1e6ed;
+    border-radius:10px;
+    padding:14px;
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    gap:12px;
+}
+
+.task-info h3{
+    font-size:14px;
+    margin-bottom:5px;
+}
+
+.task-info p{
+    font-size:11px;
+    color:#697386;
+}
+
+.status{
+    padding:5px 9px;
+    border-radius:15px;
+    font-size:10px;
+    font-weight:bold;
+    white-space:nowrap;
+}
+
+.status.pending{
+    background:#fff3cd;
+    color:#856404;
+}
+
+.status.progress{
+    background:#e3f2fd;
+    color:#0d47a1;
+}
+
+.status.completed{
+    background:#e8f5e9;
+    color:#2e7d32;
+}
+
+.application-list{
+    display:grid;
+    gap:10px;
+}
+
+.application{
+    border:1px solid #e1e6ed;
+    border-radius:10px;
+    padding:14px;
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    gap:12px;
+}
+
+.application h3{
+    font-size:14px;
+    margin-bottom:5px;
+}
+
+.application p{
+    font-size:11px;
+    color:#697386;
+}
+
+.small-btn{
+    border:1px solid #0d47a1;
+    background:white;
+    color:#0d47a1;
+    padding:8px 11px;
+    border-radius:7px;
+    cursor:pointer;
+    font-size:11px;
+    font-weight:bold;
+}
+
+.small-btn:hover{
+    background:#0d47a1;
+    color:white;
+}
+
+.subscription{
+    display:none;
+    background:white;
+    border:1px solid #e5eaf1;
+    border-radius:15px;
+    padding:20px;
+    margin-bottom:20px;
+}
+
+.subscription.active{
+    display:block;
+}
+
+.subscription-box{
+    background:#f7faff;
+    border:1px solid #d8e8ff;
+    border-radius:12px;
+    padding:18px;
+}
+
+.subscription-status{
+    color:#0d47a1;
+    font-weight:bold;
+    margin-bottom:7px;
+}
+
+.subscription-box p{
+    color:#657084;
+    font-size:13px;
+    line-height:1.5;
+}
+
+.payment-btn{
+    margin-top:13px;
+    border:none;
+    background:#0d47a1;
+    color:white;
+    padding:10px 17px;
+    border-radius:8px;
+    font-weight:bold;
+    cursor:pointer;
+}
+
+.empty{
+    text-align:center;
+    color:#697386;
+    padding:30px 15px;
+}
+
+.empty strong{
+    display:block;
+    color:#354052;
+    margin-bottom:5px;
+}
+
+.footer{
+    text-align:center;
+    color:#8993a4;
+    font-size:12px;
+    margin-top:25px;
+}
+
+@media(max-width:1050px){
+
+    .stats{
+        grid-template-columns:repeat(3,1fr);
+    }
+
+    .quick-grid{
+        grid-template-columns:repeat(3,1fr);
+    }
+
+}
+
+@media(max-width:800px){
+
+    .stats{
+        grid-template-columns:repeat(2,1fr);
+    }
+
+    .quick-grid{
+        grid-template-columns:repeat(2,1fr);
+    }
+
+    .forms-grid{
+        grid-template-columns:repeat(2,1fr);
+    }
+
+}
+
+@media(max-width:600px){
+
+    .header{
+        padding:12px;
+    }
+
+    .brand h2{
+        font-size:17px;
+    }
+
+    .user-name{
+        display:none;
+    }
+
+    .welcome{
+        padding:20px;
+    }
+
+    .welcome h1{
+        font-size:21px;
+    }
+
+    .stats{
+        grid-template-columns:repeat(2,1fr);
+    }
+
+    .quick-grid{
+        grid-template-columns:repeat(2,1fr);
+    }
+
+    .forms-grid{
+        grid-template-columns:1fr;
+    }
+
+    .section{
+        padding:15px;
+    }
+
+    .section-head{
+        flex-direction:column;
+        align-items:flex-start;
+    }
+
+    .search{
+        width:100%;
+    }
+
+    .task,
+    .application{
+        align-items:flex-start;
+        flex-direction:column;
+    }
+
+}
+</style>
+</head>
+
+<body>
+
+<header class="header">
+
+    <div class="brand">
+
+        <div class="logo">FM</div>
+
+        <div>
+            <h2>FormFill Mitra</h2>
+            <small>Professional Dashboard</small>
+        </div>
+
+    </div>
+
+    <div class="header-right">
+
+        <div class="user-name" id="userName">
+            Professional User
+        </div>
+
+        <button class="logout" onclick="logout()">
+            Logout
+        </button>
+
+    </div>
+
+</header>
+
+
+<main class="container">
+
+<section class="welcome">
+
+    <h1>Professional Workspace 👋</h1>
+
+    <p>
+        Applications, forms, tasks और documents को एक जगह से manage करें।
+    </p>
+
+</section>
+
+
+<section class="stats">
+
+    <div class="stat">
+        <div class="stat-title">Available Forms</div>
+        <div class="stat-value" id="formsCount">0</div>
+    </div>
+
+    <div class="stat">
+        <div class="stat-title">Applications</div>
+        <div class="stat-value" id="applicationsCount">0</div>
+    </div>
+
+    <div class="stat">
+        <div class="stat-title">Pending Tasks</div>
+        <div class="stat-value" id="pendingTasks">0</div>
+    </div>
+
+    <div class="stat">
+        <div class="stat-title">Completed Tasks</div>
+        <div class="stat-value" id="completedTasks">0</div>
+    </div>
+
+    <div class="stat">
+        <div class="stat-title">Active Staff</div>
+        <div class="stat-value" id="staffCount">0</div>
+    </div>
+
+</section>
+
+
+<section class="quick-grid">
+
+    <div class="quick-card" onclick="goApplications()">
+
+        <div class="quick-icon">📋</div>
+
+        <h3>Applications</h3>
+
+        <p>
+            सभी client applications
+        </p>
+
+    </div>
+
+
+    <div class="quick-card" onclick="goTasks()">
+
+        <div class="quick-icon">✅</div>
+
+        <h3>Tasks</h3>
+
+        <p>
+            Assigned tasks manage करें
+        </p>
+
+    </div>
+
+
+    <div class="quick-card" onclick="goStaff()">
+
+        <div class="quick-icon">👥</div>
+
+        <h3>Staff</h3>
+
+        <p>
+            Staff और operators
+        </p>
+
+    </div>
+
+
+    <div class="quick-card" onclick="goActivity()">
+
+        <div class="quick-icon">📊</div>
+
+        <h3>Activity</h3>
+
+        <p>
+            Work activity देखें
+        </p>
+
+    </div>
+
+
+    <div class="quick-card" onclick="goForms()">
+
+        <div class="quick-icon">📝</div>
+
+        <h3>Browse Forms</h3>
+
+        <p>
+            सभी available forms
+        </p>
+
+    </div>
+
+</section>
+
+
+<!--
+    Payment / Subscription
+
+    Admin panel में ffm_subscription_settings.enabled
+    true होने पर ही दिखाई देगा.
+-->
+
+<section
+    class="subscription"
+    id="subscriptionSection"
+>
+
+    <div class="section-head">
+
+        <h2>Subscription</h2>
+
+    </div>
+
+
+    <div class="subscription-box">
+
+        <div class="subscription-status">
+            Subscription system is active
+        </div>
+
+        <p id="subscriptionText">
+            Subscription and payment options are controlled by the administrator.
+        </p>
+
+        <button
+            class="payment-btn"
+            onclick="openPayment()"
+        >
+            View Subscription
+        </button>
+
+    </div>
+
+</section>
+
+
+<section class="section">
+
+    <div class="section-head">
+
+        <h2>Assigned Tasks</h2>
+
+        <button
+            class="small-btn"
+            onclick="goTasks()"
+        >
+            View All
+        </button>
+
+    </div>
+
+
+    <div
+        class="task-list"
+        id="taskList"
+    ></div>
+
+</section>
+
+
+<section class="section">
+
+    <div class="section-head">
+
+        <h2>Recent Applications</h2>
+
+        <button
+            class="small-btn"
+            onclick="goApplications()"
+        >
+            View All
+        </button>
+
+    </div>
+
+
+    <div
+        class="application-list"
+        id="applicationList"
+    ></div>
+
+</section>
+
+
+<section
+    class="section"
+    id="formsSection"
+>
+
+    <div class="section-head">
+
+        <h2>Available Forms</h2>
+
+        <input
+            type="search"
+            id="searchInput"
+            class="search"
+            placeholder="Search form..."
+            oninput="renderForms()"
+        >
+
+    </div>
+
+
+    <div
+        class="categories"
+        id="categories"
+    ></div>
+
+
+    <div
+        class="forms-grid"
+        id="formsGrid"
+    ></div>
+
+</section>
+
+
+<div class="footer">
+    FormFill Mitra • Professional Account
+</div>
+
+</main>
+
+
+<script>
+
+/* =========================================
+   AUTH GUARD
+========================================= */
+
+(function(){
+
+    const loggedIn =
+        localStorage.getItem("isLoggedIn");
+
+    const loginType =
+        localStorage.getItem("loginType");
+
+
+    if(
+        loggedIn !== "true" ||
+        loginType !== "professional"
+    ){
+
+        window.location.replace(
+            "professional-login.html"
+        );
+
+        return;
+    }
+
+})();
+
+
+let allForms = [];
+let selectedCategory = "All";
+
+
+/* =========================================
+   SAFE STORAGE
+========================================= */
+
+function safeParse(key, fallback){
+
+    try{
+
+        const value =
+            JSON.parse(
+                localStorage.getItem(key)
+            );
+
+        return value ?? fallback;
+
+    }catch(error){
+
+        return fallback;
+
+    }
+
+}
+
+
+function escapeHTML(value){
+
+    return String(value ?? "")
+        .replace(/&/g,"&amp;")
+        .replace(/</g,"&lt;")
+        .replace(/>/g,"&gt;")
+        .replace(/"/g,"&quot;")
+        .replace(/'/g,"&#039;");
+
+}
+
+
+/* =========================================
+   USER
+========================================= */
+
+function loadUser(){
+
+    const user =
+        safeParse(
+            "ffm_professional_user",
+            null
+        );
+
+
+    const applicant =
+        safeParse(
+            "currentApplicant",
+            {}
+        );
+
+
+    const name =
+        (user && (
+            user.name ||
+            user.username ||
+            user.email
+        ))
+        ||
+        applicant.fullName
+        ||
+        localStorage.getItem("professionalName")
+        ||
+        localStorage.getItem("userName")
+        ||
+        "Professional User";
+
+
+    document.getElementById(
+        "userName"
+    ).textContent = name;
+
+}
+
+
+/* =========================================
+   FORMS
+========================================= */
+
+function loadForms(){
+
+    const forms =
+        safeParse(
+            "ffm_admin_forms",
+            []
+        );
+
+
+    allForms =
+        Array.isArray(forms)
+            ? forms
+            : [];
+
+}
+
+
+function getCategories(){
+
+    const categories = ["All"];
+
+
+    allForms.forEach(function(form){
+
+        const category =
+            form.category ||
+            "Other";
+
+
+        if(
+            !categories.includes(category)
+        ){
+
+            categories.push(category);
+
+        }
+
+    });
+
+
+    return categories;
+
+}
+
+
+function renderCategories(){
+
+    const box =
+        document.getElementById(
+            "categories"
+        );
+
+
+    box.innerHTML =
+        getCategories()
+        .map(function(category){
+
+            const active =
+                category === selectedCategory
+                    ? "active"
+                    : "";
+
+
+            return `
+                <button
+                    class="category ${active}"
+                    onclick="selectCategory(${JSON.stringify(category)})"
+                >
+                    ${escapeHTML(category)}
+                </button>
+            `;
+
+        })
+        .join("");
+
+}
+
+
+function selectCategory(category){
+
+    selectedCategory =
+        category;
+
+    renderCategories();
+    renderForms();
+
+}
+
+
+function renderForms(){
+
+    const grid =
+        document.getElementById(
+            "formsGrid"
+        );
+
+
+    const search =
+        document.getElementById(
+            "searchInput"
+        )
+        .value
+        .trim()
+        .toLowerCase();
+
+
+    const forms =
+        allForms.filter(function(form){
+
+            const name =
+                String(
+                    form.name || ""
+                ).toLowerCase();
+
+
+            const description =
+                String(
+                    form.description || ""
+                ).toLowerCase();
+
+
+            const category =
+                String(
+                    form.category || ""
+                ).toLowerCase();
+
+
+            const searchMatch =
+                !search ||
+                name.includes(search) ||
+                description.includes(search) ||
+                category.includes(search);
+
+
+            const categoryMatch =
+                selectedCategory === "All" ||
+                String(
+                    form.category || "Other"
+                ) === selectedCategory;
+
+
+            return (
+                searchMatch &&
+                categoryMatch
+            );
+
+        });
+
+
+    if(forms.length === 0){
+
+        grid.innerHTML = `
+            <div
+                class="empty"
+                style="grid-column:1/-1"
+            >
+                <strong>No forms found</strong>
+                <span>
+                    इस search/category में कोई form उपलब्ध नहीं है।
+                </span>
+            </div>
+        `;
+
+        return;
+
+    }
+
+
+    grid.innerHTML =
+        forms
+        .map(function(form){
+
+            const index =
+                allForms.indexOf(form);
+
+
+            const name =
+                form.name ||
+                "Unnamed Form";
+
+
+            const category =
+                form.category ||
+                "Other";
+
+
+            const description =
+                form.description ||
+                "Application शुरू करने के लिए Open Form दबाएं।";
+
+
+            const fields =
+                Array.isArray(form.fields)
+                    ? form.fields.length
+                    : 0;
+
+
+            const documents =
+                Array.isArray(form.documents)
+                    ? form.documents.length
+                    : 0;
+
+
+            return `
+                <div class="form-card">
+
+                    <span class="form-category">
+                        ${escapeHTML(category)}
+                    </span>
+
+                    <h3>
+                        ${escapeHTML(name)}
+                    </h3>
+
+                    <p>
+                        ${escapeHTML(description)}
+                    </p>
+
+                    <div class="form-meta">
+                        ${fields > 0
+                            ? fields + " fields"
+                            : "Standard fields"}
+                        •
+                        ${documents} documents
+                    </div>
+
+                    <button
+                        class="primary-btn"
+                        onclick="openForm(${index})"
+                    >
+                        Open Form
+                    </button>
+
+                </div>
+            `;
+
+        })
+        .join("");
+
+}
+
+
+function openForm(index){
+
+    const form =
+        allForms[index];
+
+
+    if(!form){
+
+        alert(
+            "Form information not found."
+        );
+
+        return;
+
+    }
+
+
+    localStorage.setItem(
+        "selectedForm",
+        JSON.stringify(form)
+    );
+
+
+    localStorage.setItem(
+        "formName",
+        form.name ||
+        "Application Form"
+    );
+
+
+    localStorage.setItem(
+        "loginType",
+        "professional"
+    );
+
+
+    localStorage.removeItem(
+        "reviewCompleted"
+    );
+
+    localStorage.removeItem(
+        "formFillingCompleted"
+    );
+
+    localStorage.removeItem(
+        "finalReviewCompleted"
+    );
+
+
+    window.location.href =
+        "form-details.html";
+
+}
+
+
+/* =========================================
+   TASKS
+========================================= */
+
+function getTasks(){
+
+    const tasks =
+        safeParse(
+            "ffm_tasks",
+            []
+        );
+
+
+    return Array.isArray(tasks)
+        ? tasks
+        : [];
+
+}
+
+
+function taskStatusClass(status){
+
+    const value =
+        String(
+            status || "Pending"
+        ).toLowerCase();
+
+
+    if(
+        value.includes("complete") ||
+        value.includes("done")
+    ){
+
+        return "completed";
+
+    }
+
+
+    if(
+        value.includes("progress") ||
+        value.includes("process")
+    ){
+
+        return "progress";
+
+    }
+
+
+    return "pending";
+
+}
+
+
+function renderTasks(){
+
+    const list =
+        document.getElementById(
+            "taskList"
+        );
+
+
+    const tasks =
+        getTasks();
+
+
+    if(tasks.length === 0){
+
+        list.innerHTML = `
+            <div class="empty">
+                <strong>No tasks assigned</strong>
+                <span>
+                    अभी कोई task assigned नहीं है।
+                </span>
+            </div>
+        `;
+
+        return;
+
+    }
+
+
+    const recent =
+        tasks.slice(0,5);
+
+
+    list.innerHTML =
+        recent
+        .map(function(task){
+
+            const title =
+                task.title ||
+                task.name ||
+                "Untitled Task";
+
+
+            const description =
+                task.description ||
+                task.formName ||
+                "Professional application task";
+
+
+            const status =
+                task.status ||
+                "Pending";
+
+
+            return `
+                <div class="task">
+
+                    <div class="task-info">
+
+                        <h3>
+                            ${escapeHTML(title)}
+                        </h3>
+
+                        <p>
+                            ${escapeHTML(description)}
+                        </p>
+
+                    </div>
+
+                    <span
+                        class="status ${taskStatusClass(status)}"
+                    >
+                        ${escapeHTML(status)}
+                    </span>
+
+                </div>
+            `;
+
+        })
+        .join("");
+
+}
+
+
+/* =========================================
+   APPLICATIONS
+========================================= */
+
+function getApplications(){
+
+    const applications =
+        safeParse(
+            "ffm_applications",
+            []
+        );
+
+
+    return Array.isArray(applications)
+        ? applications
+        : [];
+
+}
+
+
+function renderApplications(){
+
+    const list =
+        document.getElementById(
+            "applicationList"
+        );
+
+
+    const applications =
+        getApplications();
+
+
+    if(applications.length === 0){
+
+        list.innerHTML = `
+            <div class="empty">
+                <strong>No applications yet</strong>
+                <span>
+                    अभी कोई application available नहीं है।
+                </span>
+            </div>
+        `;
+
+        return;
+
+    }
+
+
+    list.innerHTML =
+        applications
+        .slice(0,5)
+        .map(function(app){
+
+            const name =
+                app.formName ||
+                app.name ||
+                "Application";
+
+
+            const status =
+                app.status ||
+                "Draft";
+
+
+            const created =
+                app.createdAt ||
+                "";
+
+
+            return `
+                <div class="application">
+
+                    <div>
+
+                        <h3>
+                            ${escapeHTML(name)}
+                        </h3>
+
+                        <p>
+                            ${escapeHTML(
+                                app.category || "General"
+                            )}
+                            •
+                            ${escapeHTML(created)}
+                        </p>
+
+                    </div>
+
+                    <button
+                        class="small-btn"
+                        onclick="openApplication(${JSON.stringify(app.id)})"
+                    >
+                        Open
+                    </button>
+
+                </div>
+            `;
+
+        })
+        .join("");
+
+}
+
+
+function openApplication(id){
+
+    const applications =
+        getApplications();
+
+
+    const app =
+        applications.find(function(item){
+
+            return String(item.id) === String(id);
+
+        });
+
+
+    if(!app){
+
+        alert(
+            "Application not found."
+        );
+
+        return;
+
+    }
+
+
+    if(app.form){
+
+        localStorage.setItem(
+            "selectedForm",
+            JSON.stringify(app.form)
+        );
+
+    }
+
+
+    localStorage.setItem(
+        "formName",
+        app.formName ||
+        "Application"
+    );
+
+
+    localStorage.setItem(
+        "currentApplicationId",
+        String(app.id)
+    );
+
+
+    localStorage.setItem(
+        "loginType",
+        "professional"
+    );
+
+
+    window.location.href =
+        "form-details.html";
+
+}
+
+
+/* =========================================
+   STATS
+========================================= */
+
+function updateStats(){
+
+    const applications =
+        getApplications();
+
+
+    const tasks =
+        getTasks();
+
+
+    const staff =
+        safeParse(
+            "ffm_staff",
+            []
+        );
+
+
+    const staffList =
+        Array.isArray(staff)
+            ? staff
+            : [];
+
+
+    const pending =
+        tasks.filter(function(task){
+
+            const status =
+                String(
+                    task.status || ""
+                ).toLowerCase();
+
+
+            return !(
+                status.includes("complete") ||
+                status.includes("done")
+            );
+
+        }).length;
+
+
+    const completed =
+        tasks.filter(function(task){
+
+            const status =
+                String(
+                    task.status || ""
+                ).toLowerCase();
+
+
+            return (
+                status.includes("complete") ||
+                status.includes("done")
+            );
+
+        }).length;
+
+
+    document.getElementById(
+        "formsCount"
+    ).textContent =
+        allForms.length;
+
+
+    document.getElementById(
+        "applicationsCount"
+    ).textContent =
+        applications.length;
+
+
+    document.getElementById(
+        "pendingTasks"
+    ).textContent =
+        pending;
+
+
+    document.getElementById(
+        "completedTasks"
+    ).textContent =
+        completed;
+
+
+    document.getElementById(
+        "staffCount"
+    ).textContent =
+        staffList.filter(function(member){
+
+            return (
+                member.active !== false
+            );
+
+        }).length;
+
+}
+
+
+/* =========================================
+   QUICK NAVIGATION
+========================================= */
+
+function goApplications(){
+
+    window.location.href =
+        "my-applications.html";
+
+}
+
+
+function goTasks(){
+
+    window.location.href =
+        "task-management.html";
+
+}
+
+
+function goStaff(){
+
+    window.location.href =
+        "staff-management.html";
+
+}
+
+
+function goActivity(){
+
+    window.location.href =
+        "activity-monitoring.html";
+
+}
+
+
+function goForms(){
+
+    document.getElementById(
+        "formsSection"
+    ).scrollIntoView({
+        behavior:"smooth"
+    });
+
+}
+
+
+/* =========================================
+   SUBSCRIPTION
+========================================= */
+
+function checkSubscription(){
+
+    const settings =
+        safeParse(
+            "ffm_subscription_settings",
+            {
+                enabled:false,
+                trialDays:180
+            }
+        );
+
+
+    const section =
+        document.getElementById(
+            "subscriptionSection"
+        );
+
+
+    if(
+        settings &&
+        settings.enabled === true
+    ){
+
+        section.classList.add(
+            "active"
+        );
+
+
+        document.getElementById(
+            "subscriptionText"
+        ).textContent =
+            "Subscription is enabled by the administrator. Payment integration can be connected when required.";
+
+    }else{
+
+        section.classList.remove(
+            "active"
+        );
+
+    }
+
+}
+
+
+function openPayment(){
+
+    /*
+       Stripe intentionally not connected yet.
+       Later this button can connect to the
+       secure backend Stripe checkout endpoint.
+    */
+
+    alert(
+        "Payment system is enabled, but Stripe is not connected yet."
+    );
+
+}
+
+
+/* =========================================
+   LOGOUT
+========================================= */
+
+function logout(){
+
+    if(
+        !confirm(
+            "Are you sure you want to logout?"
+        )
+    ){
+
+        return;
+
+    }
+
+
+    localStorage.removeItem(
+        "isLoggedIn"
+    );
+
+    localStorage.removeItem(
+        "loginType"
+    );
+
+
+    window.location.href =
+        "professional-login.html";
+
+}
+
+
+/* =========================================
+   INITIALIZE
+========================================= */
+
+document.addEventListener(
+    "DOMContentLoaded",
+    function(){
+
+        loadUser();
+
+        loadForms();
+
+        updateStats();
+
+        renderCategories();
+
+        renderForms();
+
+        renderTasks();
+
+        renderApplications();
+
+        checkSubscription();
+
+    }
+);
+
+</script>
+
+</body>
+</html>

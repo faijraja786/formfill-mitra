@@ -1,0 +1,2222 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<title>Applicant Details | FormFill Mitra</title>
+
+<style>
+*{
+    box-sizing:border-box;
+}
+
+body{
+    margin:0;
+    font-family:Arial,Helvetica,sans-serif;
+    background:#f4f7fb;
+    color:#172033;
+}
+
+header{
+    background:#172b4d;
+    color:white;
+    padding:17px 20px;
+}
+
+.header-inner{
+    max-width:1000px;
+    margin:auto;
+}
+
+header h2{
+    margin:0 0 5px;
+}
+
+header p{
+    margin:0;
+    opacity:.85;
+    font-size:14px;
+}
+
+.container{
+    max-width:1000px;
+    margin:25px auto;
+    padding:0 15px 40px;
+}
+
+.card{
+    background:white;
+    border-radius:15px;
+    padding:20px;
+    margin-bottom:18px;
+    box-shadow:0 5px 20px rgba(0,0,0,.06);
+}
+
+.form-meta{
+    display:flex;
+    justify-content:space-between;
+    gap:15px;
+    align-items:flex-start;
+}
+
+.form-meta h1{
+    margin:0 0 8px;
+    font-size:25px;
+}
+
+.form-description{
+    color:#667085;
+    line-height:1.6;
+}
+
+.badge{
+    display:inline-block;
+    padding:6px 10px;
+    border-radius:20px;
+    background:#eef2ff;
+    color:#315efb;
+    font-size:12px;
+    font-weight:bold;
+    white-space:nowrap;
+}
+
+.notice{
+    background:#e8f5e9;
+    border-left:5px solid #2e7d32;
+    padding:14px;
+    border-radius:8px;
+    margin-bottom:18px;
+}
+
+.notice strong{
+    display:block;
+    margin-bottom:5px;
+}
+
+.smart-box{
+    background:#eef4ff;
+    border:1px solid #c8d8ff;
+    padding:17px;
+    border-radius:12px;
+    margin-bottom:18px;
+}
+
+.smart-title{
+    font-size:17px;
+    font-weight:bold;
+    margin-bottom:7px;
+}
+
+.smart-description{
+    color:#475467;
+    line-height:1.5;
+    font-size:14px;
+}
+
+.status{
+    margin-top:10px;
+    font-size:13px;
+    color:#475467;
+}
+
+.progress{
+    height:7px;
+    background:#e4e7ec;
+    border-radius:20px;
+    overflow:hidden;
+    margin-top:12px;
+}
+
+.progress-fill{
+    height:100%;
+    width:0;
+    background:#315efb;
+    transition:.3s;
+}
+
+.section-title{
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    gap:10px;
+    margin-bottom:18px;
+}
+
+.section-title h2{
+    margin:0;
+    font-size:20px;
+}
+
+.section-title span{
+    font-size:12px;
+    color:#667085;
+}
+
+.field{
+    margin-bottom:17px;
+}
+
+label{
+    display:block;
+    font-weight:bold;
+    margin-bottom:7px;
+}
+
+.required{
+    color:#d92d20;
+}
+
+input,
+select,
+textarea{
+    width:100%;
+    padding:12px;
+    border:1px solid #ccd3df;
+    border-radius:9px;
+    font-size:15px;
+    outline:none;
+    background:white;
+}
+
+input:focus,
+select:focus,
+textarea:focus{
+    border-color:#315efb;
+    box-shadow:0 0 0 3px rgba(49,94,251,.08);
+}
+
+textarea{
+    min-height:95px;
+    resize:vertical;
+}
+
+.row{
+    display:grid;
+    grid-template-columns:1fr 1fr;
+    gap:15px;
+}
+
+.field-wrap{
+    position:relative;
+}
+
+.auto-indicator{
+    display:none;
+    margin-top:5px;
+    font-size:12px;
+    color:#16834b;
+}
+
+.field-wrap.ocr-filled .auto-indicator{
+    display:block;
+}
+
+.field-wrap.ocr-filled input,
+.field-wrap.ocr-filled select,
+.field-wrap.ocr-filled textarea{
+    border-color:#86efac;
+    background:#f7fff9;
+}
+
+.ocr-section{
+    background:#fafafa;
+    border:1px solid #e4e7ec;
+    border-radius:11px;
+    padding:15px;
+    margin-bottom:12px;
+}
+
+.ocr-head{
+    display:flex;
+    justify-content:space-between;
+    gap:10px;
+    align-items:center;
+    margin-bottom:9px;
+}
+
+.ocr-name{
+    font-weight:bold;
+}
+
+.ocr-status{
+    font-size:11px;
+    padding:4px 8px;
+    border-radius:15px;
+    background:#e8edf5;
+}
+
+.ocr-text{
+    width:100%;
+    min-height:120px;
+    font-family:monospace;
+    font-size:13px;
+    background:#fff;
+}
+
+.extracted{
+    margin-top:12px;
+    padding:12px;
+    background:#f0fdf4;
+    border:1px solid #bbf7d0;
+    border-radius:8px;
+    font-size:13px;
+}
+
+.extracted-row{
+    display:flex;
+    justify-content:space-between;
+    gap:15px;
+    padding:5px 0;
+    border-bottom:1px solid #dcfce7;
+}
+
+.extracted-row:last-child{
+    border-bottom:0;
+}
+
+.empty{
+    padding:15px;
+    text-align:center;
+    color:#667085;
+    background:#fafafa;
+    border-radius:10px;
+}
+
+.buttons{
+    display:flex;
+    gap:10px;
+    flex-wrap:wrap;
+    margin-top:20px;
+}
+
+button{
+    border:0;
+    padding:12px 18px;
+    border-radius:9px;
+    cursor:pointer;
+    font-weight:bold;
+    font-size:14px;
+}
+
+.primary{
+    background:#315efb;
+    color:white;
+}
+
+.secondary{
+    background:#e8edf5;
+    color:#172033;
+}
+
+.success{
+    background:#16834b;
+    color:white;
+}
+
+.warning{
+    background:#f59e0b;
+    color:white;
+}
+
+.danger{
+    background:#d92d20;
+    color:white;
+}
+
+button:disabled{
+    opacity:.5;
+    cursor:not-allowed;
+}
+
+.validation{
+    display:none;
+    background:#fff4ed;
+    border:1px solid #fed7aa;
+    color:#9a3412;
+    padding:13px;
+    border-radius:9px;
+    margin-top:15px;
+    line-height:1.5;
+}
+
+.small{
+    font-size:12px;
+    color:#667085;
+    line-height:1.5;
+}
+
+@media(max-width:650px){
+
+    .row{
+        grid-template-columns:1fr;
+    }
+
+    .container{
+        margin-top:15px;
+    }
+
+    .card{
+        padding:15px;
+    }
+
+    .form-meta{
+        flex-direction:column;
+    }
+
+    .buttons{
+        flex-direction:column;
+    }
+
+    button{
+        width:100%;
+    }
+}
+</style>
+</head>
+
+<body>
+
+<header>
+    <div class="header-inner">
+        <h2>FormFill Mitra</h2>
+        <p>Applicant Details • Smart OCR Verification</p>
+    </div>
+</header>
+
+<div class="container">
+
+    <!-- FORM INFORMATION -->
+    <div class="card">
+
+        <div class="form-meta">
+
+            <div>
+                <h1 id="formTitle">Loading Form...</h1>
+
+                <div
+                    id="formDescription"
+                    class="form-description">
+                </div>
+            </div>
+
+            <span
+                id="formCategory"
+                class="badge">
+                Application
+            </span>
+
+        </div>
+
+    </div>
+
+
+    <!-- OCR NOTICE -->
+    <div class="notice">
+
+        <strong>✓ OCR Processing Completed</strong>
+
+        <div>
+            OCR से मिली information को नीचे applicant details में
+            suggest किया गया है। Final submission से पहले हर field
+            verify करना जरूरी है।
+        </div>
+
+    </div>
+
+
+    <!-- SMART OCR -->
+    <div class="smart-box">
+
+        <div class="smart-title">
+            🤖 Smart OCR Mapping
+        </div>
+
+        <div class="smart-description">
+
+            FormFill Mitra OCR text को समझकर नाम, जन्मतिथि,
+            mobile, email, address और दूसरी उपलब्ध information
+            पहचानने की कोशिश करता है।
+
+            <br><br>
+
+            <strong>
+                OCR suggestion final data नहीं है।
+            </strong>
+
+            आप हर field को manually edit कर सकते हैं।
+
+        </div>
+
+        <button
+            class="warning"
+            style="margin-top:14px"
+            onclick="applyOCR()">
+
+            Apply / Re-apply OCR
+
+        </button>
+
+        <div
+            id="ocrStatus"
+            class="status">
+        </div>
+
+        <div class="progress">
+            <div
+                id="progressFill"
+                class="progress-fill">
+            </div>
+        </div>
+
+    </div>
+
+
+    <!-- APPLICANT INFORMATION -->
+    <div class="card">
+
+        <div class="section-title">
+
+            <h2>👤 Applicant Information</h2>
+
+            <span>
+                Verify all details
+            </span>
+
+        </div>
+
+
+        <!-- FULL NAME -->
+        <div
+            class="field-wrap"
+            id="wrap-fullName">
+
+            <div class="field">
+
+                <label>
+                    Full Name <span class="required">*</span>
+                </label>
+
+                <input
+                    id="fullName"
+                    type="text"
+                    placeholder="Applicant full name"
+                    autocomplete="name">
+
+                <div class="auto-indicator">
+                    ✓ OCR suggested — please verify
+                </div>
+
+            </div>
+
+        </div>
+
+
+        <div class="row">
+
+            <!-- DOB -->
+            <div
+                class="field-wrap"
+                id="wrap-dob">
+
+                <div class="field">
+
+                    <label>
+                        Date of Birth <span class="required">*</span>
+                    </label>
+
+                    <input
+                        id="dob"
+                        type="date">
+
+                    <div class="auto-indicator">
+                        ✓ OCR suggested — please verify
+                    </div>
+
+                </div>
+
+            </div>
+
+
+            <!-- GENDER -->
+            <div
+                class="field-wrap"
+                id="wrap-gender">
+
+                <div class="field">
+
+                    <label>
+                        Gender <span class="required">*</span>
+                    </label>
+
+                    <select id="gender">
+
+                        <option value="">
+                            Select Gender
+                        </option>
+
+                        <option value="Male">
+                            Male
+                        </option>
+
+                        <option value="Female">
+                            Female
+                        </option>
+
+                        <option value="Other">
+                            Other
+                        </option>
+
+                    </select>
+
+                    <div class="auto-indicator">
+                        ✓ OCR suggested — please verify
+                    </div>
+
+                </div>
+
+            </div>
+
+        </div>
+
+
+        <div class="row">
+
+            <!-- MOBILE -->
+            <div
+                class="field-wrap"
+                id="wrap-mobile">
+
+                <div class="field">
+
+                    <label>
+                        Mobile Number <span class="required">*</span>
+                    </label>
+
+                    <input
+                        id="mobile"
+                        type="tel"
+                        maxlength="10"
+                        inputmode="numeric"
+                        placeholder="10 digit mobile number">
+
+                    <div class="auto-indicator">
+                        ✓ OCR suggested — please verify
+                    </div>
+
+                </div>
+
+            </div>
+
+
+            <!-- EMAIL -->
+            <div
+                class="field-wrap"
+                id="wrap-email">
+
+                <div class="field">
+
+                    <label>
+                        Email
+                    </label>
+
+                    <input
+                        id="email"
+                        type="email"
+                        placeholder="Email address">
+
+                    <div class="auto-indicator">
+                        ✓ OCR suggested — please verify
+                    </div>
+
+                </div>
+
+            </div>
+
+        </div>
+
+    </div>
+
+
+    <!-- ADDRESS -->
+    <div class="card">
+
+        <div class="section-title">
+
+            <h2>📍 Address</h2>
+
+            <span>
+                OCR + manual verification
+            </span>
+
+        </div>
+
+
+        <div class="row">
+
+            <!-- STATE -->
+            <div
+                class="field-wrap"
+                id="wrap-state">
+
+                <div class="field">
+
+                    <label>
+                        State <span class="required">*</span>
+                    </label>
+
+                    <input
+                        id="state"
+                        type="text"
+                        placeholder="State">
+
+                    <div class="auto-indicator">
+                        ✓ OCR suggested — please verify
+                    </div>
+
+                </div>
+
+            </div>
+
+
+            <!-- DISTRICT -->
+            <div
+                class="field-wrap"
+                id="wrap-district">
+
+                <div class="field">
+
+                    <label>
+                        District <span class="required">*</span>
+                    </label>
+
+                    <input
+                        id="district"
+                        type="text"
+                        placeholder="District">
+
+                    <div class="auto-indicator">
+                        ✓ OCR suggested — please verify
+                    </div>
+
+                </div>
+
+            </div>
+
+        </div>
+
+
+        <div class="row">
+
+            <!-- VILLAGE CITY -->
+            <div
+                class="field-wrap"
+                id="wrap-villageCity">
+
+                <div class="field">
+
+                    <label>
+                        Village / City <span class="required">*</span>
+                    </label>
+
+                    <input
+                        id="villageCity"
+                        type="text"
+                        placeholder="Village / City">
+
+                    <div class="auto-indicator">
+                        ✓ OCR suggested — please verify
+                    </div>
+
+                </div>
+
+            </div>
+
+
+            <!-- PIN -->
+            <div
+                class="field-wrap"
+                id="wrap-pin">
+
+                <div class="field">
+
+                    <label>
+                        PIN Code <span class="required">*</span>
+                    </label>
+
+                    <input
+                        id="pin"
+                        type="text"
+                        maxlength="6"
+                        inputmode="numeric"
+                        placeholder="6 digit PIN">
+
+                    <div class="auto-indicator">
+                        ✓ OCR suggested — please verify
+                    </div>
+
+                </div>
+
+            </div>
+
+        </div>
+
+
+        <!-- ADDRESS -->
+        <div
+            class="field-wrap"
+            id="wrap-address">
+
+            <div class="field">
+
+                <label>
+                    Full Address <span class="required">*</span>
+                </label>
+
+                <textarea
+                    id="address"
+                    placeholder="Complete address">
+                </textarea>
+
+                <div class="auto-indicator">
+                    ✓ OCR suggested — please verify
+                </div>
+
+            </div>
+
+        </div>
+
+    </div>
+
+
+    <!-- OCR RAW DATA -->
+    <div class="card">
+
+        <div class="section-title">
+
+            <h2>🔎 OCR Information</h2>
+
+            <span>
+                Raw extracted text
+            </span>
+
+        </div>
+
+        <p class="small">
+
+            यह original OCR output है। अगर किसी field में
+            गलत information दिखाई दे तो यहाँ देखकर ऊपर
+            manually correction कर सकते हैं।
+
+        </p>
+
+        <div id="ocrResults"></div>
+
+    </div>
+
+
+    <!-- VALIDATION -->
+    <div
+        id="validationBox"
+        class="validation">
+    </div>
+
+
+    <!-- BUTTONS -->
+    <div class="buttons">
+
+        <button
+            class="secondary"
+            onclick="goBack()">
+
+            ← Back
+
+        </button>
+
+        <button
+            class="success"
+            onclick="saveApplicant()">
+
+            ✓ Verify & Continue
+
+        </button>
+
+    </div>
+
+</div>
+
+
+<script>
+
+/*
+========================================================
+FORMFILL MITRA
+APPLICANT DATA + OCR MAPPING ENGINE
+========================================================
+
+IMPORTANT:
+
+This page is intentionally designed around a stable
+data contract.
+
+Other pages can use:
+
+selectedForm
+currentApplicant
+ocrResults
+applicantVerified
+ocrMappingCompleted
+
+Future PHP/API integration can replace the localStorage
+layer without changing the applicant data structure.
+========================================================
+*/
+
+
+let selectedForm = null;
+let applicant = {};
+let ocrResults = {};
+
+const FIELD_KEYS = [
+    "fullName",
+    "dob",
+    "gender",
+    "mobile",
+    "email",
+    "state",
+    "district",
+    "villageCity",
+    "pin",
+    "address"
+];
+
+
+/* =====================================================
+   SAFE STORAGE
+===================================================== */
+
+function readJSON(key, fallback){
+
+    try{
+
+        const value =
+            localStorage.getItem(key);
+
+        if(!value)
+            return fallback;
+
+        return JSON.parse(value);
+
+    }catch(error){
+
+        console.warn(
+            "Storage read error:",
+            key,
+            error
+        );
+
+        return fallback;
+    }
+}
+
+
+function writeJSON(key, value){
+
+    try{
+
+        localStorage.setItem(
+            key,
+            JSON.stringify(value)
+        );
+
+        return true;
+
+    }catch(error){
+
+        console.error(
+            "Storage write error:",
+            key,
+            error
+        );
+
+        return false;
+    }
+}
+
+
+/* =====================================================
+   HTML ESCAPE
+===================================================== */
+
+function escapeHTML(value){
+
+    return String(value ?? "")
+        .replace(/&/g,"&amp;")
+        .replace(/</g,"&lt;")
+        .replace(/>/g,"&gt;")
+        .replace(/"/g,"&quot;")
+        .replace(/'/g,"&#039;");
+}
+
+
+/* =====================================================
+   NORMALIZATION
+===================================================== */
+
+function normalizeText(text){
+
+    return String(text || "")
+        .replace(/\r/g,"\n")
+        .replace(/[ \t]+/g," ")
+        .replace(/\n{3,}/g,"\n\n")
+        .trim();
+}
+
+
+function clean(value){
+
+    return String(value || "")
+        .replace(/\s+/g," ")
+        .trim();
+}
+
+
+/* =====================================================
+   FORM INFORMATION
+===================================================== */
+
+function loadForm(){
+
+    selectedForm =
+        readJSON(
+            "selectedForm",
+            null
+        );
+
+    if(!selectedForm){
+
+        document.getElementById(
+            "formTitle"
+        ).textContent =
+            "No Form Selected";
+
+        document.getElementById(
+            "formDescription"
+        ).textContent =
+            "Please select a form first.";
+
+        return false;
+    }
+
+    document.getElementById(
+        "formTitle"
+    ).textContent =
+        selectedForm.name ||
+        selectedForm.formName ||
+        "Selected Form";
+
+
+    document.getElementById(
+        "formDescription"
+    ).textContent =
+        selectedForm.description ||
+        selectedForm.desc ||
+        "";
+
+
+    document.getElementById(
+        "formCategory"
+    ).textContent =
+        selectedForm.category ||
+        "Application";
+
+
+    return true;
+}
+
+
+/* =====================================================
+   LOAD EXISTING APPLICANT
+===================================================== */
+
+function loadApplicant(){
+
+    applicant =
+        readJSON(
+            "currentApplicant",
+            {}
+        );
+
+    if(!applicant ||
+       typeof applicant !== "object"){
+
+        applicant = {};
+    }
+}
+
+
+/* =====================================================
+   LOAD OCR
+===================================================== */
+
+function loadOCR(){
+
+    ocrResults =
+        readJSON(
+            "ocrResults",
+            {}
+        );
+
+    if(!ocrResults ||
+       typeof ocrResults !== "object"){
+
+        ocrResults = {};
+    }
+}
+
+
+/* =====================================================
+   FIELD UI
+===================================================== */
+
+function setField(
+    id,
+    value,
+    fromOCR = false
+){
+
+    const element =
+        document.getElementById(id);
+
+    if(!element)
+        return;
+
+    element.value =
+        value ?? "";
+
+    const wrapper =
+        document.getElementById(
+            "wrap-" + id
+        );
+
+    if(wrapper){
+
+        if(fromOCR && value){
+
+            wrapper.classList.add(
+                "ocr-filled"
+            );
+
+        }else{
+
+            wrapper.classList.remove(
+                "ocr-filled"
+            );
+        }
+    }
+}
+
+
+function getField(id){
+
+    const element =
+        document.getElementById(id);
+
+    return element
+        ? element.value.trim()
+        : "";
+}
+
+
+/* =====================================================
+   FILL EXISTING DATA
+===================================================== */
+
+function fillExistingData(){
+
+    FIELD_KEYS.forEach(key => {
+
+        setField(
+            key,
+            applicant[key] || "",
+            false
+        );
+
+    });
+}
+
+
+/* =====================================================
+   OCR TEXT COLLECTION
+===================================================== */
+
+function getAllOCRText(){
+
+    let result = "";
+
+    Object.values(ocrResults)
+        .forEach(item => {
+
+            if(!item)
+                return;
+
+            if(typeof item === "string"){
+
+                result +=
+                    "\n" + item;
+
+                return;
+            }
+
+            if(item.text){
+
+                result +=
+                    "\n" + item.text;
+            }
+
+        });
+
+    return normalizeText(result);
+}
+
+
+/* =====================================================
+   OCR RENDER
+===================================================== */
+
+function renderOCR(){
+
+    const box =
+        document.getElementById(
+            "ocrResults"
+        );
+
+    const keys =
+        Object.keys(ocrResults);
+
+    if(!keys.length){
+
+        box.innerHTML = `
+            <div class="empty">
+                कोई OCR result उपलब्ध नहीं है।
+            </div>
+        `;
+
+        return;
+    }
+
+
+    box.innerHTML =
+        keys.map(key => {
+
+            const item =
+                ocrResults[key] || {};
+
+            const text =
+                typeof item === "string"
+                    ? item
+                    : item.text || "";
+
+
+            const status =
+                typeof item === "object"
+                    ? item.status || "Available"
+                    : "Available";
+
+
+            const extracted =
+                typeof item === "object"
+                    ? item.extracted || {}
+                    : {};
+
+
+            let extractedHTML = "";
+
+
+            if(
+                extracted &&
+                typeof extracted === "object" &&
+                Object.keys(extracted).length
+            ){
+
+                extractedHTML = `
+                    <div class="extracted">
+
+                        <strong>
+                            Extracted values
+                        </strong>
+
+                        ${Object.entries(
+                            extracted
+                        ).map(([k,v]) => `
+
+                            <div class="extracted-row">
+
+                                <span>
+                                    ${escapeHTML(k)}
+                                </span>
+
+                                <strong>
+                                    ${escapeHTML(v)}
+                                </strong>
+
+                            </div>
+
+                        `).join("")}
+
+                    </div>
+                `;
+            }
+
+
+            return `
+
+                <div class="ocr-section">
+
+                    <div class="ocr-head">
+
+                        <div class="ocr-name">
+                            ${escapeHTML(key)}
+                        </div>
+
+                        <div class="ocr-status">
+                            ${escapeHTML(status)}
+                        </div>
+
+                    </div>
+
+                    <textarea
+                        class="ocr-text"
+                        readonly>${escapeHTML(text)}</textarea>
+
+                    ${extractedHTML}
+
+                </div>
+
+            `;
+
+        }).join("");
+}
+
+
+/* =====================================================
+   LINE PARSER
+===================================================== */
+
+function getLines(text){
+
+    return normalizeText(text)
+        .split("\n")
+        .map(line => line.trim())
+        .filter(Boolean);
+}
+
+
+function findLabeledValue(
+    text,
+    labels
+){
+
+    const lines =
+        getLines(text);
+
+
+    for(const line of lines){
+
+        for(const label of labels){
+
+            const pattern =
+                new RegExp(
+                    "^\\s*" +
+                    label +
+                    "\\s*[:\\-]?\\s*(.+?)\\s*$",
+                    "i"
+                );
+
+            const match =
+                line.match(pattern);
+
+
+            if(match && match[1]){
+
+                const value =
+                    clean(match[1]);
+
+                if(value)
+                    return value;
+            }
+        }
+    }
+
+
+    return "";
+}
+
+
+/* =====================================================
+   GENERIC PATTERN EXTRACTORS
+===================================================== */
+
+function extractMobile(text){
+
+    const matches =
+        text.match(
+            /(?:\+91[\s-]?)?[6-9]\d{9}/g
+        );
+
+    if(!matches)
+        return "";
+
+    const value =
+        matches[0]
+            .replace(/\D/g,"")
+            .slice(-10);
+
+    return /^\d{10}$/.test(value)
+        ? value
+        : "";
+}
+
+
+function extractEmail(text){
+
+    const match =
+        text.match(
+            /[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}/i
+        );
+
+    return match
+        ? match[0].trim()
+        : "";
+}
+
+
+function extractPIN(text){
+
+    const labeled =
+        findLabeledValue(
+            text,
+            [
+                "pin",
+                "pin code",
+                "pincode",
+                "postal code",
+                "postcode"
+            ]
+        );
+
+
+    if(labeled){
+
+        const value =
+            labeled
+                .replace(/\D/g,"")
+                .slice(0,6);
+
+        if(
+            /^\d{6}$/.test(value)
+        )
+            return value;
+    }
+
+
+    /*
+       Generic 6-digit PIN detection.
+       Avoid obvious years.
+    */
+
+    const matches =
+        text.match(
+            /\b[1-9]\d{5}\b/g
+        ) || [];
+
+
+    for(const value of matches){
+
+        if(!/^20\d{2}$/.test(value))
+            return value;
+    }
+
+
+    return "";
+}
+
+
+/* =====================================================
+   DATE PARSER
+===================================================== */
+
+function toISODate(value){
+
+    value =
+        clean(value)
+        .replace(/[.]/g,"/")
+        .replace(/-/g,"/");
+
+
+    let match;
+
+
+    /* DD/MM/YYYY */
+
+    match =
+        value.match(
+            /^(\d{1,2})\/(\d{1,2})\/(\d{4})$/
+        );
+
+
+    if(match){
+
+        const day =
+            match[1].padStart(2,"0");
+
+        const month =
+            match[2].padStart(2,"0");
+
+        const year =
+            match[3];
+
+        return `${year}-${month}-${day}`;
+    }
+
+
+    /* YYYY/MM/DD */
+
+    match =
+        value.match(
+            /^(\d{4})\/(\d{1,2})\/(\d{1,2})$/
+        );
+
+
+    if(match){
+
+        const year =
+            match[1];
+
+        const month =
+            match[2].padStart(2,"0");
+
+        const day =
+            match[3].padStart(2,"0");
+
+        return `${year}-${month}-${day}`;
+    }
+
+
+    /* YYYY-MM-DD */
+
+    if(
+        /^\d{4}-\d{2}-\d{2}$/
+            .test(value)
+    ){
+
+        return value;
+    }
+
+
+    /* DD Month YYYY */
+
+    const months = {
+        january:"01",
+        february:"02",
+        march:"03",
+        april:"04",
+        may:"05",
+        june:"06",
+        july:"07",
+        august:"08",
+        september:"09",
+        october:"10",
+        november:"11",
+        december:"12"
+    };
+
+
+    match =
+        value.match(
+            /^(\d{1,2})\s+([A-Za-z]+)\s+(\d{4})$/i
+        );
+
+
+    if(match){
+
+        const day =
+            match[1].padStart(2,"0");
+
+        const month =
+            months[
+                match[2].toLowerCase()
+            ];
+
+        const year =
+            match[3];
+
+        if(month){
+
+            return `${year}-${month}-${day}`;
+        }
+    }
+
+
+    return "";
+}
+
+
+function extractDOB(text){
+
+    const labeled =
+        findLabeledValue(
+            text,
+            [
+                "date of birth",
+                "dob",
+                "d.o.b",
+                "birth date",
+                "birthdate"
+            ]
+        );
+
+
+    if(labeled){
+
+        const iso =
+            toISODate(labeled);
+
+        if(iso)
+            return iso;
+    }
+
+
+    /*
+       Search common date formats.
+    */
+
+    const dateMatches =
+        text.match(
+            /\b\d{1,2}[\/\-]\d{1,2}[\/\-]\d{4}\b/g
+        ) || [];
+
+
+    for(const date of dateMatches){
+
+        const iso =
+            toISODate(date);
+
+        if(iso)
+            return iso;
+    }
+
+
+    return "";
+}
+
+
+/* =====================================================
+   GENDER
+===================================================== */
+
+function extractGender(text){
+
+    const labeled =
+        findLabeledValue(
+            text,
+            [
+                "gender",
+                "sex"
+            ]
+        );
+
+
+    const value =
+        (labeled || text)
+            .toLowerCase();
+
+
+    if(
+        /\bmale\b|\bman\b|\bm\b/
+            .test(value)
+    ){
+
+        return "Male";
+    }
+
+
+    if(
+        /\bfemale\b|\bwoman\b|\bf\b/
+            .test(value)
+    ){
+
+        return "Female";
+    }
+
+
+    if(
+        /\bother\b|\btransgender\b/
+            .test(value)
+    ){
+
+        return "Other";
+    }
+
+
+    return "";
+}
+
+
+/* =====================================================
+   STATE
+===================================================== */
+
+function extractState(text){
+
+    const value =
+        findLabeledValue(
+            text,
+            [
+                "state",
+                "state name"
+            ]
+        );
+
+
+    if(value)
+        return value;
+
+
+    const states = [
+        "Andhra Pradesh",
+        "Arunachal Pradesh",
+        "Assam",
+        "Bihar",
+        "Chhattisgarh",
+        "Goa",
+        "Gujarat",
+        "Haryana",
+        "Himachal Pradesh",
+        "Jharkhand",
+        "Karnataka",
+        "Kerala",
+        "Madhya Pradesh",
+        "Maharashtra",
+        "Manipur",
+        "Meghalaya",
+        "Mizoram",
+        "Nagaland",
+        "Odisha",
+        "Punjab",
+        "Rajasthan",
+        "Sikkim",
+        "Tamil Nadu",
+        "Telangana",
+        "Tripura",
+        "Uttar Pradesh",
+        "Uttarakhand",
+        "West Bengal"
+    ];
+
+
+    for(const state of states){
+
+        if(
+            new RegExp(
+                "\\b" +
+                state.replace(/ /g,"\\s+") +
+                "\\b",
+                "i"
+            ).test(text)
+        ){
+
+            return state;
+        }
+    }
+
+
+    return "";
+}
+
+
+/* =====================================================
+   DISTRICT
+===================================================== */
+
+function extractDistrict(text){
+
+    return findLabeledValue(
+        text,
+        [
+            "district",
+            "district name"
+        ]
+    );
+}
+
+
+/* =====================================================
+   VILLAGE / CITY
+===================================================== */
+
+function extractVillageCity(text){
+
+    return findLabeledValue(
+        text,
+        [
+            "village",
+            "village name",
+            "city",
+            "city name",
+            "town"
+        ]
+    );
+}
+
+
+/* =====================================================
+   ADDRESS
+===================================================== */
+
+function extractAddress(text){
+
+    return findLabeledValue(
+        text,
+        [
+            "full address",
+            "address",
+            "permanent address",
+            "present address",
+            "residential address"
+        ]
+    );
+}
+
+
+/* =====================================================
+   NAME
+===================================================== */
+
+function extractName(text){
+
+    return findLabeledValue(
+        text,
+        [
+            "full name",
+            "applicant name",
+            "candidate name",
+            "name of applicant",
+            "name"
+        ]
+    );
+}
+
+
+/* =====================================================
+   SMART EXTRACTION
+===================================================== */
+
+function extractApplicantFromOCR(text){
+
+    return {
+
+        fullName:
+            extractName(text),
+
+        dob:
+            extractDOB(text),
+
+        gender:
+            extractGender(text),
+
+        mobile:
+            extractMobile(text),
+
+        email:
+            extractEmail(text),
+
+        state:
+            extractState(text),
+
+        district:
+            extractDistrict(text),
+
+        villageCity:
+            extractVillageCity(text),
+
+        pin:
+            extractPIN(text),
+
+        address:
+            extractAddress(text)
+
+    };
+}
+
+
+/* =====================================================
+   APPLY ONLY GOOD OCR VALUES
+===================================================== */
+
+function applySuggestedField(
+    key,
+    value
+){
+
+    value =
+        clean(value);
+
+
+    if(!value)
+        return false;
+
+
+    /*
+       Don't replace existing user-entered data
+       unless user explicitly presses Re-apply OCR.
+    */
+
+    setField(
+        key,
+        value,
+        true
+    );
+
+    return true;
+}
+
+
+/* =====================================================
+   APPLY OCR
+===================================================== */
+
+function applyOCR(){
+
+    const text =
+        getAllOCRText();
+
+
+    if(!text){
+
+        document.getElementById(
+            "ocrStatus"
+        ).textContent =
+            "OCR text नहीं मिला। Details manually भरें।";
+
+        return;
+    }
+
+
+    document.getElementById(
+        "progressFill"
+    ).style.width = "20%";
+
+
+    const extracted =
+        extractApplicantFromOCR(text);
+
+
+    document.getElementById(
+        "progressFill"
+    ).style.width = "70%";
+
+
+    let applied = 0;
+
+
+    FIELD_KEYS.forEach(key => {
+
+        const value =
+            extracted[key];
+
+        if(
+            value &&
+            applySuggestedField(
+                key,
+                value
+            )
+        ){
+
+            applied++;
+        }
+
+    });
+
+
+    /*
+       Save suggestions separately.
+       This allows future backend/API integration
+       without changing currentApplicant.
+    */
+
+    writeJSON(
+        "ocrApplicantSuggestions",
+        extracted
+    );
+
+
+    document.getElementById(
+        "progressFill"
+    ).style.width = "100%";
+
+
+    document.getElementById(
+        "ocrStatus"
+    ).textContent =
+        `✓ ${applied} field(s) में OCR suggestions apply हुईं। सभी details verify करें।`;
+}
+
+
+/* =====================================================
+   VALIDATION
+===================================================== */
+
+function validateApplicant(data){
+
+    const errors = [];
+
+
+    if(!data.fullName)
+        errors.push("Full Name");
+
+
+    if(!data.dob)
+        errors.push("Date of Birth");
+
+
+    if(!data.gender)
+        errors.push("Gender");
+
+
+    if(!/^\d{10}$/.test(data.mobile))
+        errors.push("10-digit Mobile Number");
+
+
+    if(!data.state)
+        errors.push("State");
+
+
+    if(!data.district)
+        errors.push("District");
+
+
+    if(!data.villageCity)
+        errors.push("Village / City");
+
+
+    if(!/^\d{6}$/.test(data.pin))
+        errors.push("6-digit PIN Code");
+
+
+    if(!data.address)
+        errors.push("Full Address");
+
+
+    return errors;
+}
+
+
+/* =====================================================
+   SAVE APPLICANT
+===================================================== */
+
+function saveApplicant(){
+
+    const data = {
+
+        fullName:
+            getField("fullName"),
+
+        dob:
+            getField("dob"),
+
+        gender:
+            getField("gender"),
+
+        mobile:
+            getField("mobile")
+                .replace(/\D/g,"")
+                .slice(-10),
+
+        email:
+            getField("email"),
+
+        state:
+            getField("state"),
+
+        district:
+            getField("district"),
+
+        villageCity:
+            getField("villageCity"),
+
+        pin:
+            getField("pin")
+                .replace(/\D/g,"")
+                .slice(0,6),
+
+        address:
+            getField("address")
+    };
+
+
+    const errors =
+        validateApplicant(data);
+
+
+    const validationBox =
+        document.getElementById(
+            "validationBox"
+        );
+
+
+    if(errors.length){
+
+        validationBox.style.display =
+            "block";
+
+        validationBox.innerHTML =
+            "<strong>Please check:</strong><br>" +
+            errors
+                .map(
+                    x => "• " +
+                    escapeHTML(x)
+                )
+                .join("<br>");
+
+        window.scrollTo({
+            top:
+                validationBox
+                    .getBoundingClientRect()
+                    .top +
+                window.scrollY -
+                30,
+            behavior:"smooth"
+        });
+
+        return;
+    }
+
+
+    validationBox.style.display =
+        "none";
+
+
+    /*
+       Save the verified applicant profile.
+    */
+
+    writeJSON(
+        "currentApplicant",
+        data
+    );
+
+
+    /*
+       Flags consumed by review/form-filling.
+    */
+
+    localStorage.setItem(
+        "applicantVerified",
+        "true"
+    );
+
+    localStorage.setItem(
+        "ocrMappingCompleted",
+        "true"
+    );
+
+
+    /*
+       Keep timestamp for future application
+       tracking/backend sync.
+    */
+
+    localStorage.setItem(
+        "applicantVerifiedAt",
+        new Date().toISOString()
+    );
+
+
+    /*
+       Continue to existing review page.
+    */
+
+    window.location.href =
+        "review.html";
+}
+
+
+/* =====================================================
+   BACK
+===================================================== */
+
+function goBack(){
+
+    window.location.href =
+        "ocr-processing.html";
+}
+
+
+/* =====================================================
+   MANUAL EDIT DETECTION
+===================================================== */
+
+FIELD_KEYS.forEach(key => {
+
+    const element =
+        document.getElementById(key);
+
+    if(!element)
+        return;
+
+
+    element.addEventListener(
+        "input",
+        () => {
+
+            const wrapper =
+                document.getElementById(
+                    "wrap-" + key
+                );
+
+            if(wrapper){
+
+                wrapper.classList.remove(
+                    "ocr-filled"
+                );
+            }
+
+        }
+    );
+
+});
+
+
+/* =====================================================
+   INITIALIZATION
+===================================================== */
+
+function init(){
+
+    const formLoaded =
+        loadForm();
+
+
+    if(!formLoaded)
+        return;
+
+
+    loadApplicant();
+
+    loadOCR();
+
+    fillExistingData();
+
+    renderOCR();
+
+}
+
+
+init();
+
+</script>
+
+</body>
+</html>

@@ -1,0 +1,2600 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<title>FormFill Mitra - Admin Panel</title>
+
+<style>
+
+*{
+    box-sizing:border-box;
+    margin:0;
+    padding:0;
+    font-family:Arial,sans-serif;
+}
+
+body{
+    background:#f4f7fb;
+    color:#172033;
+}
+
+header{
+    background:#0d47a1;
+    color:white;
+    padding:18px 22px;
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    gap:15px;
+    flex-wrap:wrap;
+}
+
+.logo{
+    font-size:24px;
+    font-weight:800;
+}
+
+.logo span{
+    color:#90caf9;
+}
+
+.admin-info{
+    display:flex;
+    align-items:center;
+    gap:12px;
+    flex-wrap:wrap;
+}
+
+.admin-name{
+    font-size:14px;
+}
+
+.logout-btn{
+    border:none;
+    background:#d32f2f;
+    color:white;
+    padding:9px 15px;
+    border-radius:8px;
+    font-weight:700;
+    cursor:pointer;
+}
+
+.container{
+    width:100%;
+    max-width:1250px;
+    margin:auto;
+    padding:22px;
+}
+
+.nav-grid{
+    display:grid;
+    grid-template-columns:repeat(auto-fit,minmax(150px,1fr));
+    gap:12px;
+    margin-bottom:22px;
+}
+
+.nav-card{
+    background:white;
+    border:1px solid #dce4ef;
+    border-radius:14px;
+    padding:17px;
+    text-align:center;
+    cursor:pointer;
+    transition:.2s;
+}
+
+.nav-card:hover{
+    transform:translateY(-2px);
+    box-shadow:0 8px 20px rgba(0,0,0,.08);
+}
+
+.nav-icon{
+    font-size:25px;
+    margin-bottom:7px;
+}
+
+.nav-title{
+    font-weight:700;
+    font-size:14px;
+}
+
+.stats{
+    display:grid;
+    grid-template-columns:repeat(auto-fit,minmax(180px,1fr));
+    gap:15px;
+    margin-bottom:22px;
+}
+
+.stat{
+    background:white;
+    padding:20px;
+    border-radius:15px;
+    border:1px solid #dce4ef;
+}
+
+.stat-title{
+    color:#667085;
+    font-size:14px;
+    margin-bottom:8px;
+}
+
+.stat-number{
+    font-size:30px;
+    font-weight:800;
+    color:#0d47a1;
+}
+
+.panel{
+    background:white;
+    border-radius:16px;
+    padding:22px;
+    margin-bottom:22px;
+    border:1px solid #dce4ef;
+}
+
+.panel h2{
+    font-size:20px;
+    color:#0d47a1;
+    margin-bottom:18px;
+}
+
+.form-grid{
+    display:grid;
+    grid-template-columns:repeat(2,1fr);
+    gap:15px;
+}
+
+.field{
+    display:flex;
+    flex-direction:column;
+    gap:7px;
+}
+
+.field.full{
+    grid-column:1/-1;
+}
+
+label{
+    font-weight:700;
+    font-size:14px;
+}
+
+input,
+select,
+textarea{
+    width:100%;
+    padding:12px;
+    border:1px solid #ccd3df;
+    border-radius:9px;
+    font-size:14px;
+    outline:none;
+    background:white;
+}
+
+input:focus,
+select:focus,
+textarea:focus{
+    border-color:#1976d2;
+}
+
+textarea{
+    min-height:100px;
+    resize:vertical;
+}
+
+.documents{
+    display:grid;
+    grid-template-columns:repeat(auto-fit,minmax(180px,1fr));
+    gap:10px;
+}
+
+.doc-item{
+    border:1px solid #dce4ef;
+    border-radius:9px;
+    padding:11px;
+    background:#f8fafc;
+}
+
+.doc-item label{
+    display:flex;
+    gap:8px;
+    align-items:center;
+    cursor:pointer;
+}
+
+.doc-item input{
+    width:auto;
+}
+
+.actions{
+    display:flex;
+    gap:10px;
+    margin-top:20px;
+    flex-wrap:wrap;
+}
+
+.btn{
+    border:none;
+    padding:12px 18px;
+    border-radius:9px;
+    font-weight:700;
+    cursor:pointer;
+}
+
+.btn-primary{
+    background:#0d47a1;
+    color:white;
+}
+
+.btn-primary:hover{
+    background:#08367d;
+}
+
+.btn-secondary{
+    background:#e7ecf2;
+    color:#172033;
+}
+
+.btn-danger{
+    background:#d32f2f;
+    color:white;
+}
+
+.btn-success{
+    background:#2e7d32;
+    color:white;
+}
+
+.btn-small{
+    padding:9px 12px;
+    border:none;
+    border-radius:8px;
+    font-size:13px;
+    font-weight:700;
+    cursor:pointer;
+}
+
+.btn-edit{
+    background:#e3f2fd;
+    color:#0d47a1;
+}
+
+.btn-delete{
+    background:#ffebee;
+    color:#c62828;
+}
+
+.btn-open{
+    background:#e8f5e9;
+    color:#2e7d32;
+}
+
+.forms-list{
+    display:grid;
+    gap:13px;
+}
+
+.form-card{
+    border:1px solid #dce4ef;
+    border-radius:13px;
+    padding:17px;
+    background:#f8fafc;
+}
+
+.form-top{
+    display:flex;
+    justify-content:space-between;
+    gap:15px;
+    flex-wrap:wrap;
+}
+
+.form-name{
+    font-size:18px;
+    font-weight:800;
+}
+
+.category{
+    display:inline-block;
+    margin-top:7px;
+    padding:5px 9px;
+    border-radius:20px;
+    background:#e3f2fd;
+    color:#0d47a1;
+    font-size:12px;
+    font-weight:700;
+}
+
+.description{
+    margin-top:10px;
+    color:#475467;
+    line-height:1.5;
+}
+
+.meta{
+    margin-top:9px;
+    font-size:13px;
+    color:#667085;
+}
+
+.documents-list,
+.fields-list{
+    margin-top:10px;
+    color:#475467;
+    font-size:13px;
+    line-height:1.7;
+}
+
+.form-actions{
+    display:flex;
+    gap:8px;
+    margin-top:14px;
+    flex-wrap:wrap;
+}
+
+.field-builder{
+    margin-top:5px;
+}
+
+.builder-item{
+    border:1px solid #dce4ef;
+    background:#f8fafc;
+    border-radius:12px;
+    padding:15px;
+    margin-bottom:12px;
+}
+
+.builder-head{
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    gap:10px;
+    margin-bottom:13px;
+}
+
+.builder-title{
+    font-weight:800;
+    color:#0d47a1;
+}
+
+.field-builder-grid{
+    display:grid;
+    grid-template-columns:1fr 1fr;
+    gap:12px;
+}
+
+.check-row{
+    display:flex;
+    gap:18px;
+    flex-wrap:wrap;
+    align-items:center;
+    margin-top:12px;
+}
+
+.check-row label{
+    display:flex;
+    gap:7px;
+    align-items:center;
+}
+
+.check-row input{
+    width:auto;
+}
+
+.options-box{
+    margin-top:12px;
+    display:none;
+}
+
+.options-box.show{
+    display:block;
+}
+
+.builder-empty{
+    padding:20px;
+    border:1px dashed #b9c5d6;
+    border-radius:10px;
+    text-align:center;
+    color:#667085;
+}
+
+.subscription{
+    border:2px solid #dce4ef;
+    border-radius:14px;
+    padding:18px;
+}
+
+.subscription-status{
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    gap:15px;
+    flex-wrap:wrap;
+    margin-bottom:18px;
+}
+
+.status-badge{
+    display:inline-block;
+    padding:7px 13px;
+    border-radius:20px;
+    font-weight:800;
+    font-size:13px;
+}
+
+.status-off{
+    background:#ffebee;
+    color:#c62828;
+}
+
+.status-on{
+    background:#e8f5e9;
+    color:#2e7d32;
+}
+
+.subscription-grid{
+    display:grid;
+    grid-template-columns:1fr 1fr;
+    gap:15px;
+}
+
+.hidden-info{
+    background:#eef5ff;
+    border:1px solid #c9ddf7;
+    color:#174a7a;
+    padding:13px;
+    border-radius:10px;
+    line-height:1.5;
+    margin-top:15px;
+}
+
+.notice{
+    background:#fff8e6;
+    border:1px solid #efd58b;
+    color:#725500;
+    padding:14px;
+    border-radius:11px;
+    line-height:1.5;
+}
+
+.empty{
+    text-align:center;
+    padding:30px;
+    color:#667085;
+    border:1px dashed #b9c5d6;
+    border-radius:12px;
+}
+
+@media(max-width:700px){
+
+    .container{
+        padding:14px;
+    }
+
+    .form-grid,
+    .field-builder-grid,
+    .subscription-grid{
+        grid-template-columns:1fr;
+    }
+
+    .field.full{
+        grid-column:auto;
+    }
+
+    header{
+        align-items:flex-start;
+    }
+
+}
+
+</style>
+</head>
+
+<body>
+
+<header>
+
+    <div class="logo">
+        FormFill <span>Mitra</span>
+    </div>
+
+    <div class="admin-info">
+
+        <div class="admin-name">
+            Admin:
+            <strong id="adminUser">Admin</strong>
+        </div>
+
+        <button
+            class="logout-btn"
+            onclick="adminLogout()">
+
+            Logout
+
+        </button>
+
+    </div>
+
+</header>
+
+
+<div class="container">
+
+
+    <!-- NAVIGATION -->
+
+    <div class="nav-grid">
+
+        <div
+            class="nav-card"
+            onclick="goTo('staff-management.html')">
+
+            <div class="nav-icon">👥</div>
+            <div class="nav-title">Staff Management</div>
+
+        </div>
+
+
+        <div
+            class="nav-card"
+            onclick="goTo('task-management.html')">
+
+            <div class="nav-icon">📋</div>
+            <div class="nav-title">Task Management</div>
+
+        </div>
+
+
+        <div
+            class="nav-card"
+            onclick="goTo('activity-monitoring.html')">
+
+            <div class="nav-icon">📊</div>
+            <div class="nav-title">Activity Monitoring</div>
+
+        </div>
+
+
+        <div
+            class="nav-card"
+            onclick="goTo('ai-assistant.html')">
+
+            <div class="nav-icon">🤖</div>
+            <div class="nav-title">AI Assistant</div>
+
+        </div>
+
+
+        <div
+            class="nav-card"
+            onclick="goTo('index.html')">
+
+            <div class="nav-icon">🏠</div>
+            <div class="nav-title">Home</div>
+
+        </div>
+
+    </div>
+
+
+    <!-- STATS -->
+
+    <div class="stats">
+
+        <div class="stat">
+
+            <div class="stat-title">
+                Total Forms
+            </div>
+
+            <div
+                class="stat-number"
+                id="totalForms">
+                0
+            </div>
+
+        </div>
+
+
+        <div class="stat">
+
+            <div class="stat-title">
+                Staff
+            </div>
+
+            <div
+                class="stat-number"
+                id="totalStaff">
+                0
+            </div>
+
+        </div>
+
+
+        <div class="stat">
+
+            <div class="stat-title">
+                Tasks
+            </div>
+
+            <div
+                class="stat-number"
+                id="totalTasks">
+                0
+            </div>
+
+        </div>
+
+
+        <div class="stat">
+
+            <div class="stat-title">
+                Activities
+            </div>
+
+            <div
+                class="stat-number"
+                id="totalActivities">
+                0
+            </div>
+
+        </div>
+
+    </div>
+
+
+    <!-- FORM MANAGEMENT -->
+
+    <div class="panel">
+
+        <h2 id="formHeading">
+            ➕ Add New Form
+        </h2>
+
+
+        <div class="form-grid">
+
+            <div class="field">
+
+                <label>
+                    Form Name
+                </label>
+
+                <input
+                    id="formName"
+                    type="text"
+                    placeholder="Example: Bihar Scholarship 2026">
+
+            </div>
+
+
+            <div class="field">
+
+                <label>
+                    Category
+                </label>
+
+                <input
+                    id="category"
+                    type="text"
+                    placeholder="Bihar / SSC / Education / Jobs">
+
+            </div>
+
+
+            <div class="field full">
+
+                <label>
+                    Official Form Link
+                </label>
+
+                <input
+                    id="formLink"
+                    type="url"
+                    placeholder="https://official-website.gov.in/">
+
+            </div>
+
+
+            <div class="field full">
+
+                <label>
+                    Description
+                </label>
+
+                <textarea
+                    id="description"
+                    placeholder="Enter form description..."></textarea>
+
+            </div>
+
+
+            <!-- DOCUMENTS -->
+
+            <div class="field full">
+
+                <label>
+                    Required Documents
+                </label>
+
+                <div class="documents">
+
+                    <div class="doc-item">
+                        <label>
+                            <input
+                                type="checkbox"
+                                value="identity">
+                            Identity Document
+                        </label>
+                    </div>
+
+                    <div class="doc-item">
+                        <label>
+                            <input
+                                type="checkbox"
+                                value="education">
+                            Educational Document
+                        </label>
+                    </div>
+
+                    <div class="doc-item">
+                        <label>
+                            <input
+                                type="checkbox"
+                                value="photograph">
+                            Photograph
+                        </label>
+                    </div>
+
+                    <div class="doc-item">
+                        <label>
+                            <input
+                                type="checkbox"
+                                value="signature">
+                            Signature
+                        </label>
+                    </div>
+
+                    <div class="doc-item">
+                        <label>
+                            <input
+                                type="checkbox"
+                                value="address">
+                            Address Proof
+                        </label>
+                    </div>
+
+                    <div class="doc-item">
+                        <label>
+                            <input
+                                type="checkbox"
+                                value="caste">
+                            Caste Certificate
+                        </label>
+                    </div>
+
+                </div>
+
+            </div>
+
+        </div>
+
+
+        <!-- FIELD BUILDER -->
+
+        <div
+            class="field full"
+            style="margin-top:25px;">
+
+            <label>
+                Form Fields / Autofill Configuration
+            </label>
+
+            <p
+                style="color:#667085;font-size:13px;margin:6px 0 15px;line-height:1.5;">
+
+                यहाँ इस particular form के fields configure करें।
+                यही configuration आगे Smart Autofill और Form Filling में इस्तेमाल होगी।
+
+            </p>
+
+
+            <div
+                id="fieldBuilder"
+                class="field-builder">
+
+            </div>
+
+
+            <div class="actions">
+
+                <button
+                    type="button"
+                    class="btn btn-secondary"
+                    onclick="addField()">
+
+                    + Add Form Field
+
+                </button>
+
+            </div>
+
+        </div>
+
+
+        <div class="actions">
+
+            <button
+                class="btn btn-primary"
+                onclick="saveForm()"
+                id="saveButton">
+
+                Add Form
+
+            </button>
+
+
+            <button
+                class="btn btn-secondary"
+                onclick="clearForm()">
+
+                Clear
+
+            </button>
+
+        </div>
+
+    </div>
+
+
+    <!-- FORMS -->
+
+    <div class="panel">
+
+        <h2>
+            📋 Configured Forms
+        </h2>
+
+        <div
+            id="formsList"
+            class="forms-list">
+
+        </div>
+
+    </div>
+
+
+    <!-- SUBSCRIPTION CONTROL -->
+
+    <div class="panel">
+
+        <h2>
+            💳 Subscription & Payment Control
+        </h2>
+
+
+        <div class="subscription">
+
+            <div class="subscription-status">
+
+                <div>
+
+                    <strong>
+                        Subscription System
+                    </strong>
+
+                    <p
+                        style="margin-top:6px;color:#667085;font-size:13px;">
+
+                        यह control केवल Admin के लिए है।
+
+                    </p>
+
+                </div>
+
+
+                <span
+                    id="subscriptionBadge"
+                    class="status-badge status-off">
+
+                    OFF
+
+                </span>
+
+            </div>
+
+
+            <div class="subscription-grid">
+
+                <div class="field">
+
+                    <label>
+                        Subscription Status
+                    </label>
+
+                    <select id="subscriptionEnabled">
+
+                        <option value="false">
+                            OFF
+                        </option>
+
+                        <option value="true">
+                            ON
+                        </option>
+
+                    </select>
+
+                </div>
+
+
+                <div class="field">
+
+                    <label>
+                        Free / Trial Period (Days)
+                    </label>
+
+                    <input
+                        id="trialDays"
+                        type="number"
+                        min="1"
+                        max="3650"
+                        value="180">
+
+                </div>
+
+            </div>
+
+
+            <div class="actions">
+
+                <button
+                    class="btn btn-primary"
+                    onclick="saveSubscription()">
+
+                    Save Subscription Settings
+
+                </button>
+
+            </div>
+
+
+            <div class="hidden-info">
+
+                <strong>🔒 User Visibility Rule</strong>
+
+                <br><br>
+
+                Subscription OFF होने पर सामान्य users को
+                subscription/payment interface नहीं दिखाया जाएगा।
+
+                Subscription ON होने पर backend subscription rules
+                सभी users पर लागू किए जा सकेंगे।
+
+                Payment gateway अभी connected नहीं है।
+
+            </div>
+
+        </div>
+
+    </div>
+
+
+    <!-- QUICK CONTROLS -->
+
+    <div class="panel">
+
+        <h2>
+            ⚙️ Quick Controls
+        </h2>
+
+        <div class="actions">
+
+            <button
+                class="btn btn-primary"
+                onclick="goTo('staff-management.html')">
+
+                Staff Management
+
+            </button>
+
+
+            <button
+                class="btn btn-primary"
+                onclick="goTo('task-management.html')">
+
+                Task Management
+
+            </button>
+
+
+            <button
+                class="btn btn-primary"
+                onclick="goTo('activity-monitoring.html')">
+
+                Activity Monitoring
+
+            </button>
+
+
+            <button
+                class="btn btn-primary"
+                onclick="goTo('ai-assistant.html')">
+
+                AI Assistant
+
+            </button>
+
+        </div>
+
+    </div>
+
+
+    <!-- SECURITY -->
+
+    <div class="panel">
+
+        <div class="notice">
+
+            <strong>
+                🔐 Production Security Notice
+            </strong>
+
+            <br><br>
+
+            यह frontend configuration अभी localStorage पर काम करती है।
+            Live deployment से पहले Admin authentication,
+            form configuration, subscription control,
+            permissions और payment verification को PHP/MySQL backend
+            से enforce करना जरूरी होगा।
+
+        </div>
+
+    </div>
+
+</div>
+
+
+<script>
+
+/* =====================================================
+   ADMIN GUARD
+===================================================== */
+
+(function(){
+
+    if(
+        localStorage.getItem("ffm_admin_logged_in")
+        !== "true"
+    ){
+
+        window.location.replace("admin-login.html");
+
+    }
+
+})();
+
+
+
+/* =====================================================
+   STORAGE
+===================================================== */
+
+function getForms(){
+
+    try{
+
+        return JSON.parse(
+            localStorage.getItem("ffm_admin_forms")
+        ) || [];
+
+    }catch(e){
+
+        return [];
+
+    }
+
+}
+
+
+function getStaff(){
+
+    try{
+
+        return JSON.parse(
+            localStorage.getItem("ffm_staff")
+        ) || [];
+
+    }catch(e){
+
+        return [];
+
+    }
+
+}
+
+
+function getTasks(){
+
+    try{
+
+        return JSON.parse(
+            localStorage.getItem("ffm_tasks")
+        ) || [];
+
+    }catch(e){
+
+        return [];
+
+    }
+
+}
+
+
+function getActivities(){
+
+    try{
+
+        return JSON.parse(
+            localStorage.getItem("ffm_activity")
+        ) || [];
+
+    }catch(e){
+
+        return [];
+
+    }
+
+}
+
+
+
+/* =====================================================
+   ESCAPE
+===================================================== */
+
+function escapeHTML(value){
+
+    if(
+        value === undefined ||
+        value === null
+    ){
+
+        return "";
+
+    }
+
+    return String(value)
+        .replace(/&/g,"&amp;")
+        .replace(/</g,"&lt;")
+        .replace(/>/g,"&gt;")
+        .replace(/"/g,"&quot;")
+        .replace(/'/g,"&#039;");
+
+}
+
+
+
+/* =====================================================
+   ADMIN
+===================================================== */
+
+function loadAdmin(){
+
+    const user =
+        localStorage.getItem("ffm_admin_user")
+        || "Admin";
+
+    document.getElementById(
+        "adminUser"
+    ).textContent = user;
+
+}
+
+
+function adminLogout(){
+
+    if(
+        !confirm(
+            "Are you sure you want to logout?"
+        )
+    ){
+
+        return;
+
+    }
+
+    localStorage.removeItem(
+        "ffm_admin_logged_in"
+    );
+
+    localStorage.removeItem(
+        "ffm_admin_user"
+    );
+
+    window.location.href =
+        "admin-login.html";
+
+}
+
+
+function goTo(page){
+
+    window.location.href = page;
+
+}
+
+
+
+/* =====================================================
+   ACTIVITY
+===================================================== */
+
+function logActivity(
+    action,
+    status="completed"
+){
+
+    const activities =
+        getActivities();
+
+    activities.unshift({
+
+        id:Date.now(),
+
+        staff:
+            localStorage.getItem(
+                "ffm_admin_user"
+            ) || "Admin",
+
+        action:action,
+
+        status:status,
+
+        time:
+            new Date().toLocaleString()
+
+    });
+
+
+    localStorage.setItem(
+        "ffm_activity",
+        JSON.stringify(activities)
+    );
+
+}
+
+
+
+/* =====================================================
+   FIELD BUILDER
+===================================================== */
+
+let builderFields = [];
+
+let editingIndex = -1;
+
+
+
+function createFieldObject(){
+
+    return {
+
+        key:"",
+
+        label:"",
+
+        type:"text",
+
+        required:false,
+
+        autofill:"",
+
+        placeholder:"",
+
+        help:"",
+
+        options:[]
+
+    };
+
+}
+
+
+
+function addField(field=null){
+
+    builderFields.push(
+        field
+        ? normalizeField(field)
+        : createFieldObject()
+    );
+
+    renderFieldBuilder();
+
+}
+
+
+
+function normalizeField(field){
+
+    return {
+
+        key:
+            field.key ||
+            field.name ||
+            "",
+
+        label:
+            field.label ||
+            field.name ||
+            "",
+
+        type:
+            field.type ||
+            "text",
+
+        required:
+            field.required === true,
+
+        autofill:
+            field.autofill ||
+            field.autofillKey ||
+            "",
+
+        placeholder:
+            field.placeholder ||
+            "",
+
+        help:
+            field.help ||
+            "",
+
+        options:
+            Array.isArray(field.options)
+            ? field.options
+            : []
+
+    };
+
+}
+
+
+
+function removeField(index){
+
+    if(
+        !confirm(
+            "Remove this form field?"
+        )
+    ){
+
+        return;
+
+    }
+
+    builderFields.splice(
+        index,
+        1
+    );
+
+    renderFieldBuilder();
+
+}
+
+
+
+function renderFieldBuilder(){
+
+    const container =
+        document.getElementById(
+            "fieldBuilder"
+        );
+
+
+    if(
+        !builderFields.length
+    ){
+
+        container.innerHTML = `
+
+            <div class="builder-empty">
+
+                अभी कोई custom field नहीं है।
+
+                <br>
+
+                "+ Add Form Field" दबाकर
+                form fields बनाएं।
+
+            </div>
+
+        `;
+
+        return;
+
+    }
+
+
+    let html = "";
+
+
+    builderFields.forEach(
+        function(field,index){
+
+            const optionsVisible =
+                field.type === "select"
+                ? "show"
+                : "";
+
+
+            html += `
+
+                <div class="builder-item">
+
+                    <div class="builder-head">
+
+                        <div class="builder-title">
+
+                            Field ${index + 1}
+
+                        </div>
+
+                        <button
+                            type="button"
+                            class="btn-small btn-delete"
+                            onclick="removeField(${index})">
+
+                            Remove
+
+                        </button>
+
+                    </div>
+
+
+                    <div class="field-builder-grid">
+
+                        <div class="field">
+
+                            <label>
+                                Field Key
+                            </label>
+
+                            <input
+                                type="text"
+                                value="${escapeHTML(field.key)}"
+                                placeholder="fatherName"
+                                oninput="updateField(${index},'key',this.value)">
+
+                        </div>
+
+
+                        <div class="field">
+
+                            <label>
+                                Field Label
+                            </label>
+
+                            <input
+                                type="text"
+                                value="${escapeHTML(field.label)}"
+                                placeholder="Father Name"
+                                oninput="updateField(${index},'label',this.value)">
+
+                        </div>
+
+
+                        <div class="field">
+
+                            <label>
+                                Field Type
+                            </label>
+
+                            <select
+                                onchange="updateField(${index},'type',this.value)">
+
+                                <option
+                                    value="text"
+                                    ${field.type==="text"?"selected":""}>
+                                    Text
+                                </option>
+
+                                <option
+                                    value="date"
+                                    ${field.type==="date"?"selected":""}>
+                                    Date
+                                </option>
+
+                                <option
+                                    value="email"
+                                    ${field.type==="email"?"selected":""}>
+                                    Email
+                                </option>
+
+                                <option
+                                    value="tel"
+                                    ${field.type==="tel"?"selected":""}>
+                                    Mobile / Tel
+                                </option>
+
+                                <option
+                                    value="number"
+                                    ${field.type==="number"?"selected":""}>
+                                    Number
+                                </option>
+
+                                <option
+                                    value="select"
+                                    ${field.type==="select"?"selected":""}>
+                                    Select
+                                </option>
+
+                                <option
+                                    value="textarea"
+                                    ${field.type==="textarea"?"selected":""}>
+                                    Textarea
+                                </option>
+
+                            </select>
+
+                        </div>
+
+
+                        <div class="field">
+
+                            <label>
+                                Autofill Mapping
+                            </label>
+
+                            <input
+                                type="text"
+                                value="${escapeHTML(field.autofill)}"
+                                placeholder="fullName / dob / mobile"
+                                oninput="updateField(${index},'autofill',this.value)">
+
+                        </div>
+
+
+                        <div class="field">
+
+                            <label>
+                                Placeholder
+                            </label>
+
+                            <input
+                                type="text"
+                                value="${escapeHTML(field.placeholder)}"
+                                placeholder="Enter value..."
+                                oninput="updateField(${index},'placeholder',this.value)">
+
+                        </div>
+
+
+                        <div class="field">
+
+                            <label>
+                                Help Text
+                            </label>
+
+                            <input
+                                type="text"
+                                value="${escapeHTML(field.help)}"
+                                placeholder="Optional instruction"
+                                oninput="updateField(${index},'help',this.value)">
+
+                        </div>
+
+                    </div>
+
+
+                    <div class="check-row">
+
+                        <label>
+
+                            <input
+                                type="checkbox"
+                                ${field.required ? "checked" : ""}
+                                onchange="updateField(${index},'required',this.checked)">
+
+                            Required Field
+
+                        </label>
+
+                    </div>
+
+
+                    <div class="options-box ${optionsVisible}">
+
+                        <label>
+                            Select Options
+                        </label>
+
+                        <input
+                            type="text"
+                            value="${escapeHTML((field.options || []).join(", "))}"
+                            placeholder="Male, Female, Other"
+                            oninput="updateOptions(${index},this.value)">
+
+                    </div>
+
+                </div>
+
+            `;
+
+        }
+    );
+
+
+    container.innerHTML = html;
+
+}
+
+
+
+function updateField(
+    index,
+    property,
+    value
+){
+
+    if(!builderFields[index]){
+        return;
+    }
+
+    builderFields[index][property] =
+        value;
+
+    /*
+       Automatically create a key
+       from label if key is empty.
+    */
+
+    if(
+        property === "label" &&
+        !builderFields[index].key
+    ){
+
+        builderFields[index].key =
+            makeKey(value);
+
+    }
+
+
+    if(
+        property === "type" &&
+        value !== "select"
+    ){
+
+        builderFields[index].options = [];
+
+    }
+
+
+    if(
+        property === "type" ||
+        property === "label"
+    ){
+
+        renderFieldBuilder();
+
+    }
+
+}
+
+
+
+function updateOptions(
+    index,
+    value
+){
+
+    if(!builderFields[index]){
+        return;
+    }
+
+    builderFields[index].options =
+        value
+        .split(",")
+        .map(
+            item => item.trim()
+        )
+        .filter(Boolean);
+
+}
+
+
+
+function makeKey(value){
+
+    return String(value || "")
+        .trim()
+        .replace(/([a-z])([A-Z])/g,"$1_$2")
+        .replace(/[^a-zA-Z0-9]+/g,"_")
+        .replace(/^_+|_+$/g,"")
+        .toLowerCase();
+
+}
+
+
+
+/* =====================================================
+   FORM SAVE
+===================================================== */
+
+function saveForm(){
+
+    const name =
+        document.getElementById(
+            "formName"
+        ).value.trim();
+
+
+    const category =
+        document.getElementById(
+            "category"
+        ).value.trim();
+
+
+    const link =
+        document.getElementById(
+            "formLink"
+        ).value.trim();
+
+
+    const description =
+        document.getElementById(
+            "description"
+        ).value.trim();
+
+
+    if(!name){
+
+        alert(
+            "Please enter Form Name."
+        );
+
+        return;
+
+    }
+
+
+    if(!category){
+
+        alert(
+            "Please enter Category."
+        );
+
+        return;
+
+    }
+
+
+    if(!link){
+
+        alert(
+            "Please enter Official Form Link."
+        );
+
+        return;
+
+    }
+
+
+    /*
+       Validate custom fields
+    */
+
+    const finalFields = [];
+
+
+    for(
+        const field
+        of builderFields
+    ){
+
+        if(
+            !field.label.trim()
+        ){
+
+            alert(
+                "हर custom field का Label भरें।"
+            );
+
+            return;
+
+        }
+
+
+        if(
+            !field.key.trim()
+        ){
+
+            field.key =
+                makeKey(
+                    field.label
+                );
+
+        }
+
+
+        finalFields.push(
+            normalizeField(field)
+        );
+
+    }
+
+
+    /*
+       Documents
+    */
+
+    const docs = [];
+
+
+    document
+        .querySelectorAll(
+            '.documents input[type="checkbox"]:checked'
+        )
+        .forEach(
+            function(input){
+
+                docs.push(
+                    input.value
+                );
+
+            }
+        );
+
+
+    const forms =
+        getForms();
+
+
+    const oldForm =
+        editingIndex >= 0
+        ? forms[editingIndex]
+        : null;
+
+
+    const formData = {
+
+        id:
+            oldForm && oldForm.id
+            ? oldForm.id
+            : Date.now(),
+
+        name:name,
+
+        category:category,
+
+        link:link,
+
+        description:description,
+
+        documents:docs,
+
+        /*
+           New dynamic configuration
+        */
+
+        fields:finalFields,
+
+        updatedAt:
+            new Date().toISOString()
+
+    };
+
+
+    if(editingIndex >= 0){
+
+        forms[editingIndex] =
+            formData;
+
+        logActivity(
+            "Admin updated form: " + name
+        );
+
+    }else{
+
+        forms.unshift(
+            formData
+        );
+
+        logActivity(
+            "Admin added form: " + name
+        );
+
+    }
+
+
+    localStorage.setItem(
+        "ffm_admin_forms",
+        JSON.stringify(forms)
+    );
+
+
+    const wasEditing =
+        editingIndex >= 0;
+
+
+    clearForm();
+
+    renderForms();
+
+    updateStats();
+
+
+    alert(
+        wasEditing
+        ? "Form updated successfully."
+        : "Form added successfully."
+    );
+
+}
+
+
+
+/* =====================================================
+   EDIT
+===================================================== */
+
+function editForm(index){
+
+    const forms =
+        getForms();
+
+
+    const form =
+        forms[index];
+
+
+    if(!form){
+        return;
+    }
+
+
+    editingIndex =
+        index;
+
+
+    document.getElementById(
+        "formName"
+    ).value =
+        form.name || "";
+
+
+    document.getElementById(
+        "category"
+    ).value =
+        form.category || "";
+
+
+    document.getElementById(
+        "formLink"
+    ).value =
+        form.link || "";
+
+
+    document.getElementById(
+        "description"
+    ).value =
+        form.description || "";
+
+
+    /*
+       Documents
+    */
+
+    document
+        .querySelectorAll(
+            '.documents input[type="checkbox"]'
+        )
+        .forEach(
+            function(input){
+
+                input.checked =
+                    Array.isArray(form.documents)
+                    &&
+                    form.documents.includes(
+                        input.value
+                    );
+
+            }
+        );
+
+
+    /*
+       Fields
+    */
+
+    builderFields =
+        Array.isArray(form.fields)
+        ? form.fields.map(
+            normalizeField
+          )
+        : [];
+
+
+    renderFieldBuilder();
+
+
+    document.getElementById(
+        "formHeading"
+    ).textContent =
+        "✏️ Edit Form";
+
+
+    document.getElementById(
+        "saveButton"
+    ).textContent =
+        "Update Form";
+
+
+    window.scrollTo({
+        top:0,
+        behavior:"smooth"
+    });
+
+}
+
+
+
+/* =====================================================
+   DELETE
+===================================================== */
+
+function deleteForm(index){
+
+    const forms =
+        getForms();
+
+
+    const form =
+        forms[index];
+
+
+    if(!form){
+        return;
+    }
+
+
+    if(
+        !confirm(
+            `Delete "${form.name}"?`
+        )
+    ){
+
+        return;
+
+    }
+
+
+    forms.splice(
+        index,
+        1
+    );
+
+
+    localStorage.setItem(
+        "ffm_admin_forms",
+        JSON.stringify(forms)
+    );
+
+
+    logActivity(
+        "Admin deleted form: "
+        + (form.name || "Unnamed")
+    );
+
+
+    renderForms();
+
+    updateStats();
+
+}
+
+
+
+/* =====================================================
+   OPEN OFFICIAL LINK
+===================================================== */
+
+function openFormLink(index){
+
+    const forms =
+        getForms();
+
+
+    const form =
+        forms[index];
+
+
+    if(
+        !form ||
+        !form.link
+    ){
+
+        alert(
+            "Official link उपलब्ध नहीं है।"
+        );
+
+        return;
+
+    }
+
+
+    window.open(
+        form.link,
+        "_blank",
+        "noopener,noreferrer"
+    );
+
+}
+
+
+
+/* =====================================================
+   RENDER FORMS
+===================================================== */
+
+function renderForms(){
+
+    const container =
+        document.getElementById(
+            "formsList"
+        );
+
+
+    const forms =
+        getForms();
+
+
+    if(!forms.length){
+
+        container.innerHTML = `
+
+            <div class="empty">
+
+                अभी कोई form configured नहीं है।
+
+            </div>
+
+        `;
+
+        return;
+
+    }
+
+
+    let html = "";
+
+
+    forms.forEach(
+        function(form,index){
+
+            const docs =
+                Array.isArray(form.documents)
+                ? form.documents
+                : [];
+
+
+            const fields =
+                Array.isArray(form.fields)
+                ? form.fields
+                : [];
+
+
+            const docText =
+                docs.length
+                ? docs.join(", ")
+                : "No required documents";
+
+
+            const fieldText =
+                fields.length
+                ? fields
+                    .map(
+                        f =>
+                        `${f.label || f.key}${f.required ? " *" : ""}`
+                    )
+                    .join(", ")
+                : "Default applicant fields";
+
+
+            html += `
+
+                <div class="form-card">
+
+                    <div class="form-top">
+
+                        <div>
+
+                            <div class="form-name">
+
+                                ${escapeHTML(
+                                    form.name ||
+                                    "Unnamed Form"
+                                )}
+
+                            </div>
+
+                            <span class="category">
+
+                                ${escapeHTML(
+                                    form.category ||
+                                    "General"
+                                )}
+
+                            </span>
+
+                        </div>
+
+                    </div>
+
+
+                    <div class="description">
+
+                        ${escapeHTML(
+                            form.description ||
+                            "No description"
+                        )}
+
+                    </div>
+
+
+                    <div class="meta">
+
+                        Official Link:
+                        ${escapeHTML(
+                            form.link || "-"
+                        )}
+
+                    </div>
+
+
+                    <div class="documents-list">
+
+                        <strong>
+                            Documents:
+                        </strong>
+
+                        ${escapeHTML(docText)}
+
+                    </div>
+
+
+                    <div class="fields-list">
+
+                        <strong>
+                            Form Fields:
+                        </strong>
+
+                        ${escapeHTML(fieldText)}
+
+                    </div>
+
+
+                    <div class="form-actions">
+
+                        <button
+                            class="btn-small btn-edit"
+                            onclick="editForm(${index})">
+
+                            Edit
+
+                        </button>
+
+
+                        <button
+                            class="btn-small btn-open"
+                            onclick="openFormLink(${index})">
+
+                            Official Portal
+
+                        </button>
+
+
+                        <button
+                            class="btn-small btn-delete"
+                            onclick="deleteForm(${index})">
+
+                            Delete
+
+                        </button>
+
+                    </div>
+
+                </div>
+
+            `;
+
+        }
+    );
+
+
+    container.innerHTML =
+        html;
+
+}
+
+
+
+/* =====================================================
+   CLEAR FORM
+===================================================== */
+
+function clearForm(){
+
+    editingIndex =
+        -1;
+
+
+    document.getElementById(
+        "formName"
+    ).value = "";
+
+
+    document.getElementById(
+        "category"
+    ).value = "";
+
+
+    document.getElementById(
+        "formLink"
+    ).value = "";
+
+
+    document.getElementById(
+        "description"
+    ).value = "";
+
+
+    document
+        .querySelectorAll(
+            '.documents input[type="checkbox"]'
+        )
+        .forEach(
+            input =>
+            input.checked = false
+        );
+
+
+    builderFields =
+        [];
+
+
+    renderFieldBuilder();
+
+
+    document.getElementById(
+        "formHeading"
+    ).textContent =
+        "➕ Add New Form";
+
+
+    document.getElementById(
+        "saveButton"
+    ).textContent =
+        "Add Form";
+
+}
+
+
+
+/* =====================================================
+   STATS
+===================================================== */
+
+function updateStats(){
+
+    document.getElementById(
+        "totalForms"
+    ).textContent =
+        getForms().length;
+
+
+    document.getElementById(
+        "totalStaff"
+    ).textContent =
+        getStaff().length;
+
+
+    document.getElementById(
+        "totalTasks"
+    ).textContent =
+        getTasks().length;
+
+
+    document.getElementById(
+        "totalActivities"
+    ).textContent =
+        getActivities().length;
+
+}
+
+
+
+/* =====================================================
+   SUBSCRIPTION
+===================================================== */
+
+function getSubscriptionSettings(){
+
+    try{
+
+        return JSON.parse(
+            localStorage.getItem(
+                "ffm_subscription_settings"
+            )
+        ) || {
+
+            enabled:false,
+
+            trialDays:180
+
+        };
+
+    }catch(e){
+
+        return {
+
+            enabled:false,
+
+            trialDays:180
+
+        };
+
+    }
+
+}
+
+
+
+function loadSubscription(){
+
+    const settings =
+        getSubscriptionSettings();
+
+
+    document.getElementById(
+        "subscriptionEnabled"
+    ).value =
+        settings.enabled
+        ? "true"
+        : "false";
+
+
+    document.getElementById(
+        "trialDays"
+    ).value =
+        Number(
+            settings.trialDays
+        ) || 180;
+
+
+    updateSubscriptionBadge(
+        settings.enabled
+    );
+
+}
+
+
+
+function updateSubscriptionBadge(
+    enabled
+){
+
+    const badge =
+        document.getElementById(
+            "subscriptionBadge"
+        );
+
+
+    if(enabled){
+
+        badge.textContent =
+            "ON";
+
+
+        badge.className =
+            "status-badge status-on";
+
+    }else{
+
+        badge.textContent =
+            "OFF";
+
+
+        badge.className =
+            "status-badge status-off";
+
+    }
+
+}
+
+
+
+function saveSubscription(){
+
+    const enabled =
+        document.getElementById(
+            "subscriptionEnabled"
+        ).value === "true";
+
+
+    let trialDays =
+        parseInt(
+            document.getElementById(
+                "trialDays"
+            ).value,
+            10
+        );
+
+
+    if(
+        !Number.isFinite(trialDays) ||
+        trialDays < 1
+    ){
+
+        trialDays =
+            180;
+
+    }
+
+
+    const settings = {
+
+        enabled:enabled,
+
+        trialDays:trialDays,
+
+        updatedAt:
+            new Date().toISOString()
+
+    };
+
+
+    localStorage.setItem(
+        "ffm_subscription_settings",
+        JSON.stringify(settings)
+    );
+
+
+    updateSubscriptionBadge(
+        enabled
+    );
+
+
+    logActivity(
+        "Admin changed subscription status to "
+        + (enabled ? "ON" : "OFF")
+    );
+
+
+    alert(
+        enabled
+        ? "Subscription system ON कर दिया गया है।"
+        : "Subscription system OFF कर दिया गया है।"
+    );
+
+}
+
+
+
+/* =====================================================
+   INITIALIZE
+===================================================== */
+
+loadAdmin();
+
+renderForms();
+
+renderFieldBuilder();
+
+updateStats();
+
+loadSubscription();
+
+</script>
+
+</body>
+</html>

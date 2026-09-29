@@ -1,0 +1,818 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Activity Monitoring - FormFill Mitra</title>
+
+<style>
+*{
+    box-sizing:border-box;
+    margin:0;
+    padding:0;
+    font-family:Arial,sans-serif;
+}
+
+body{
+    background:#f4f7fb;
+    color:#172033;
+}
+
+.header{
+    background:#0d47a1;
+    color:white;
+    padding:18px 22px;
+}
+
+.header h1{
+    font-size:24px;
+}
+
+.header p{
+    margin-top:5px;
+    opacity:.9;
+}
+
+.container{
+    max-width:1150px;
+    margin:30px auto;
+    padding:0 18px;
+}
+
+.card{
+    background:white;
+    border-radius:14px;
+    padding:22px;
+    margin-bottom:20px;
+    box-shadow:0 5px 20px rgba(0,0,0,.08);
+}
+
+.title{
+    color:#0d47a1;
+    margin-bottom:7px;
+}
+
+.subtitle{
+    color:#666;
+    margin-bottom:20px;
+}
+
+.stats{
+    display:grid;
+    grid-template-columns:repeat(4,1fr);
+    gap:14px;
+}
+
+.stat{
+    background:#f7f9fc;
+    border:1px solid #e1e6ed;
+    border-radius:10px;
+    padding:18px;
+}
+
+.stat-number{
+    font-size:27px;
+    font-weight:bold;
+    color:#0d47a1;
+}
+
+.stat-label{
+    color:#666;
+    margin-top:5px;
+    font-size:13px;
+}
+
+.filters{
+    display:grid;
+    grid-template-columns:1.5fr 1fr 1fr;
+    gap:12px;
+}
+
+input,select{
+    width:100%;
+    padding:11px 12px;
+    border:1px solid #ccd3df;
+    border-radius:8px;
+    font-size:14px;
+    outline:none;
+}
+
+input:focus,select:focus{
+    border-color:#1976d2;
+}
+
+.activity-list{
+    display:flex;
+    flex-direction:column;
+    gap:11px;
+}
+
+.activity{
+    border:1px solid #e1e6ed;
+    border-radius:10px;
+    padding:15px;
+    background:#fafbfd;
+}
+
+.activity-top{
+    display:flex;
+    justify-content:space-between;
+    gap:15px;
+}
+
+.activity-title{
+    font-weight:bold;
+}
+
+.activity-meta{
+    color:#777;
+    font-size:12px;
+    margin-top:6px;
+    line-height:1.5;
+}
+
+.badge{
+    display:inline-block;
+    padding:5px 9px;
+    border-radius:20px;
+    font-size:11px;
+    font-weight:bold;
+    white-space:nowrap;
+}
+
+.success{
+    background:#e5f7eb;
+    color:#16763a;
+}
+
+.pending{
+    background:#fff4df;
+    color:#765000;
+}
+
+.error{
+    background:#fde8e8;
+    color:#a32121;
+}
+
+.info{
+    background:#eaf2ff;
+    color:#0d47a1;
+}
+
+.empty{
+    padding:20px 0;
+    color:#777;
+}
+
+.error-box{
+    border-left:4px solid #c62828;
+    background:#fff5f5;
+    padding:15px;
+    border-radius:8px;
+    margin-bottom:10px;
+}
+
+.error-title{
+    font-weight:bold;
+    color:#a32121;
+}
+
+.error-meta{
+    font-size:12px;
+    color:#777;
+    margin-top:5px;
+}
+
+.actions{
+    display:flex;
+    gap:10px;
+    margin-top:15px;
+}
+
+button{
+    border:none;
+    border-radius:8px;
+    padding:11px 17px;
+    font-weight:bold;
+    cursor:pointer;
+}
+
+.clear{
+    background:#fde8e8;
+    color:#a32121;
+}
+
+.demo{
+    background:#eef4ff;
+    color:#0d47a1;
+}
+
+@media(max-width:800px){
+
+    .stats{
+        grid-template-columns:1fr 1fr;
+    }
+
+    .filters{
+        grid-template-columns:1fr;
+    }
+}
+
+@media(max-width:500px){
+
+    .stats{
+        grid-template-columns:1fr;
+    }
+
+    .activity-top{
+        flex-direction:column;
+    }
+}
+</style>
+</head>
+
+<body>
+
+<header class="header">
+    <h1>FormFill Mitra</h1>
+    <p>Admin • Activity Monitoring</p>
+</header>
+
+
+<div class="container">
+
+    <!-- STATISTICS -->
+
+    <div class="card">
+
+        <h2 class="title">Activity Overview</h2>
+
+        <p class="subtitle">
+            Staff और application activity का monitoring dashboard।
+        </p>
+
+        <div class="stats">
+
+            <div class="stat">
+                <div class="stat-number" id="totalActivities">0</div>
+                <div class="stat-label">Total Activities</div>
+            </div>
+
+            <div class="stat">
+                <div class="stat-number" id="completedActivities">0</div>
+                <div class="stat-label">Completed</div>
+            </div>
+
+            <div class="stat">
+                <div class="stat-number" id="pendingActivities">0</div>
+                <div class="stat-label">Pending</div>
+            </div>
+
+            <div class="stat">
+                <div class="stat-number" id="errorActivities">0</div>
+                <div class="stat-label">Errors</div>
+            </div>
+
+        </div>
+
+    </div>
+
+
+    <!-- FILTERS -->
+
+    <div class="card">
+
+        <h2 class="title">Activity Filters</h2>
+
+        <div class="filters">
+
+            <input
+                type="text"
+                id="search"
+                placeholder="Search staff, action, application...">
+
+            <select id="statusFilter">
+
+                <option value="all">
+                    All Status
+                </option>
+
+                <option value="Completed">
+                    Completed
+                </option>
+
+                <option value="Pending">
+                    Pending
+                </option>
+
+                <option value="Error">
+                    Error
+                </option>
+
+                <option value="Info">
+                    Info
+                </option>
+
+            </select>
+
+
+            <select id="staffFilter">
+
+                <option value="all">
+                    All Staff
+                </option>
+
+            </select>
+
+        </div>
+
+    </div>
+
+
+    <!-- ACTIVITY -->
+
+    <div class="card">
+
+        <h2 class="title">Activity Log</h2>
+
+        <p class="subtitle">
+            Recent staff and application activities।
+        </p>
+
+        <div
+            class="activity-list"
+            id="activityList">
+        </div>
+
+    </div>
+
+
+    <!-- ERRORS -->
+
+    <div class="card">
+
+        <h2 class="title">Error Monitoring</h2>
+
+        <p class="subtitle">
+            System में recorded errors और warnings।
+        </p>
+
+        <div id="errorList"></div>
+
+        <div class="actions">
+
+            <button
+                class="clear"
+                onclick="clearErrors()">
+                Clear Errors
+            </button>
+
+            <button
+                class="demo"
+                onclick="addDemoActivity()">
+                Add Test Activity
+            </button>
+
+        </div>
+
+    </div>
+
+</div>
+
+
+<script>
+
+    // 🔐 ADMIN ACCESS GUARD
+if (localStorage.getItem("ffm_admin_logged_in") !== "true") {
+    window.location.replace("admin-login.html");
+}
+    
+/* =====================================
+   STORAGE
+===================================== */
+
+let activities =
+    JSON.parse(
+        localStorage.getItem("ffm_activity")
+    ) || [];
+
+
+/* =====================================
+   LOAD STAFF
+===================================== */
+
+const staff =
+    JSON.parse(
+        localStorage.getItem("ffm_staff")
+    ) || [];
+
+
+/* =====================================
+   CREATE STAFF FILTER
+===================================== */
+
+function loadStaffFilter(){
+
+    const select =
+        document.getElementById("staffFilter");
+
+    staff.forEach(member => {
+
+        const option =
+            document.createElement("option");
+
+        option.value =
+            member.username;
+
+        option.textContent =
+            member.name;
+
+        select.appendChild(option);
+
+    });
+}
+
+
+/* =====================================
+   RENDER ACTIVITIES
+===================================== */
+
+function renderActivities(){
+
+    const search =
+        document.getElementById("search")
+        .value
+        .toLowerCase()
+        .trim();
+
+    const status =
+        document.getElementById("statusFilter")
+        .value;
+
+    const selectedStaff =
+        document.getElementById("staffFilter")
+        .value;
+
+
+    const filtered =
+        activities.filter(item => {
+
+            const text =
+                (
+                    item.staff +
+                    " " +
+                    item.action +
+                    " " +
+                    item.application +
+                    " " +
+                    item.details
+                )
+                .toLowerCase();
+
+
+            const searchMatch =
+                !search ||
+                text.includes(search);
+
+
+            const statusMatch =
+                status === "all" ||
+                item.status === status;
+
+
+            const staffMatch =
+                selectedStaff === "all" ||
+                item.staff === selectedStaff;
+
+
+            return (
+                searchMatch &&
+                statusMatch &&
+                staffMatch
+            );
+
+        });
+
+
+    const list =
+        document.getElementById("activityList");
+
+    list.innerHTML = "";
+
+
+    if(filtered.length === 0){
+
+        list.innerHTML =
+            '<div class="empty">कोई activity नहीं मिली।</div>';
+
+        updateStats();
+
+        return;
+    }
+
+
+    filtered
+        .slice()
+        .reverse()
+        .forEach(item => {
+
+            const div =
+                document.createElement("div");
+
+            div.className = "activity";
+
+
+            const badgeClass =
+                item.status === "Completed"
+                ? "success"
+                : item.status === "Pending"
+                ? "pending"
+                : item.status === "Error"
+                ? "error"
+                : "info";
+
+
+            div.innerHTML = `
+
+                <div class="activity-top">
+
+                    <div>
+
+                        <div class="activity-title">
+                            ${escapeHTML(item.action)}
+                        </div>
+
+                        <div class="activity-meta">
+
+                            Staff:
+                            ${escapeHTML(item.staff || "System")}
+
+                            <br>
+
+                            Application:
+                            ${escapeHTML(item.application || "—")}
+
+                            <br>
+
+                            ${escapeHTML(item.details || "")}
+
+                            <br>
+
+                            ${escapeHTML(item.time || "")}
+
+                        </div>
+
+                    </div>
+
+                    <div>
+
+                        <span class="badge ${badgeClass}">
+                            ${escapeHTML(item.status)}
+                        </span>
+
+                    </div>
+
+                </div>
+
+            `;
+
+
+            list.appendChild(div);
+
+        });
+
+
+    updateStats();
+}
+
+
+/* =====================================
+   STATISTICS
+===================================== */
+
+function updateStats(){
+
+    document.getElementById("totalActivities")
+        .textContent = activities.length;
+
+
+    document.getElementById("completedActivities")
+        .textContent =
+        activities.filter(
+            x => x.status === "Completed"
+        ).length;
+
+
+    document.getElementById("pendingActivities")
+        .textContent =
+        activities.filter(
+            x => x.status === "Pending"
+        ).length;
+
+
+    document.getElementById("errorActivities")
+        .textContent =
+        activities.filter(
+            x => x.status === "Error"
+        ).length;
+
+
+    renderErrors();
+}
+
+
+/* =====================================
+   ERROR LIST
+===================================== */
+
+function renderErrors(){
+
+    const box =
+        document.getElementById("errorList");
+
+    const errors =
+        activities.filter(
+            x => x.status === "Error"
+        );
+
+
+    if(errors.length === 0){
+
+        box.innerHTML =
+            '<div class="empty">कोई error recorded नहीं है।</div>';
+
+        return;
+    }
+
+
+    box.innerHTML = "";
+
+
+    errors
+        .slice()
+        .reverse()
+        .forEach(item => {
+
+            const div =
+                document.createElement("div");
+
+            div.className = "error-box";
+
+
+            div.innerHTML = `
+
+                <div class="error-title">
+                    ${escapeHTML(item.action)}
+                </div>
+
+                <div class="error-meta">
+
+                    Staff:
+                    ${escapeHTML(item.staff || "System")}
+
+                    <br>
+
+                    Application:
+                    ${escapeHTML(item.application || "—")}
+
+                    <br>
+
+                    ${escapeHTML(item.details || "")}
+
+                    <br>
+
+                    ${escapeHTML(item.time || "")}
+
+                </div>
+
+            `;
+
+
+            box.appendChild(div);
+
+        });
+}
+
+
+/* =====================================
+   TEST ACTIVITY
+===================================== */
+
+function addDemoActivity(){
+
+    const demo = {
+
+        id:
+            Date.now().toString(),
+
+        staff:
+            staff.length
+            ? staff[0].username
+            : "system",
+
+        action:
+            "Application Processing",
+
+        application:
+            "Test Application",
+
+        details:
+            "Application processing activity recorded.",
+
+        status:
+            "Completed",
+
+        time:
+            new Date().toLocaleString()
+
+    };
+
+
+    activities.push(demo);
+
+
+    localStorage.setItem(
+        "ffm_activity",
+        JSON.stringify(activities)
+    );
+
+
+    renderActivities();
+}
+
+
+/* =====================================
+   CLEAR ERRORS
+===================================== */
+
+function clearErrors(){
+
+    activities =
+        activities.filter(
+            item => item.status !== "Error"
+        );
+
+
+    localStorage.setItem(
+        "ffm_activity",
+        JSON.stringify(activities)
+    );
+
+
+    renderActivities();
+}
+
+
+/* =====================================
+   EVENTS
+===================================== */
+
+document
+    .getElementById("search")
+    .addEventListener(
+        "input",
+        renderActivities
+    );
+
+document
+    .getElementById("statusFilter")
+    .addEventListener(
+        "change",
+        renderActivities
+    );
+
+document
+    .getElementById("staffFilter")
+    .addEventListener(
+        "change",
+        renderActivities
+    );
+
+
+/* =====================================
+   SECURITY HELPER
+===================================== */
+
+function escapeHTML(value){
+
+    return String(value)
+        .replace(/&/g,"&amp;")
+        .replace(/</g,"&lt;")
+        .replace(/>/g,"&gt;")
+        .replace(/"/g,"&quot;")
+        .replace(/'/g,"&#039;");
+}
+
+
+/* =====================================
+   START
+===================================== */
+
+loadStaffFilter();
+renderActivities();
+
+</script>
+
+</body>
+</html>

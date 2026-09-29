@@ -1,0 +1,233 @@
+<!DOCTYPE html>
+<html lang="hi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>Applicant Documents - FormFill Mitra</title>
+
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: Arial, sans-serif;
+        }
+
+        body {
+            background: #f4f7fb;
+            color: #222;
+        }
+
+        header {
+            background: #172554;
+            color: white;
+            padding: 18px 22px;
+            font-size: 22px;
+            font-weight: bold;
+        }
+
+        .container {
+            max-width: 850px;
+            margin: 28px auto;
+            padding: 0 18px;
+        }
+
+        .card {
+            background: white;
+            padding: 24px;
+            border-radius: 16px;
+            margin-bottom: 18px;
+            box-shadow: 0 4px 18px rgba(0,0,0,0.07);
+        }
+
+        h1 {
+            color: #172554;
+            margin-bottom: 8px;
+        }
+
+        .subtitle {
+            color: #666;
+            margin-bottom: 25px;
+        }
+
+        .document {
+            border: 1px solid #ddd;
+            border-radius: 12px;
+            padding: 18px;
+            margin-bottom: 15px;
+        }
+
+        .document h3 {
+            color: #172554;
+            margin-bottom: 7px;
+        }
+
+        .document p {
+            color: #666;
+            font-size: 14px;
+            margin-bottom: 12px;
+        }
+
+        input[type="file"] {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ccc;
+            border-radius: 8px;
+            background: #fafafa;
+        }
+
+        .buttons {
+            display: flex;
+            gap: 12px;
+            margin-top: 22px;
+        }
+
+        button {
+            flex: 1;
+            padding: 14px;
+            border: none;
+            border-radius: 9px;
+            font-size: 15px;
+            cursor: pointer;
+        }
+
+        .back {
+            background: #e5e7eb;
+        }
+
+        .continue {
+            background: #2563eb;
+            color: white;
+        }
+
+        .continue:hover {
+            background: #1d4ed8;
+        }
+
+        .info {
+            background: #eff6ff;
+            border-left: 4px solid #2563eb;
+            padding: 14px;
+            border-radius: 8px;
+            color: #374151;
+            line-height: 1.5;
+            margin-bottom: 20px;
+        }
+
+        @media (max-width: 600px) {
+            .buttons {
+                flex-direction: column;
+            }
+        }
+    </style>
+</head>
+
+<body>
+
+<header>
+    FormFill Mitra — Applicant Documents
+</header>
+
+<div class="container">
+
+    <div class="card">
+
+        <h1>Applicant Documents</h1>
+
+        <p class="subtitle">
+            Applicant के documents upload करें।
+        </p>
+
+        <div class="info">
+            Documents upload होने के बाद supported documents से
+            information extract करने के लिए OCR processing की जाएगी।
+            CAPTCHA और OTP जैसी security verification manual रहेगी।
+        </div>
+
+        <div class="document">
+            <h3>Identity Document</h3>
+            <p>Aadhaar Card / अन्य valid identity document</p>
+
+            <input type="file"
+                   id="identity"
+                   accept="image/*,.pdf">
+        </div>
+
+        <div class="document">
+            <h3>Educational Document</h3>
+            <p>Marksheet / Certificate / अन्य required document</p>
+
+            <input type="file"
+                   id="education"
+                   accept="image/*,.pdf">
+        </div>
+
+        <div class="document">
+            <h3>Photograph</h3>
+            <p>Applicant की passport-size photograph</p>
+
+            <input type="file"
+                   id="photo"
+                   accept="image/*">
+        </div>
+
+        <div class="document">
+            <h3>Signature</h3>
+            <p>Applicant की signature image</p>
+
+            <input type="file"
+                   id="signature"
+                   accept="image/*">
+        </div>
+
+        <div class="buttons">
+
+            <button class="back"
+                    onclick="location.href='professional-dashboard.html'">
+                ← Back
+            </button>
+
+            <button class="continue"
+                    onclick="processDocuments()">
+                Continue to OCR →
+            </button>
+
+        </div>
+
+    </div>
+
+</div>
+
+<script>
+
+function processDocuments() {
+
+    const identity =
+        document.getElementById("identity").files.length;
+
+    const education =
+        document.getElementById("education").files.length;
+
+    const photo =
+        document.getElementById("photo").files.length;
+
+    const signature =
+        document.getElementById("signature").files.length;
+
+    if (!identity || !education || !photo || !signature) {
+
+        alert("कृपया सभी required documents upload करें।");
+        return;
+
+    }
+
+    localStorage.setItem("documentsUploaded", "true");
+
+    location.href = "ocr-processing.html";
+}
+
+</script>
+
+</body>
+</html>

@@ -1,0 +1,557 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>FormFill Mitra - AI Assistant</title>
+
+<style>
+*{
+    box-sizing:border-box;
+    margin:0;
+    padding:0;
+    font-family:Arial,sans-serif;
+}
+
+body{
+    background:#f4f7fb;
+    color:#1f2937;
+}
+
+header{
+    background:#111827;
+    color:white;
+    padding:18px 20px;
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    gap:10px;
+}
+
+.logo{
+    font-size:22px;
+    font-weight:bold;
+}
+
+.badge{
+    background:#374151;
+    padding:7px 12px;
+    border-radius:20px;
+    font-size:13px;
+}
+
+.container{
+    max-width:1100px;
+    margin:25px auto;
+    padding:0 15px;
+}
+
+.hero{
+    background:white;
+    padding:25px;
+    border-radius:16px;
+    box-shadow:0 5px 20px rgba(0,0,0,.07);
+    margin-bottom:20px;
+}
+
+.hero h1{
+    margin-bottom:8px;
+}
+
+.hero p{
+    color:#6b7280;
+    line-height:1.6;
+}
+
+.warning{
+    margin-top:18px;
+    padding:14px;
+    background:#fff7ed;
+    border-left:4px solid #f97316;
+    border-radius:8px;
+    color:#7c2d12;
+}
+
+.grid{
+    display:grid;
+    grid-template-columns:repeat(auto-fit,minmax(280px,1fr));
+    gap:18px;
+}
+
+.card{
+    background:white;
+    border-radius:16px;
+    padding:20px;
+    box-shadow:0 5px 20px rgba(0,0,0,.06);
+}
+
+.card h3{
+    margin-bottom:10px;
+}
+
+.card p{
+    color:#6b7280;
+    line-height:1.5;
+    font-size:14px;
+}
+
+.tag{
+    display:inline-block;
+    background:#eef2ff;
+    color:#4338ca;
+    padding:5px 9px;
+    border-radius:15px;
+    font-size:12px;
+    margin-bottom:12px;
+}
+
+textarea,
+select,
+input{
+    width:100%;
+    padding:12px;
+    margin-top:8px;
+    margin-bottom:12px;
+    border:1px solid #d1d5db;
+    border-radius:9px;
+    font-size:14px;
+}
+
+button{
+    border:none;
+    padding:11px 15px;
+    border-radius:9px;
+    cursor:pointer;
+    font-weight:bold;
+}
+
+.primary{
+    background:#2563eb;
+    color:white;
+}
+
+.success{
+    background:#16a34a;
+    color:white;
+}
+
+.danger{
+    background:#dc2626;
+    color:white;
+}
+
+.secondary{
+    background:#e5e7eb;
+    color:#111827;
+}
+
+.suggestion{
+    border:1px solid #e5e7eb;
+    border-radius:12px;
+    padding:16px;
+    margin-top:12px;
+}
+
+.suggestion h4{
+    margin-bottom:8px;
+}
+
+.suggestion .actions{
+    display:flex;
+    gap:8px;
+    flex-wrap:wrap;
+    margin-top:12px;
+}
+
+.status{
+    font-size:13px;
+    margin-top:10px;
+    font-weight:bold;
+}
+
+.approved{
+    color:#15803d;
+}
+
+.pending{
+    color:#b45309;
+}
+
+.rejected{
+    color:#b91c1c;
+}
+
+.empty{
+    text-align:center;
+    padding:25px;
+    color:#6b7280;
+}
+
+@media(max-width:600px){
+    header{
+        align-items:flex-start;
+        flex-direction:column;
+    }
+}
+</style>
+</head>
+
+<body>
+
+<header>
+    <div class="logo">FormFill Mitra</div>
+    <div class="badge">Admin • AI Assistant</div>
+</header>
+
+<div class="container">
+
+    <section class="hero">
+        <h1>🤖 AI Assistant</h1>
+        <p>
+            AI Assistant application configuration, form setup,
+            workflow और system improvements के लिए suggestions तैयार करेगा।
+        </p>
+
+        <div class="warning">
+            <strong>Admin Approval Required:</strong>
+            AI कोई बदलाव अपने आप लागू नहीं करेगा।
+            हर suggestion को पहले Admin approve करेगा।
+        </div>
+    </section>
+
+    <div class="grid">
+
+        <div class="card">
+            <span class="tag">Form Analysis</span>
+            <h3>Form Configuration Check</h3>
+            <p>
+                Existing forms की configuration check करके
+                missing information या document requirements की पहचान करें।
+            </p>
+
+            <button class="primary" onclick="analyzeForms()">
+                Analyze Forms
+            </button>
+        </div>
+
+        <div class="card">
+            <span class="tag">Workflow</span>
+            <h3>Workflow Suggestions</h3>
+            <p>
+                Form filling process में missing steps या
+                workflow improvements के लिए suggestions बनाएं।
+            </p>
+
+            <button class="primary" onclick="workflowCheck()">
+                Check Workflow
+            </button>
+        </div>
+
+        <div class="card">
+            <span class="tag">System</span>
+            <h3>System Improvement</h3>
+            <p>
+                Application में future improvements के लिए
+                administrative suggestions तैयार करें।
+            </p>
+
+            <button class="primary" onclick="systemCheck()">
+                Generate Suggestions
+            </button>
+        </div>
+
+    </div>
+
+    <section class="card" style="margin-top:20px;">
+
+        <h2>Custom AI Request</h2>
+
+        <p style="margin-top:8px;color:#6b7280;">
+            Admin किसी specific समस्या या requirement को यहाँ लिख सकता है।
+        </p>
+
+        <textarea
+            id="customRequest"
+            rows="5"
+            placeholder="Example: Form में नया document requirement जोड़ना है...">
+        </textarea>
+
+        <button class="primary" onclick="customSuggestion()">
+            Generate Suggestion
+        </button>
+
+    </section>
+
+    <section class="card" style="margin-top:20px;">
+
+        <h2>AI Suggestions</h2>
+
+        <div id="suggestionsContainer">
+            <div class="empty">
+                अभी कोई suggestion नहीं है।
+            </div>
+        </div>
+
+    </section>
+
+</div>
+
+<script>
+    
+    // 🔐 ADMIN ACCESS GUARD
+if (localStorage.getItem("ffm_admin_logged_in") !== "true") {
+    window.location.replace("admin-login.html");
+}
+
+const STORAGE_KEY = "ffm_ai_suggestions";
+
+function getSuggestions(){
+    return JSON.parse(localStorage.getItem(STORAGE_KEY)) || [];
+}
+
+function saveSuggestions(data){
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+}
+
+function addSuggestion(title, description, type){
+
+    const suggestions = getSuggestions();
+
+    suggestions.unshift({
+        id: Date.now(),
+        title:title,
+        description:description,
+        type:type,
+        status:"Pending",
+        createdAt:new Date().toLocaleString()
+    });
+
+    saveSuggestions(suggestions);
+
+    renderSuggestions();
+}
+
+function analyzeForms(){
+
+    const forms =
+        JSON.parse(localStorage.getItem("ffm_admin_forms")) || [];
+
+    if(forms.length === 0){
+
+        addSuggestion(
+            "No Forms Configured",
+            "Admin Panel में अभी कोई form configured नहीं है। पहले official forms और उनकी required documents configuration जोड़ें।",
+            "Form Analysis"
+        );
+
+        return;
+    }
+
+    let incomplete = 0;
+
+    forms.forEach(form=>{
+        if(!form.name || !form.link || !form.documents){
+            incomplete++;
+        }
+    });
+
+    if(incomplete > 0){
+
+        addSuggestion(
+            "Form Configuration Review Required",
+            incomplete + " form configuration में information incomplete हो सकती है। Admin को form name, official link और required documents verify करने चाहिए।",
+            "Form Analysis"
+        );
+
+    }else{
+
+        addSuggestion(
+            "Form Configuration Check",
+            forms.length + " configured forms मिले। Admin को official links और document requirements की अंतिम verification करनी चाहिए।",
+            "Form Analysis"
+        );
+    }
+}
+
+function workflowCheck(){
+
+    addSuggestion(
+        "Workflow Improvement",
+        "Application workflow में Form Selection → Documents → OCR → Applicant Verification → Review → Form Filling → Final Review sequence maintain करने का सुझाव है।",
+        "Workflow"
+    );
+}
+
+function systemCheck(){
+
+    addSuggestion(
+        "Production Security Upgrade",
+        "Production version में localStorage आधारित admin/staff authentication की जगह server-side authentication, authorization, database और audit logging लागू करना चाहिए।",
+        "System"
+    );
+}
+
+function customSuggestion(){
+
+    const request =
+        document.getElementById("customRequest").value.trim();
+
+    if(!request){
+        alert("पहले अपनी requirement लिखें।");
+        return;
+    }
+
+    addSuggestion(
+        "Admin Custom Request",
+        "Admin Request: " + request +
+        "\n\nAI Suggestion: इस requirement को लागू करने से पहले affected pages, permissions, data flow और security impact की Admin द्वारा समीक्षा की जानी चाहिए।",
+        "Custom"
+    );
+
+    document.getElementById("customRequest").value="";
+}
+
+function approveSuggestion(id){
+
+    const suggestions = getSuggestions();
+
+    const item = suggestions.find(x => x.id === id);
+
+    if(!item) return;
+
+    item.status="Approved";
+
+    saveSuggestions(suggestions);
+
+    renderSuggestions();
+
+    alert(
+        "Suggestion approved.\n\n" +
+        "ध्यान दें: यह prototype केवल approval record करता है। " +
+        "Actual code/configuration change अभी automatically नहीं किया जाता।"
+    );
+}
+
+function rejectSuggestion(id){
+
+    const suggestions = getSuggestions();
+
+    const item = suggestions.find(x => x.id === id);
+
+    if(!item) return;
+
+    item.status="Rejected";
+
+    saveSuggestions(suggestions);
+
+    renderSuggestions();
+}
+
+function deleteSuggestion(id){
+
+    const suggestions =
+        getSuggestions().filter(x => x.id !== id);
+
+    saveSuggestions(suggestions);
+
+    renderSuggestions();
+}
+
+function renderSuggestions(){
+
+    const container =
+        document.getElementById("suggestionsContainer");
+
+    const suggestions = getSuggestions();
+
+    if(suggestions.length === 0){
+
+        container.innerHTML =
+            '<div class="empty">अभी कोई suggestion नहीं है।</div>';
+
+        return;
+    }
+
+    container.innerHTML = suggestions.map(item => {
+
+        let statusClass = "pending";
+
+        if(item.status === "Approved"){
+            statusClass = "approved";
+        }
+
+        if(item.status === "Rejected"){
+            statusClass = "rejected";
+        }
+
+        return `
+            <div class="suggestion">
+
+                <span class="tag">${escapeHTML(item.type)}</span>
+
+                <h4>${escapeHTML(item.title)}</h4>
+
+                <p>
+                    ${escapeHTML(item.description)}
+                </p>
+
+                <div class="status ${statusClass}">
+                    Status: ${escapeHTML(item.status)}
+                </div>
+
+                <small>
+                    Created: ${escapeHTML(item.createdAt)}
+                </small>
+
+                <div class="actions">
+
+                    ${
+                        item.status === "Pending"
+                        ?
+                        `
+                        <button
+                            class="success"
+                            onclick="approveSuggestion(${item.id})">
+                            Approve
+                        </button>
+
+                        <button
+                            class="danger"
+                            onclick="rejectSuggestion(${item.id})">
+                            Reject
+                        </button>
+                        `
+                        :
+                        ""
+                    }
+
+                    <button
+                        class="secondary"
+                        onclick="deleteSuggestion(${item.id})">
+                        Delete
+                    </button>
+
+                </div>
+
+            </div>
+        `;
+
+    }).join("");
+}
+
+function escapeHTML(value){
+
+    return String(value)
+        .replace(/&/g,"&amp;")
+        .replace(/</g,"&lt;")
+        .replace(/>/g,"&gt;")
+        .replace(/"/g,"&quot;")
+        .replace(/'/g,"&#039;");
+}
+
+renderSuggestions();
+
+</script>
+
+</body>
+</html>

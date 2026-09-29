@@ -1,0 +1,855 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Staff Management - FormFill Mitra</title>
+
+<style>
+*{
+    box-sizing:border-box;
+    margin:0;
+    padding:0;
+    font-family:Arial,sans-serif;
+}
+
+body{
+    background:#f4f7fb;
+    color:#172033;
+}
+
+.header{
+    background:#0d47a1;
+    color:white;
+    padding:18px 22px;
+}
+
+.header h1{
+    font-size:24px;
+}
+
+.header p{
+    margin-top:5px;
+    opacity:.9;
+}
+
+.container{
+    max-width:1100px;
+    margin:30px auto;
+    padding:0 18px;
+}
+
+.card{
+    background:white;
+    border-radius:14px;
+    padding:24px;
+    margin-bottom:20px;
+    box-shadow:0 5px 20px rgba(0,0,0,.08);
+}
+
+.title{
+    color:#0d47a1;
+    margin-bottom:8px;
+}
+
+.subtitle{
+    color:#666;
+    margin-bottom:20px;
+}
+
+.grid{
+    display:grid;
+    grid-template-columns:1fr 1fr;
+    gap:16px;
+}
+
+.field{
+    display:flex;
+    flex-direction:column;
+}
+
+.full{
+    grid-column:1/-1;
+}
+
+label{
+    font-weight:bold;
+    margin-bottom:7px;
+}
+
+input,select{
+    padding:12px;
+    border:1px solid #ccd3df;
+    border-radius:8px;
+    font-size:15px;
+    outline:none;
+}
+
+input:focus,select:focus{
+    border-color:#1976d2;
+}
+
+.permissions{
+    display:grid;
+    grid-template-columns:repeat(2,1fr);
+    gap:10px;
+    margin-top:8px;
+}
+
+.permission{
+    background:#f7f9fc;
+    border:1px solid #e1e6ed;
+    padding:11px;
+    border-radius:8px;
+}
+
+.permission label{
+    display:flex;
+    align-items:center;
+    gap:8px;
+    margin:0;
+    font-weight:normal;
+}
+
+button{
+    border:none;
+    border-radius:8px;
+    padding:12px 18px;
+    font-size:14px;
+    font-weight:bold;
+    cursor:pointer;
+}
+
+.add{
+    background:#0d47a1;
+    color:white;
+    margin-top:20px;
+}
+
+.clear{
+    background:#e7ecf2;
+    color:#333;
+    margin-top:20px;
+    margin-left:8px;
+}
+
+.staff-list{
+    display:flex;
+    flex-direction:column;
+    gap:12px;
+}
+
+.staff{
+    border:1px solid #e0e5ec;
+    border-radius:10px;
+    padding:16px;
+    background:#fafbfd;
+}
+
+.staff-top{
+    display:flex;
+    justify-content:space-between;
+    gap:15px;
+}
+
+.staff-name{
+    font-size:17px;
+    font-weight:bold;
+}
+
+.badge{
+    padding:5px 9px;
+    border-radius:20px;
+    font-size:12px;
+    font-weight:bold;
+}
+
+.active{
+    background:#e5f7eb;
+    color:#16763a;
+}
+
+.inactive{
+    background:#fce8e8;
+    color:#a32121;
+}
+
+.staff-info{
+    color:#666;
+    font-size:13px;
+    margin-top:7px;
+}
+
+.permissions-view{
+    margin-top:10px;
+    display:flex;
+    flex-wrap:wrap;
+    gap:6px;
+}
+
+.permission-tag{
+    background:#eef4ff;
+    color:#0d47a1;
+    padding:5px 8px;
+    border-radius:6px;
+    font-size:12px;
+}
+
+.actions{
+    display:flex;
+    gap:8px;
+    margin-top:13px;
+}
+
+.edit{
+    background:#eef4ff;
+    color:#0d47a1;
+}
+
+.toggle{
+    background:#fff4df;
+    color:#765000;
+}
+
+.delete{
+    background:#fde8e8;
+    color:#a32121;
+}
+
+.empty{
+    color:#777;
+    padding:15px 0;
+}
+
+.notice{
+    background:#fff8e6;
+    border:1px solid #efd58b;
+    color:#725500;
+    padding:14px;
+    border-radius:9px;
+    line-height:1.5;
+    margin-bottom:20px;
+}
+
+@media(max-width:700px){
+
+    .grid{
+        grid-template-columns:1fr;
+    }
+
+    .full{
+        grid-column:auto;
+    }
+
+    .permissions{
+        grid-template-columns:1fr;
+    }
+
+    .staff-top{
+        flex-direction:column;
+    }
+
+    .clear{
+        margin-left:0;
+    }
+}
+</style>
+</head>
+
+<body>
+
+<header class="header">
+    <h1>FormFill Mitra</h1>
+    <p>Admin • Staff Management</p>
+</header>
+
+<div class="container">
+
+    <div class="notice">
+        <strong>Admin Control</strong><br>
+        यहाँ से staff accounts और उनकी permissions manage की जा सकती हैं।
+        Production version में authentication और server-side access control
+        आवश्यक होगा।
+    </div>
+
+
+    <!-- ADD STAFF -->
+
+    <div class="card">
+
+        <h2 class="title">Add Staff Member</h2>
+
+        <p class="subtitle">
+            नया staff account और उसकी permissions configure करें।
+        </p>
+
+        <div class="grid">
+
+            <div class="field">
+                <label>Staff Name *</label>
+                <input
+                    type="text"
+                    id="staffName"
+                    placeholder="Enter staff name">
+            </div>
+
+            <div class="field">
+                <label>Username *</label>
+                <input
+                    type="text"
+                    id="username"
+                    placeholder="Enter username">
+            </div>
+
+            <div class="field">
+                <label>Email</label>
+                <input
+                    type="email"
+                    id="email"
+                    placeholder="Enter email">
+            </div>
+
+            <div class="field">
+                <label>Role</label>
+
+                <select id="role">
+                    <option value="Form Operator">
+                        Form Operator
+                    </option>
+
+                    <option value="Senior Operator">
+                        Senior Operator
+                    </option>
+
+                    <option value="Reviewer">
+                        Reviewer
+                    </option>
+                </select>
+            </div>
+
+            <div class="field full">
+
+                <label>Permissions</label>
+
+                <div class="permissions">
+
+                    <div class="permission">
+                        <label>
+                            <input
+                                type="checkbox"
+                                value="View Applications"
+                                class="permissionBox">
+                            View Applications
+                        </label>
+                    </div>
+
+                    <div class="permission">
+                        <label>
+                            <input
+                                type="checkbox"
+                                value="Create Applications"
+                                class="permissionBox">
+                            Create Applications
+                        </label>
+                    </div>
+
+                    <div class="permission">
+                        <label>
+                            <input
+                                type="checkbox"
+                                value="Upload Documents"
+                                class="permissionBox">
+                            Upload Documents
+                        </label>
+                    </div>
+
+                    <div class="permission">
+                        <label>
+                            <input
+                                type="checkbox"
+                                value="Process Forms"
+                                class="permissionBox">
+                            Process Forms
+                        </label>
+                    </div>
+
+                    <div class="permission">
+                        <label>
+                            <input
+                                type="checkbox"
+                                value="Review Applications"
+                                class="permissionBox">
+                            Review Applications
+                        </label>
+                    </div>
+
+                    <div class="permission">
+                        <label>
+                            <input
+                                type="checkbox"
+                                value="View Activity"
+                                class="permissionBox">
+                            View Activity
+                        </label>
+                    </div>
+
+                </div>
+
+            </div>
+
+        </div>
+
+        <button
+            class="add"
+            id="saveBtn"
+            onclick="saveStaff()">
+            + Add Staff
+        </button>
+
+        <button
+            class="clear"
+            onclick="clearForm()">
+            Clear
+        </button>
+
+    </div>
+
+
+    <!-- STAFF LIST -->
+
+    <div class="card">
+
+        <h2 class="title">Staff Members</h2>
+
+        <p class="subtitle">
+            सभी staff accounts और उनकी current permissions।
+        </p>
+
+        <div
+            class="staff-list"
+            id="staffList">
+        </div>
+
+    </div>
+
+</div>
+
+    
+<script>
+    
+    // 🔐 ADMIN ACCESS GUARD
+if (localStorage.getItem("ffm_admin_logged_in") !== "true") {
+    window.location.replace("admin-login.html");
+}
+
+let staff =
+    JSON.parse(
+        localStorage.getItem("ffm_staff")
+    ) || [];
+
+let editingId = null;
+
+
+/* =========================
+   SAVE STAFF
+========================= */
+
+function saveStaff(){
+
+    const name =
+        document.getElementById("staffName")
+        .value.trim();
+
+    const username =
+        document.getElementById("username")
+        .value.trim();
+
+    const email =
+        document.getElementById("email")
+        .value.trim();
+
+    const role =
+        document.getElementById("role")
+        .value;
+
+
+    if(!name || !username){
+
+        alert(
+            "Staff Name और Username जरूरी हैं।"
+        );
+
+        return;
+    }
+
+
+    const permissions =
+        Array.from(
+            document.querySelectorAll(
+                ".permissionBox:checked"
+            )
+        ).map(box => box.value);
+
+
+    const staffData = {
+
+        id:
+            editingId ||
+            Date.now().toString(),
+
+        name:name,
+
+        username:username,
+
+        email:email,
+
+        role:role,
+
+        permissions:permissions,
+
+        status:"Active",
+
+        createdAt:
+            new Date().toLocaleString()
+
+    };
+
+
+    if(editingId){
+
+        staff =
+            staff.map(item =>
+                item.id === editingId
+                    ? staffData
+                    : item
+            );
+
+        editingId = null;
+
+        document.getElementById("saveBtn")
+            .textContent = "+ Add Staff";
+
+    }else{
+
+        staff.push(staffData);
+
+    }
+
+
+    localStorage.setItem(
+        "ffm_staff",
+        JSON.stringify(staff)
+    );
+
+
+    clearForm();
+
+    renderStaff();
+}
+
+
+/* =========================
+   RENDER STAFF
+========================= */
+
+function renderStaff(){
+
+    const list =
+        document.getElementById("staffList");
+
+    list.innerHTML = "";
+
+
+    if(staff.length === 0){
+
+        list.innerHTML =
+            '<div class="empty">अभी कोई staff member नहीं है।</div>';
+
+        return;
+    }
+
+
+    staff.forEach(member => {
+
+        const div =
+            document.createElement("div");
+
+        div.className = "staff";
+
+
+        const permissionHTML =
+            member.permissions &&
+            member.permissions.length
+
+            ? member.permissions.map(permission => `
+                <span class="permission-tag">
+                    ${escapeHTML(permission)}
+                </span>
+              `).join("")
+
+            : `<span class="staff-info">
+                No permissions assigned
+               </span>`;
+
+
+        div.innerHTML = `
+
+            <div class="staff-top">
+
+                <div>
+
+                    <div class="staff-name">
+                        ${escapeHTML(member.name)}
+                    </div>
+
+                    <div class="staff-info">
+                        Username: ${escapeHTML(member.username)}
+                    </div>
+
+                    <div class="staff-info">
+                        Role: ${escapeHTML(member.role)}
+                    </div>
+
+                    ${
+                        member.email
+                        ? `<div class="staff-info">
+                            Email: ${escapeHTML(member.email)}
+                           </div>`
+                        : ""
+                    }
+
+                </div>
+
+                <div>
+
+                    <span class="badge ${
+                        member.status === "Active"
+                        ? "active"
+                        : "inactive"
+                    }">
+
+                        ${escapeHTML(member.status)}
+
+                    </span>
+
+                </div>
+
+            </div>
+
+
+            <div class="permissions-view">
+                ${permissionHTML}
+            </div>
+
+
+            <div class="actions">
+
+                <button
+                    class="edit"
+                    onclick="editStaff('${member.id}')">
+                    Edit
+                </button>
+
+                <button
+                    class="toggle"
+                    onclick="toggleStatus('${member.id}')">
+
+                    ${
+                        member.status === "Active"
+                        ? "Deactivate"
+                        : "Activate"
+                    }
+
+                </button>
+
+                <button
+                    class="delete"
+                    onclick="deleteStaff('${member.id}')">
+                    Delete
+                </button>
+
+            </div>
+
+        `;
+
+
+        list.appendChild(div);
+
+    });
+}
+
+
+/* =========================
+   EDIT
+========================= */
+
+function editStaff(id){
+
+    const member =
+        staff.find(item => item.id === id);
+
+    if(!member) return;
+
+
+    editingId = id;
+
+
+    document.getElementById("staffName")
+        .value = member.name || "";
+
+    document.getElementById("username")
+        .value = member.username || "";
+
+    document.getElementById("email")
+        .value = member.email || "";
+
+    document.getElementById("role")
+        .value = member.role || "Form Operator";
+
+
+    document.querySelectorAll(
+        ".permissionBox"
+    ).forEach(box => {
+
+        box.checked =
+            member.permissions &&
+            member.permissions.includes(box.value);
+
+    });
+
+
+    document.getElementById("saveBtn")
+        .textContent = "Save Changes";
+
+
+    window.scrollTo({
+        top:0,
+        behavior:"smooth"
+    });
+}
+
+
+/* =========================
+   STATUS
+========================= */
+
+function toggleStatus(id){
+
+    staff =
+        staff.map(member => {
+
+            if(member.id === id){
+
+                member.status =
+                    member.status === "Active"
+                    ? "Inactive"
+                    : "Active";
+            }
+
+            return member;
+        });
+
+
+    localStorage.setItem(
+        "ffm_staff",
+        JSON.stringify(staff)
+    );
+
+
+    renderStaff();
+}
+
+
+/* =========================
+   DELETE
+========================= */
+
+function deleteStaff(id){
+
+    const member =
+        staff.find(item => item.id === id);
+
+    if(!member) return;
+
+
+    const confirmDelete =
+        confirm(
+            `क्या ${member.name} को delete करना चाहते हैं?`
+        );
+
+
+    if(!confirmDelete) return;
+
+
+    staff =
+        staff.filter(
+            item => item.id !== id
+        );
+
+
+    localStorage.setItem(
+        "ffm_staff",
+        JSON.stringify(staff)
+    );
+
+
+    renderStaff();
+}
+
+
+/* =========================
+   CLEAR
+========================= */
+
+function clearForm(){
+
+    editingId = null;
+
+    document.getElementById("staffName")
+        .value = "";
+
+    document.getElementById("username")
+        .value = "";
+
+    document.getElementById("email")
+        .value = "";
+
+    document.getElementById("role")
+        .value = "Form Operator";
+
+
+    document.querySelectorAll(
+        ".permissionBox"
+    ).forEach(box => {
+
+        box.checked = false;
+
+    });
+
+
+    document.getElementById("saveBtn")
+        .textContent = "+ Add Staff";
+}
+
+
+/* =========================
+   ESCAPE HTML
+========================= */
+
+function escapeHTML(value){
+
+    return String(value)
+        .replace(/&/g,"&amp;")
+        .replace(/</g,"&lt;")
+        .replace(/>/g,"&gt;")
+        .replace(/"/g,"&quot;")
+        .replace(/'/g,"&#039;");
+}
+
+
+renderStaff();
+
+</script>
+
+</body>
+</html>

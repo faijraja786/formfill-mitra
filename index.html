@@ -1,0 +1,306 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>FormFill Mitra</title>
+
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: Arial, sans-serif;
+        }
+
+        body {
+            min-height: 100vh;
+            background: #f5f7fb;
+            color: #172033;
+        }
+
+        header {
+            background: #ffffff;
+            border-bottom: 1px solid #e5e7eb;
+            padding: 16px 6%;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+
+        .logo {
+            font-size: 22px;
+            font-weight: 800;
+        }
+
+        .logo span {
+            color: #315efb;
+        }
+
+        .header-btn {
+            border: none;
+            background: #315efb;
+            color: white;
+            padding: 10px 18px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 600;
+        }
+
+        .hero {
+            padding: 70px 6% 50px;
+            text-align: center;
+        }
+
+        .hero h1 {
+            font-size: clamp(34px, 6vw, 62px);
+            line-height: 1.05;
+            margin-bottom: 18px;
+        }
+
+        .hero h1 span {
+            color: #315efb;
+        }
+
+        .hero p {
+            max-width: 650px;
+            margin: auto;
+            color: #667085;
+            font-size: 17px;
+            line-height: 1.7;
+        }
+
+        .mode-container {
+            max-width: 950px;
+            margin: 20px auto 70px;
+            padding: 0 20px;
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 22px;
+        }
+
+        .mode-card {
+            background: white;
+            border: 1px solid #e5e7eb;
+            border-radius: 18px;
+            padding: 30px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.05);
+            transition: 0.25s;
+        }
+
+        .mode-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 15px 35px rgba(0,0,0,0.08);
+        }
+
+        .icon {
+            width: 55px;
+            height: 55px;
+            border-radius: 14px;
+            background: #eef2ff;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 27px;
+            margin-bottom: 20px;
+        }
+
+        .mode-card h2 {
+            margin-bottom: 10px;
+        }
+
+        .mode-card p {
+            color: #667085;
+            line-height: 1.6;
+            margin-bottom: 22px;
+        }
+
+        .mode-btn {
+            width: 100%;
+            padding: 13px;
+            border: none;
+            border-radius: 9px;
+            background: #315efb;
+            color: white;
+            font-size: 15px;
+            font-weight: 700;
+            cursor: pointer;
+        }
+
+        .mode-btn.secondary {
+            background: #172033;
+        }
+
+        .features {
+            max-width: 1100px;
+            margin: 0 auto 70px;
+            padding: 0 20px;
+        }
+
+        .features h2 {
+            text-align: center;
+            margin-bottom: 28px;
+            font-size: 30px;
+        }
+
+        .feature-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 18px;
+        }
+
+        .feature {
+            background: white;
+            padding: 23px;
+            border-radius: 14px;
+            border: 1px solid #e5e7eb;
+        }
+
+        .feature h3 {
+            margin-bottom: 8px;
+        }
+
+        .feature p {
+            color: #667085;
+            line-height: 1.5;
+            font-size: 14px;
+        }
+
+        footer {
+            text-align: center;
+            padding: 30px 20px;
+            border-top: 1px solid #e5e7eb;
+            color: #667085;
+            background: white;
+        }
+
+        @media (max-width: 700px) {
+            .mode-container,
+            .feature-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .hero {
+                padding-top: 50px;
+            }
+
+            header {
+                padding: 14px 20px;
+            }
+        }
+    </style>
+</head>
+
+<body>
+
+<header>
+    <div class="logo">
+        FormFill <span>Mitra</span>
+    </div>
+
+    <button class="header-btn" onclick="showMessage()">
+        Login
+    </button>
+</header>
+
+<section class="hero">
+    <h1>
+        Forms भरना बनेगा<br>
+        <span>Simple & Organized</span>
+    </h1>
+
+    <p>
+        अपने forms को manage करने के लिए Personal या Professional
+        mode चुनें और application process को एक जगह से व्यवस्थित करें।
+    </p>
+</section>
+
+<section class="mode-container">
+
+    <div class="mode-card">
+        <div class="icon">👤</div>
+
+        <h2>Personal</h2>
+
+        <p>
+            अपने applications और documents को manage करने के लिए
+            Personal mode का इस्तेमाल करें।
+        </p>
+
+        <button class="mode-btn" onclick="location.href='personal-login.html'">
+    Continue as Personal
+</button>
+    </div>
+
+    <div class="mode-card">
+        <div class="icon">💼</div>
+
+        <h2>Professional</h2>
+
+        <p>
+            Applicants के forms को manage करने वाले operators के लिए
+            Professional mode।
+        </p>
+
+        <button class="mode-btn" onclick="location.href='professional-login.html'">
+    Continue as Professional
+</button>
+         
+    </div>
+
+</section>
+
+<section class="features">
+
+    <h2>Platform Features</h2>
+
+    <div class="feature-grid">
+
+        <div class="feature">
+            <h3>📋 Form Management</h3>
+            <p>
+                उपलब्ध forms को एक जगह से access करने के लिए बनाया गया
+                centralized system।
+            </p>
+        </div>
+
+        <div class="feature">
+            <h3>📄 Document Ready</h3>
+            <p>
+                आगे चलकर supported forms के लिए required documents
+                और upload requirements व्यवस्थित किए जाएंगे।
+            </p>
+        </div>
+
+        <div class="feature">
+            <h3>🤖 AI Assistant</h3>
+            <p>
+                Future versions में configuration और system management
+                के लिए controlled AI assistant जोड़ा जाएगा।
+            </p>
+        </div>
+
+    </div>
+
+</section>
+
+<footer>
+    © 2026 FormFill Mitra — All Rights Reserved
+</footer>
+
+<script>
+    function selectMode(mode) {
+        alert(mode + " mode selected.");
+    }
+
+    function showMessage() {
+        alert("Login system अगले phase में connect किया जाएगा.");
+    }
+</script>
+
+</body>
+</html>
