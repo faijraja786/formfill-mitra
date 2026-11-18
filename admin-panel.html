@@ -16,9 +16,19 @@
 }
 
 body{
-    background:#f4f7fb;
+    background:#f3f7ff;
     color:#172033;
+    visibility:hidden;
 }
+
+header{background:#ffffff!important;color:#17345f!important;border-bottom:1px solid #dce7f7;box-shadow:0 4px 18px rgba(24,75,140,.08)}
+.logo span{color:#1769e8!important}
+.nav-card,.panel,.stat{border-color:#dce7f7!important;box-shadow:0 5px 18px rgba(30,75,130,.055)}
+.nav-card:hover{border-color:#8bbaff!important}
+.panel h2,.stat-number,.builder-title{color:#1769e8!important}
+.btn-primary{background:#1769e8!important}
+.btn-primary:hover{background:#0d47a1!important}
+.admin-name{color:#526783}
 
 header{
     background:#0d47a1;
@@ -1060,18 +1070,7 @@ textarea{
    ADMIN GUARD
 ===================================================== */
 
-(function(){
-
-    if(
-        localStorage.getItem("ffm_admin_logged_in")
-        !== "true"
-    ){
-
-        window.location.replace("admin-login.html");
-
-    }
-
-})();
+// Admin access is verified below with Firebase Auth custom claims.
 
 
 
@@ -1192,28 +1191,12 @@ function loadAdmin(){
 
 
 function adminLogout(){
-
-    if(
-        !confirm(
-            "Are you sure you want to logout?"
-        )
-    ){
-
-        return;
-
+    if(!confirm("Are you sure you want to logout?")) return;
+    if(typeof window.__ffmAdminSignOut === "function"){
+        window.__ffmAdminSignOut();
+    }else{
+        window.location.replace("admin-login.html");
     }
-
-    localStorage.removeItem(
-        "ffm_admin_logged_in"
-    );
-
-    localStorage.removeItem(
-        "ffm_admin_user"
-    );
-
-    window.location.href =
-        "admin-login.html";
-
 }
 
 
@@ -2594,6 +2577,29 @@ updateStats();
 
 loadSubscription();
 
+</script>
+
+
+<script type="module">
+import { auth } from "./firebase-init.js";
+import { onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-auth.js";
+let checked=false;
+window.__ffmAdminSignOut=async()=>{await signOut(auth);window.location.replace("admin-login.html");};
+onAuthStateChanged(auth,async(user)=>{
+ if(checked)return;
+ checked=true;
+ if(!user){window.location.replace("admin-login.html");return;}
+ try{
+  const token=await user.getIdTokenResult(true);
+  if(!user.emailVerified||token.claims.admin!==true){await signOut(auth);window.location.replace("admin-login.html?reason=unauthorized");return;}
+  const name=document.getElementById("adminUser");
+  if(name)name.textContent=user.email||"Admin";
+  document.body.style.visibility="visible";
+ }catch(error){
+  await signOut(auth);
+  window.location.replace("admin-login.html");
+ }
+});
 </script>
 
 </body>
