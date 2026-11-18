@@ -29,8 +29,9 @@ button{width:100%;margin-top:22px;padding:14px;border:0;border-radius:10px;backg
 <a class="back" href="index.html">← Back to home</a>
 </main>
 <script type="module">
-import { auth } from "./firebase-init.js";
+import { auth, db } from "./firebase-init.js";
 import { signInWithEmailAndPassword, signOut } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-auth.js";
+import { doc, getDoc } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-firestore.js";
 const form=document.getElementById("adminLoginForm");
 const button=document.getElementById("loginButton");
 const message=document.getElementById("message");
@@ -40,8 +41,13 @@ form.addEventListener("submit",async(event)=>{
  try{
   const credential=await signInWithEmailAndPassword(auth,document.getElementById("email").value.trim(),document.getElementById("password").value);
   if(!credential.user.emailVerified){await signOut(auth);showMessage("Please verify your email address before using Admin Login.");return;}
-  const token=await credential.user.getIdTokenResult(true);
-  if(token.claims.admin!==true){await signOut(auth);showMessage("This account is not authorized as an Admin yet. Ask the project owner to assign Admin permission securely.");return;}
+  const adminSnap=await getDoc(doc(db,"admins",credential.user.uid));
+  if(!adminSnap.exists()||adminSnap.data().role!=="admin"||adminSnap.data().active!==true){
+   const uid=credential.user.uid;
+   await signOut(auth);
+   showMessage("This account is not an Admin yet. Give the project owner this UID to authorize it in Firestore: "+uid);
+   return;
+  }
   window.location.replace("admin-panel.html");
  }catch(error){
   const messages={"auth/invalid-credential":"Email or password is incorrect.","auth/too-many-requests":"Too many attempts. Please wait and try again.","auth/network-request-failed":"Network error. Check your internet connection.","auth/invalid-email":"Enter a valid email address."};
