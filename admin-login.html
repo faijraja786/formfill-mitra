@@ -3,168 +3,51 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>FormFill Mitra - Admin Login</title>
-
+<title>Admin Login | FormFill Mitra</title>
 <style>
-*{
-    box-sizing:border-box;
-    margin:0;
-    padding:0;
-}
-
-body{
-    font-family:Arial,sans-serif;
-    min-height:100vh;
-    display:flex;
-    align-items:center;
-    justify-content:center;
-    background:linear-gradient(135deg,#eef2ff,#f8fafc);
-    padding:20px;
-}
-
-.login-box{
-    width:100%;
-    max-width:420px;
-    background:white;
-    padding:30px;
-    border-radius:20px;
-    box-shadow:0 15px 40px rgba(0,0,0,.12);
-}
-
-.logo{
-    text-align:center;
-    font-size:28px;
-    font-weight:800;
-    color:#2563eb;
-    margin-bottom:8px;
-}
-
-.subtitle{
-    text-align:center;
-    color:#64748b;
-    margin-bottom:28px;
-}
-
-label{
-    display:block;
-    margin:15px 0 7px;
-    font-weight:600;
-}
-
-input{
-    width:100%;
-    padding:13px;
-    border:1px solid #cbd5e1;
-    border-radius:10px;
-    font-size:15px;
-}
-
-button{
-    width:100%;
-    margin-top:22px;
-    padding:14px;
-    border:none;
-    border-radius:10px;
-    background:#2563eb;
-    color:white;
-    font-size:16px;
-    font-weight:700;
-    cursor:pointer;
-}
-
-button:hover{
-    background:#1d4ed8;
-}
-
-.error{
-    display:none;
-    margin-top:15px;
-    padding:10px;
-    border-radius:8px;
-    background:#fee2e2;
-    color:#b91c1c;
-    text-align:center;
-}
-
-.back{
-    display:block;
-    text-align:center;
-    margin-top:18px;
-    color:#2563eb;
-    text-decoration:none;
-}
+*{box-sizing:border-box}body{margin:0;min-height:100vh;display:grid;place-items:center;padding:20px;font-family:Arial,sans-serif;background:linear-gradient(135deg,#edf4ff,#f8fbff);color:#17345f}
+.login-card{width:min(100%,430px);background:#fff;border:1px solid #dce7f7;border-radius:22px;padding:30px;box-shadow:0 18px 50px rgba(22,78,150,.12)}
+.brand{text-align:center;font-size:27px;font-weight:800;color:#1769e8}.brand span{color:#17345f}.subtitle{text-align:center;color:#64748b;margin:9px 0 25px}
+label{display:block;font-weight:700;font-size:14px;margin:15px 0 7px}input{width:100%;padding:13px;border:1px solid #cbd8eb;border-radius:10px;font-size:15px;outline:none}input:focus{border-color:#1769e8;box-shadow:0 0 0 3px #1769e81c}
+button{width:100%;margin-top:22px;padding:14px;border:0;border-radius:10px;background:#1769e8;color:#fff;font-weight:750;font-size:15px;cursor:pointer}button:disabled{opacity:.6;cursor:wait}
+.message{display:none;margin-top:15px;padding:12px;border-radius:10px;background:#fff2f0;color:#a12b20;font-size:13px;line-height:1.5}.hint{margin-top:18px;padding:12px;background:#edf4ff;border-radius:10px;color:#526783;font-size:12px;line-height:1.5}.back{display:block;text-align:center;margin-top:20px;color:#1769e8;text-decoration:none;font-weight:650}
 </style>
 </head>
-
 <body>
-
-<div class="login-box">
-
-    <div class="logo">FormFill Mitra</div>
-    <div class="subtitle">Admin Control Panel</div>
-
-    <form id="adminLoginForm">
-
-        <label>Admin Username</label>
-        <input
-            type="text"
-            id="username"
-            placeholder="Enter admin username"
-            required
-        >
-
-        <label>Admin Password</label>
-        <input
-            type="password"
-            id="password"
-            placeholder="Enter admin password"
-            required
-        >
-
-        <button type="submit">Login as Admin</button>
-
-        <div class="error" id="errorMessage">
-            Invalid admin username or password.
-        </div>
-
-    </form>
-
-    <a href="index.html" class="back">← Back to Home</a>
-
-</div>
-
-<script>
-
-document.getElementById("adminLoginForm").addEventListener("submit", function(e){
-
-    e.preventDefault();
-
-    const username = document.getElementById("username").value.trim();
-    const password = document.getElementById("password").value;
-
-    /*
-      TEMPORARY DEVELOPMENT LOGIN
-
-      Production version में username/password
-      backend database से verify होंगे.
-    */
-
-    if(username === "admin" && password === "admin123"){
-
-        localStorage.setItem("ffm_admin_logged_in", "true");
-        localStorage.setItem("ffm_admin_user", username);
-
-        window.location.href = "admin-panel.html";
-
-    }else{
-
-        document.getElementById("errorMessage").style.display = "block";
-
-    }
-
+<main class="login-card">
+<div class="brand">FormFill <span>Mitra</span></div>
+<p class="subtitle">Secure administrator sign in</p>
+<form id="adminLoginForm">
+<label for="email">Admin email</label>
+<input id="email" type="email" autocomplete="username" placeholder="Enter authorized admin email" required>
+<label for="password">Password</label>
+<input id="password" type="password" autocomplete="current-password" placeholder="Enter password" required>
+<button id="loginButton" type="submit">Sign in securely</button>
+<div class="message" id="message" role="alert"></div>
+</form>
+<div class="hint">Admin access is restricted to accounts that have been assigned the administrator permission by the project owner. A normal Personal or Professional account cannot access this panel.</div>
+<a class="back" href="index.html">← Back to home</a>
+</main>
+<script type="module">
+import { auth } from "./firebase-init.js";
+import { signInWithEmailAndPassword, signOut } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-auth.js";
+const form=document.getElementById("adminLoginForm");
+const button=document.getElementById("loginButton");
+const message=document.getElementById("message");
+function showMessage(text){message.textContent=text;message.style.display="block";}
+form.addEventListener("submit",async(event)=>{
+ event.preventDefault();message.style.display="none";button.disabled=true;button.textContent="Checking access…";
+ try{
+  const credential=await signInWithEmailAndPassword(auth,document.getElementById("email").value.trim(),document.getElementById("password").value);
+  if(!credential.user.emailVerified){await signOut(auth);showMessage("Please verify your email address before using Admin Login.");return;}
+  const token=await credential.user.getIdTokenResult(true);
+  if(token.claims.admin!==true){await signOut(auth);showMessage("This account is not authorized as an Admin yet. Ask the project owner to assign Admin permission securely.");return;}
+  window.location.replace("admin-panel.html");
+ }catch(error){
+  const messages={"auth/invalid-credential":"Email or password is incorrect.","auth/too-many-requests":"Too many attempts. Please wait and try again.","auth/network-request-failed":"Network error. Check your internet connection.","auth/invalid-email":"Enter a valid email address."};
+  showMessage(messages[error.code]||"Sign in failed. Please check your details and try again.");
+ }finally{button.disabled=false;button.textContent="Sign in securely";}
 });
-
 </script>
-
 </body>
 </html>
