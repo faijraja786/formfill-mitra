@@ -16,6 +16,7 @@
 body{
     background:#f4f7fb;
     color:#1f2937;
+    visibility:hidden;
 }
 
 header{
@@ -298,10 +299,7 @@ button{
 
 <script>
     
-    // 🔐 ADMIN ACCESS GUARD
-if (localStorage.getItem("ffm_admin_logged_in") !== "true") {
-    window.location.replace("admin-login.html");
-}
+    // Admin access is verified with Firebase Auth administrator custom claims.
 
 const STORAGE_KEY = "ffm_ai_suggestions";
 
@@ -553,5 +551,17 @@ renderSuggestions();
 
 </script>
 
+
+<script type="module">
+import { auth } from "./firebase-init.js";
+import { onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-auth.js";
+let checked=false;
+onAuthStateChanged(auth,async(user)=>{
+ if(checked)return;checked=true;
+ if(!user){window.location.replace("admin-login.html");return;}
+ try{const token=await user.getIdTokenResult(true);if(!user.emailVerified||token.claims.admin!==true){await signOut(auth);window.location.replace("admin-login.html?reason=unauthorized");return;}document.body.style.visibility="visible";}
+ catch(error){await signOut(auth);window.location.replace("admin-login.html");}
+});
+</script>
 </body>
 </html>
