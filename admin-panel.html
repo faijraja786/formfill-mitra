@@ -2576,6 +2576,7 @@ onAuthStateChanged(auth,async(user)=>{
  if(!allowed){await signOut(auth);window.location.replace("admin-login.html?reason=unauthorized");return;}
  localStorage.setItem("isLoggedIn","true");
  localStorage.setItem("loginType","admin");
+ localStorage.setItem("ffm_admin_user",user.email||ADMIN_EMAIL);
  const name=document.getElementById("adminUser");
  if(name)name.textContent=user.email||"Admin";
  document.body.style.visibility="visible";
