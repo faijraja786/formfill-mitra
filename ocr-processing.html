@@ -6,8 +6,6 @@
 
 <title>FormFill Mitra - OCR Processing</title>
 
-<!-- Tesseract.js -->
-<script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
 
 <style>
 *{
@@ -268,8 +266,11 @@ button:disabled{
 
 </main>
 
-<script>
+<script type="module">
+import { auth } from "./firebase-init.js";
+import { onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-auth.js";
 
+const API_BASE = "https://form-fill-mitra-api.onrender.com";
 const DB_NAME = "FormFillMitraDB";
 const DB_VERSION = 1;
 const STORE_NAME = "documents";
@@ -437,273 +438,111 @@ function loadFileList(){
    START OCR
 ============================== */
 
-async function startOCR(){
-
-    if(!selectedForm){
-
-        setProgress(
-            100,
-            "Form selected नहीं है।"
-        );
-
-        return;
-
-    }
-
-
-    document.getElementById("formName")
-        .textContent =
-        selectedForm.name || "Selected Form";
-
-
-    loadFileList();
-
-
-    const keys =
-        Object.keys(uploadedDocuments);
-
-
-    if(keys.length === 0){
-
-        setProgress(
-            100,
-            "No documents available."
-        );
-
-        enableContinue();
-
-        return;
-
-    }
-
-
-    try{
-
-        /*
-        One worker can process multiple images.
-        */
-
-        let worker = null;
-
-
-        for(
-            let i = 0;
-            i < keys.length;
-            i++
-        ){
-
-            const key = keys[i];
-
-            const fileRecord =
-                await getDocument(key);
-
-
-            if(!fileRecord){
-
-                continue;
-
-            }
-
-
-            const file =
-                fileRecord.file;
-
-
-            const percentStart =
-                Math.round(
-                    (i / keys.length) * 90
-                );
-
-
-            setProgress(
-                percentStart,
-                "Preparing " +
-                fileRecord.name +
-                "..."
-            );
-
-
-            /*
-            PDF cannot be directly processed
-            by Tesseract.js.
-            */
-
-            if(
-                file.type === "application/pdf" ||
-                fileRecord.name
-                    .toLowerCase()
-                    .endsWith(".pdf")
-            ){
-
-                ocrResults[key] = {
-
-                    name:fileRecord.name,
-
-                    status:"manual",
-
-                    text:"PDF document requires manual review or server-side PDF OCR."
-
-                };
-
-                continue;
-
-            }
-
-
-            /*
-            Only image OCR in this frontend version.
-            */
-
-            if(
-                !file.type.startsWith("image/")
-            ){
-
-                ocrResults[key] = {
-
-                    name:fileRecord.name,
-
-                    status:"unsupported",
-
-                    text:"Unsupported file type."
-
-                };
-
-                continue;
-
-            }
-
-
-            if(!worker){
-
-                setProgress(
-                    percentStart,
-                    "Loading OCR engine..."
-                );
-
-                worker =
-                    await Tesseract.createWorker(
-                        "eng"
-                    );
-
-            }
-
-
-            setProgress(
-                percentStart + 5,
-                "Reading " +
-                fileRecord.name +
-                "..."
-            );
-
-
-            const result =
-                await worker.recognize(
-                    file
-                );
-
-
-            const text =
-                result.data.text || "";
-
-
-            ocrResults[key] = {
-
-                name:fileRecord.name,
-
-                status:"success",
-
-                text:text
-
-            };
-
-
-            const percentDone =
-                Math.round(
-                    ((i + 1) / keys.length) * 90
-                );
-
-
-            setProgress(
-                percentDone,
-                "Completed " +
-                fileRecord.name
-            );
-
-        }
-
-
-        if(worker){
-
-            await worker.terminate();
-
-        }
-
-
-        /*
-        Save OCR output
-        */
-
-        localStorage.setItem(
-            "ocrResults",
-            JSON.stringify(
-                ocrResults
-            )
-        );
-
-
-        localStorage.setItem(
-            "ocrCompleted",
-            "true"
-        );
-
-
-        setProgress(
-            100,
-            "OCR processing completed."
-        );
-
-
-        renderResults();
-
-        enableContinue();
-
-
-    }catch(error){
-
-        console.error(error);
-
-        setProgress(
-            100,
-            "OCR में error आया।"
-        );
-
-
-        document.getElementById("results")
-            .innerHTML = `
-                <div class="status error">
-                    OCR processing failed.
-                </div>
-
-                <p style="margin-top:10px;color:#64748b;">
-                    Document को verify करके manual entry जारी रख सकते हैं।
-                </p>
-            `;
-
-        /*
-        Manual fallback
-        */
-
-        localStorage.setItem(
-            "ocrCompleted",
-            "true"
-        );
-
-        enableContinue();
-
-    }
-
+function waitForSignedInUser(){
+    if(auth.currentUser) return Promise.resolve(auth.currentUser);
+    return new Promise((resolve) => {
+        const unsubscribe = onAuthStateChanged(auth, (user) => {
+            unsubscribe();
+            resolve(user);
+        });
+    });
 }
 
+/* ==============================
+   START OCR THROUGH RENDER API
+============================== */
+async function startOCR(){
+    if(!selectedForm){
+        setProgress(100, "Form selected नहीं है।");
+        return;
+    }
+
+    document.getElementById("formName").textContent =
+        selectedForm.name || "Selected Form";
+    loadFileList();
+
+    const keys = Object.keys(uploadedDocuments);
+    if(keys.length === 0){
+        setProgress(100, "No documents available.");
+        enableContinue();
+        return;
+    }
+
+    const user = await waitForSignedInUser();
+    if(!user){
+        setProgress(100, "Please sign in again to process documents.");
+        document.getElementById("results").textContent =
+            "Your sign-in session is not available. Sign in and reopen this page.";
+        return;
+    }
+
+    try{
+        for(let i = 0; i < keys.length; i++){
+            const key = keys[i];
+            const fileRecord = await getDocument(key);
+            if(!fileRecord) continue;
+
+            const percent = Math.round((i / keys.length) * 90);
+            setProgress(percent, "Preparing " + fileRecord.name + "...");
+
+            const file = fileRecord.file;
+            if(!file || !file.type.startsWith("image/")){
+                ocrResults[key] = {
+                    name: fileRecord.name,
+                    status: "manual",
+                    text: "This file type is not supported by server OCR yet. Please review it and enter details manually."
+                };
+                continue;
+            }
+
+            const token = await user.getIdToken();
+            const formData = new FormData();
+            formData.append("document", file, fileRecord.name);
+
+            const response = await fetch(API_BASE + "/api/ocr/image", {
+                method: "POST",
+                headers: { Authorization: "Bearer " + token },
+                body: formData
+            });
+
+            const payload = await response.json().catch(() => ({}));
+            if(!response.ok){
+                const message = payload.error || "OCR service could not process this document.";
+                ocrResults[key] = {
+                    name: fileRecord.name,
+                    status: "manual",
+                    text: message + " Please enter the details manually or contact the site administrator."
+                };
+            }else{
+                ocrResults[key] = {
+                    name: fileRecord.name,
+                    status: "success",
+                    text: payload.text || "",
+                    confidence: payload.confidence ?? null,
+                    reviewRequired: true
+                };
+            }
+
+            setProgress(
+                Math.round(((i + 1) / keys.length) * 90),
+                "Processed " + fileRecord.name
+            );
+        }
+
+        localStorage.setItem("ocrResults", JSON.stringify(ocrResults));
+        localStorage.setItem("ocrCompleted", "true");
+        setProgress(100, "OCR processing completed. Please verify extracted text.");
+        renderResults();
+        enableContinue();
+    }catch(error){
+        console.error("Render OCR request failed:", error);
+        setProgress(100, "OCR service unavailable. Manual entry is still available.");
+        document.getElementById("results").textContent =
+            "The OCR service could not be reached. You can continue with manual data entry.";
+        localStorage.setItem("ocrCompleted", "true");
+        enableContinue();
+    }
+}
 
 /* ==============================
    RESULTS
