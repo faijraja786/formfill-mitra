@@ -426,7 +426,7 @@ function loadStaff(){
         }
 
         /*
-        एक staff का active task check
+        Check whether a staff member already has an active task
         */
 
         const hasActiveTask =
@@ -529,7 +529,7 @@ function createTask(){
 
     /*
     Final safety check:
-    एक staff के पास एक active task ही हो सकता है।
+    A staff member can have only one active task at a time.
     */
 
     const busy =
@@ -597,9 +597,9 @@ function createTask(){
     addActivity(
         "Task Created",
         person.name +
-        " को " +
+        "  to  " +
         form.name +
-        " का task assign किया गया।",
+        "  was assigned the task.",
         "Pending"
     );
 
