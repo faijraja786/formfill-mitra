@@ -602,21 +602,48 @@ body{background:#f3f7ff;color:#172b4d}
 
 <script>
 
-(function(){
-
-    /*
-       Personal dashboard protection.
-       User must come through personal login.
-    */
-
-    const isLoggedIn = localStorage.getItem("isLoggedIn");
-    const loginType = localStorage.getItem("loginType");
-
-    if(isLoggedIn !== "true" || loginType !== "personal"){
-        window.location.replace("personal-login.html");
-        return;
+document.documentElement.style.visibility = "hidden";
+(async function(){
+  const clearSession=()=>["isLoggedIn","loginType","ffm_admin_user"].forEach(key=>localStorage.removeItem(key));
+  try{
+    const [{auth},{onAuthStateChanged,signOut}]=await Promise.all([
+      import("./firebase-init.js"),
+      import("https://www.gstatic.com/firebasejs/10.12.5/firebase-auth.js")
+    ]);
+    const user=await new Promise(resolve=>{
+      let unsubscribe=()=>{};
+      unsubscribe=onAuthStateChanged(auth,value=>{unsubscribe();resolve(value);},()=>resolve(null));
+    });
+    if(!user||user.emailVerified!==true){
+      if(user) await signOut(auth).catch(()=>{});
+      clearSession();
+      window.location.replace("personal-login.html");
+      return;
     }
-
+    const isAdmin=(user.email||"").trim().toLowerCase()==="faijraja28@gmail.com";
+    if(isAdmin){
+      localStorage.setItem("isLoggedIn","true");
+      localStorage.setItem("loginType","admin");
+      localStorage.setItem("ffm_admin_user",user.email);
+      window.location.replace("admin-panel.html");
+      return;
+    }
+    const actualRole=localStorage.getItem("loginType")==="professional"?"professional":"personal";
+    if(actualRole!=="personal"){
+      localStorage.setItem("loginType",actualRole);
+      localStorage.setItem("isLoggedIn","true");
+      window.location.replace(actualRole==="professional"?"professional-dashboard.html":"personal-dashboard.html");
+      return;
+    }
+    localStorage.setItem("isLoggedIn","true");
+    localStorage.setItem("loginType",actualRole);
+    localStorage.removeItem("ffm_admin_user");
+    document.documentElement.style.visibility="";
+  }catch(error){
+    console.error("Dashboard authentication check failed:",error);
+    clearSession();
+    window.location.replace("personal-login.html");
+  }
 })();
 
 
@@ -1071,10 +1098,11 @@ async function logout(){
         await signOut(auth);
     }catch(error){
         console.error("Sign-out error:",error);
-    }finally{
-        ["isLoggedIn","loginType","ffm_admin_user"].forEach(key=>localStorage.removeItem(key));
-        window.location.replace("personal-login.html");
+        alert("We could not sign you out. Please try again.");
+        return;
     }
+    ["isLoggedIn","loginType","ffm_admin_user"].forEach(key=>localStorage.removeItem(key));
+    window.location.replace("personal-login.html");
 }
 
 /*
