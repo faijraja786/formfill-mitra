@@ -73,3 +73,17 @@ img{max-width:100%}
   table{display:block;overflow-x:auto;white-space:nowrap}
   button,.btn{max-width:100%}
 }
+
+/* Dashboard navigation and action tiles */
+.section{background:#fff!important;border:1px solid var(--ffm-line)!important;border-radius:16px!important;box-shadow:var(--ffm-shadow)!important}
+.quick-card,.form-card,.nav-card{background:#fff!important;border:1px solid var(--ffm-line)!important;border-radius:14px!important;box-shadow:0 5px 18px rgba(25,72,130,.045)!important}
+.quick-card:hover,.form-card:hover,.nav-card:hover{border-color:#9cc6ff!important;box-shadow:0 12px 26px rgba(23,105,232,.10)!important}
+.quick-card h3,.form-card h3{color:#244a7b!important}
+.quick-icon{display:inline-grid;place-items:center;width:44px;height:44px;border-radius:12px;background:#edf5ff;color:var(--ffm-primary)}
+.fm-drawer,.admin-drawer{background:#fff!important;border-right:1px solid var(--ffm-line)!important}
+.fm-drawer-head,.drawer-heading{border-color:var(--ffm-line)!important}
+.fm-menu-item,.drawer-nav button,.drawer-logout{border-radius:10px!important;transition:background .18s ease,color .18s ease!important}
+.fm-menu-item:hover,.fm-menu-item.active,.drawer-nav button:hover{background:#edf5ff!important;color:var(--ffm-primary)!important}
+.fm-overlay,.drawer-backdrop{backdrop-filter:blur(2px)}
+.section-head{align-items:center}
+@media(max-width:640px){.section-head{align-items:stretch!important;flex-direction:column!important}.quick-card{min-width:0}}
