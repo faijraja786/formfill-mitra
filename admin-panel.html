@@ -536,6 +536,7 @@ textarea{
     <nav class="drawer-nav">
         <button onclick="goTo('admin-panel.html')"><span>⌂</span> Dashboard</button>
         <button onclick="goTo('form-management.html')"><span>▦</span> Form Management</button>
+        <button onclick="goTo('applicant-management.html')"><span>♙</span> Applicant Management</button>
         <button onclick="goTo('subscription-management.html')"><span>＄</span> Subscription & Payment</button>
         <button onclick="goTo('staff-management.html')"><span>♙</span> Staff Management</button>
         <button onclick="goTo('task-management.html')"><span>▤</span> Task Management</button>
@@ -2567,6 +2568,7 @@ loadSubscription();
 <script type="module">
 import { auth } from "./firebase-init.js";
 import { onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-auth.js";
+import { bootstrapProfile } from "./api-client.js";
 const ADMIN_EMAIL="faijraja28@gmail.com";
 window.__ffmAdminSignOut=async()=>{await signOut(auth);["isLoggedIn","loginType","ffm_admin_user"].forEach(key=>localStorage.removeItem(key));window.location.replace("personal-login.html");};
 onAuthStateChanged(auth,async(user)=>{
