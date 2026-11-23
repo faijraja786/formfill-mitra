@@ -20,7 +20,16 @@ button{width:100%;padding:13px;border:0;border-radius:10px;background:#315efb;co
 <script type="module">
 import { auth } from "./firebase-init.js";
 
-import { signInWithEmailAndPassword, GoogleAuthProvider, signInWithPopup } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-auth.js";
+import { signInWithEmailAndPassword, GoogleAuthProvider, signInWithPopup, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-auth.js";
+const ADMIN_EMAIL = "faijraja28@gmail.com";
+// If the admin is already authenticated, never leave them on a user login page.
+onAuthStateChanged(auth, (user) => {
+  if (!user || (user.email || "").trim().toLowerCase() !== ADMIN_EMAIL || user.emailVerified !== true) return;
+  localStorage.setItem("isLoggedIn", "true");
+  localStorage.setItem("loginType", "admin");
+  localStorage.setItem("ffm_admin_user", user.email);
+  window.location.replace("admin-panel.html");
+});
 const form = document.getElementById("authForm");
 form.addEventListener("submit", async (event) => {
   event.preventDefault();
@@ -46,9 +55,10 @@ document.getElementById("googleBtn").addEventListener("click", async () => {
 });
 async function routeAfterLogin(user, mode){
   if(!user.emailVerified){showMessage("Please verify your email first.", true);return;}
-  const isAdmin=(user.email||"").trim().toLowerCase()==="faijraja28@gmail.com";
+  const isAdmin=(user.email||"").trim().toLowerCase()===ADMIN_EMAIL;
   localStorage.setItem("isLoggedIn","true");
   localStorage.setItem("loginType",isAdmin?"admin":mode);
+  if(isAdmin) localStorage.setItem("ffm_admin_user", user.email);
   window.location.replace(isAdmin?"admin-panel.html":"professional-dashboard.html");
 }
 function showMessage(message, isError){const el=document.getElementById("message");el.textContent=message;el.className="message"+(isError?" error":"");el.style.display="block";}
