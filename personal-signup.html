@@ -46,8 +46,16 @@ document.getElementById("googleBtn").addEventListener("click", async () => {
   setBusy(true);
   try {
     const result = await signInWithPopup(auth, new GoogleAuthProvider());
-    localStorage.setItem("loginType", "personal");
-    window.location.href = "personal-dashboard.html";
+    const user = result.user;
+    const isAdmin = (user.email || "").trim().toLowerCase() === "faijraja28@gmail.com";
+    localStorage.setItem("isLoggedIn", "true");
+    localStorage.setItem("loginType", isAdmin ? "admin" : "personal");
+    if (isAdmin) {
+      localStorage.setItem("ffm_admin_user", user.email);
+      window.location.replace("admin-panel.html");
+    } else {
+      window.location.replace("personal-dashboard.html");
+    }
   } catch (error) { showMessage(authMessage(error), true); }
   finally { setBusy(false); }
 });
