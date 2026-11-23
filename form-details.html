@@ -682,14 +682,14 @@ async function continueToOCR(){
     try{
 
         /*
-        पुराने current documents हटाएँ
+        Remove previous current documents
         */
 
         await clearCurrentDocuments();
 
 
         /*
-        Actual File objects IndexedDB में save करें
+        Save actual File objects in IndexedDB
         */
 
         for(const key of documents){
@@ -708,7 +708,7 @@ async function continueToOCR(){
 
 
         /*
-        Metadata भी रखें
+        Store metadata as well
         */
 
         localStorage.setItem(
