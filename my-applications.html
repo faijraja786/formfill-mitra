@@ -549,17 +549,16 @@ function normalizeStatus(status){
         .toLowerCase()
         .trim();
 
-    const allowed = [
-        "draft",
-        "processing",
-        "review",
-        "completed",
-        "error"
-    ];
-
-    return allowed.includes(value)
-        ? value
-        : "draft";
+    const statusMap = {
+        submitted: "processing",
+        under_review: "review",
+        needs_correction: "error",
+        approved: "completed",
+        rejected: "error"
+    };
+    const normalized = statusMap[value] || value;
+    const allowed = ["draft", "processing", "review", "completed", "error"];
+    return allowed.includes(normalized) ? normalized : "draft";
 }
 
 
