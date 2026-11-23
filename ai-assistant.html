@@ -269,13 +269,13 @@ button{
         <h2>Custom AI Request</h2>
 
         <p style="margin-top:8px;color:#6b7280;">
-            Admin किसी specific समस्या या requirement को यहाँ लिख सकता है।
+            Administrators can describe a specific issue or requirement here.
         </p>
 
         <textarea
             id="customRequest"
             rows="5"
-            placeholder="Example: Form में नया document requirement जोड़ना है...">
+            placeholder="Example: Add a new document requirement to a form...">
         </textarea>
 
         <button class="primary" onclick="customSuggestion()">
@@ -290,7 +290,7 @@ button{
 
         <div id="suggestionsContainer">
             <div class="empty">
-                अभी कोई suggestion नहीं है।
+                There are no suggestions yet.
             </div>
         </div>
 
@@ -339,7 +339,7 @@ function analyzeForms(){
 
         addSuggestion(
             "No Forms Configured",
-            "Admin Panel में अभी कोई form configured नहीं है। पहले official forms और उनकी required documents configuration जोड़ें।",
+            "No forms are configured in the Admin Panel yet. Add official forms and their required document settings first.",
             "Form Analysis"
         );
 
@@ -358,7 +358,7 @@ function analyzeForms(){
 
         addSuggestion(
             "Form Configuration Review Required",
-            incomplete + " form configuration में information incomplete हो सकती है। Admin को form name, official link और required documents verify करने चाहिए।",
+            incomplete + " form configuration(s) may be incomplete. An administrator should verify the form name, official link and required documents.",
             "Form Analysis"
         );
 
@@ -366,7 +366,7 @@ function analyzeForms(){
 
         addSuggestion(
             "Form Configuration Check",
-            forms.length + " configured forms मिले। Admin को official links और document requirements की अंतिम verification करनी चाहिए।",
+            forms.length + " configured form(s) found. An administrator should verify the official links and document requirements.",
             "Form Analysis"
         );
     }
@@ -376,7 +376,7 @@ function workflowCheck(){
 
     addSuggestion(
         "Workflow Improvement",
-        "Application workflow में Form Selection → Documents → OCR → Applicant Verification → Review → Form Filling → Final Review sequence maintain करने का सुझाव है।",
+        "Recommended workflow: Form Selection → Documents → OCR → Applicant Verification → Review → Form Filling → Final Review.",
         "Workflow"
     );
 }
@@ -385,7 +385,7 @@ function systemCheck(){
 
     addSuggestion(
         "Production Security Upgrade",
-        "Production version में localStorage आधारित admin/staff authentication की जगह server-side authentication, authorization, database और audit logging लागू करना चाहिए।",
+        "For production, replace localStorage-based administrator and staff authentication with server-side authentication, authorization, a database and audit logging.",
         "System"
     );
 }
@@ -396,13 +396,13 @@ function customSuggestion(){
         document.getElementById("customRequest").value.trim();
 
     if(!request){
-        alert("पहले अपनी requirement लिखें।");
+        alert("Enter your requirement first.");
         return;
     }
 
     addSuggestion(
         "Admin Custom Request",
-        "Admin Request: " + request +
+        "Administrator request: " + request +
         "\n\nAI Suggestion: इस requirement को लागू करने से पहले affected pages, permissions, data flow और security impact की Admin द्वारा समीक्षा की जानी चाहिए।",
         "Custom"
     );
@@ -466,7 +466,7 @@ function renderSuggestions(){
     if(suggestions.length === 0){
 
         container.innerHTML =
-            '<div class="empty">अभी कोई suggestion नहीं है।</div>';
+            '<div class="empty">There are no suggestions yet.</div>';
 
         return;
     }
