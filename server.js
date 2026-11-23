@@ -84,11 +84,13 @@ async function writeAudit(actor, action, entityType, entityId, metadata = {}) {
   });
 }
 function validFields(fields) {
-  return Array.isArray(fields) && fields.length <= 150 && fields.every(field =>
+  const allowedTypes = new Set(["text", "email", "tel", "number", "date", "textarea", "select"]);
+  return Array.isArray(fields) && fields.length > 0 && fields.length <= 150 && fields.every(field =>
     field && typeof field === "object" &&
-    clean(field.label).length > 0 &&
-    clean(field.type).length > 0 &&
-    clean(field.label).length <= 160
+    clean(field.label).length > 0 && clean(field.label).length <= 160 &&
+    allowedTypes.has(clean(field.type)) &&
+    /^[a-zA-Z0-9_-]{1,100}$/.test(clean(field.key)) &&
+    (field.type !== "select" || (Array.isArray(field.options) && field.options.length > 0 && field.options.length <= 100))
   );
 }
 function applicationAccess(req, appData) {
@@ -111,8 +113,16 @@ app.post("/api/profile/bootstrap", requireUser, async (req, res) => {
   try {
     const ref = db.collection("profiles").doc(req.user.uid);
     const existing = await ref.get();
-    if (existing.exists) return res.json({ profile: { id: req.user.uid, ...existing.data() } });
     const email = clean(req.user.email).toLowerCase();
+    if (existing.exists) {
+      const oldProfile = existing.data();
+      if (email === ADMIN_EMAIL && oldProfile.role !== "admin") {
+        await ref.set({ role: "admin", status: "active", email, updatedAt: now() }, { merge: true });
+        const refreshed = await ref.get();
+        return res.json({ profile: { id: req.user.uid, ...refreshed.data() } });
+      }
+      return res.json({ profile: { id: req.user.uid, ...oldProfile } });
+    }
     const requested = clean(req.body && req.body.role).toLowerCase();
     const role = email === ADMIN_EMAIL ? "admin" : (["personal", "professional"].includes(requested) ? requested : "");
     if (!role) return fail(res, 400, "Choose Personal or Professional account type before continuing.");
@@ -244,11 +254,17 @@ app.post("/api/applications", requireUser, requireProfile, async (req, res) => {
       userId: req.profile.role === "personal" ? req.user.uid : null,
       professionalId,
       createdBy: req.user.uid,
+      clientId: req.profile.role === "professional" ? clean(body.clientId) || null : null,
       applicant: {
         fullName: clean(applicant.fullName).slice(0, 160),
         email: clean(applicant.email).slice(0, 200),
         phone: clean(applicant.phone).slice(0, 40),
-        address: clean(applicant.address).slice(0, 1000)
+        address: clean(applicant.address).slice(0, 1000),
+        dateOfBirth: clean(applicant.dateOfBirth).slice(0, 40),
+        gender: clean(applicant.gender).slice(0, 40),
+        category: clean(applicant.category).slice(0, 80),
+        guardianName: clean(applicant.guardianName).slice(0, 160),
+        education: clean(applicant.education).slice(0, 1000)
       },
       answers: body.answers && typeof body.answers === "object" ? body.answers : {},
       status: "submitted", assignedStaffId: null,
