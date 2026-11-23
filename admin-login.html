@@ -49,6 +49,7 @@ form.addEventListener("submit",async(event)=>{
   }
   localStorage.setItem("isLoggedIn","true");
   localStorage.setItem("loginType","admin");
+  localStorage.setItem("ffm_admin_user",credential.user.email);
   window.location.replace("admin-panel.html");
  }catch(error){
   const messages={"auth/invalid-credential":"Email or password is incorrect.","auth/too-many-requests":"Too many attempts. Please wait and try again.","auth/network-request-failed":"Network error. Check your internet connection.","auth/invalid-email":"Enter a valid email address.","auth/user-disabled":"This account has been disabled. Contact the project owner.","auth/operation-not-allowed":"Email and password sign-in is not enabled in Firebase Authentication. Enable the Email/Password provider.","auth/user-not-found":"No account found for this email. Create an account first.","auth/wrong-password":"Incorrect password. Use Forgot password to set or reset it."};
