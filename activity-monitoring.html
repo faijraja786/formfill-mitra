@@ -390,7 +390,7 @@ button{
 const workspaceRole = localStorage.getItem("loginType");
 const workspaceLoggedIn = localStorage.getItem("isLoggedIn") === "true";
 const workspaceAdmin = workspaceRole === "admin" &&
-  (localStorage.getItem("ffm_admin_user") || "").toLowerCase() === "faijra28@gmail.com";
+  (localStorage.getItem("ffm_admin_user") || "").toLowerCase() === "faijraja28@gmail.com";
 const workspaceProfessional = workspaceRole === "professional";
 if (!workspaceLoggedIn || (!workspaceAdmin && !workspaceProfessional)) {
   window.location.replace(workspaceRole === "professional" ? "professional-login.html" : "admin-login.html");
