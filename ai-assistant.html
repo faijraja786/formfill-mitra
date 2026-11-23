@@ -211,13 +211,13 @@ button{
         <h1>🤖 AI Assistant</h1>
         <p>
             AI Assistant application configuration, form setup,
-            workflow और system improvements के लिए suggestions तैयार करेगा।
+            workflow and system improvements.
         </p>
 
         <div class="warning">
             <strong>Admin Approval Required:</strong>
-            AI कोई बदलाव अपने आप लागू नहीं करेगा।
-            हर suggestion को पहले Admin approve करेगा।
+            AI will not apply any changes automatically.
+            An administrator must approve every suggestion first.
         </div>
     </section>
 
@@ -227,8 +227,8 @@ button{
             <span class="tag">Form Analysis</span>
             <h3>Form Configuration Check</h3>
             <p>
-                Existing forms की configuration check करके
-                missing information या document requirements की पहचान करें।
+                Existing forms Review the configuration of
+                missing information and identify missing information or document requirements.
             </p>
 
             <button class="primary" onclick="analyzeForms()">
@@ -240,8 +240,8 @@ button{
             <span class="tag">Workflow</span>
             <h3>Workflow Suggestions</h3>
             <p>
-                Form filling process में missing steps या
-                workflow improvements के लिए suggestions बनाएं।
+                Form filling process Identify missing steps or
+                workflow improvements and suggest improvements.
             </p>
 
             <button class="primary" onclick="workflowCheck()">
@@ -253,8 +253,8 @@ button{
             <span class="tag">System</span>
             <h3>System Improvement</h3>
             <p>
-                Application में future improvements के लिए
-                administrative suggestions तैयार करें।
+                Application Prepare suggestions for future improvements to
+                administrative suggestions .
             </p>
 
             <button class="primary" onclick="systemCheck()">
@@ -403,7 +403,7 @@ function customSuggestion(){
     addSuggestion(
         "Admin Custom Request",
         "Administrator request: " + request +
-        "\n\nAI Suggestion: इस requirement को लागू करने से पहले affected pages, permissions, data flow और security impact की Admin द्वारा समीक्षा की जानी चाहिए।",
+        "\n\nAI Suggestion: An administrator should review affected pages, permissions, data flow and security impact before implementing this requirement.",
         "Custom"
     );
 
@@ -426,8 +426,8 @@ function approveSuggestion(id){
 
     alert(
         "Suggestion approved.\n\n" +
-        "ध्यान दें: यह prototype केवल approval record करता है। " +
-        "Actual code/configuration change अभी automatically नहीं किया जाता।"
+        "Note: this prototype only records approval. " +
+        "Actual code/configuration change No changes are applied automatically."
     );
 }
 
