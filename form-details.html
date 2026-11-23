@@ -166,7 +166,7 @@ button{
         <div id="documentsContainer"></div>
 
         <div class="info">
-            📄 Your uploaded documents are stored in this browser for this application workflow. OCR may extract information from supported files. Review all extracted information before continuing.
+            📄 Your documents remain in this browser temporarily until you confirm the application review. Supported formats: PDF, JPG, PNG, WEBP. Maximum file size: 10 MB each.
         </div>
 
         <div class="buttons">
@@ -507,7 +507,7 @@ function loadForm(){
                     <input
                         type="file"
                         id="document_${escapeHTML(key)}"
-                        accept="image/*,.pdf"
+                        accept=".jpg,.jpeg,.png,.webp,.pdf,image/jpeg,image/png,image/webp,application/pdf"
                         onchange="showFileInfo('${escapeHTML(key)}')">
 
                     <div
