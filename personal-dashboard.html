@@ -452,7 +452,15 @@ body{background:#f3f7ff;color:#172b4d}
 
 </style>
 <link rel="stylesheet" href="professional-ui.css?v=20261123">
-</head>
+<style id="ffm-header-layout">
+.ffm-app-header{display:grid!important;grid-template-columns:48px 1fr auto!important;align-items:center!important;gap:14px!important;padding:12px clamp(16px,4vw,42px)!important;min-height:76px!important}
+.ffm-app-header>.menu-trigger{grid-column:1;grid-row:1;justify-self:start!important}
+.ffm-app-header>.brand{grid-column:3;grid-row:1;justify-self:end!important;display:flex;align-items:center;gap:10px}
+.ffm-app-header>.header-right{grid-column:2;grid-row:1;justify-self:center!important}
+.fm-drawer-bottom{margin-top:auto;border-top:1px solid #e3ebf6;padding-top:12px}
+.fm-logout-item{color:#b42318!important;background:#fff2f1!important}
+@media(max-width:640px){.ffm-app-header{grid-template-columns:44px 1fr!important;min-height:66px!important}.ffm-app-header>.brand{grid-column:2;justify-self:end!important}.ffm-app-header>.header-right{display:none!important}.ffm-app-header .brand h2{font-size:16px}.ffm-app-header .brand small{font-size:11px}}
+</style></head>
 
 <body>
 
@@ -465,34 +473,21 @@ body{background:#f3f7ff;color:#172b4d}
 <button class="fm-menu-item" type="button" onclick="goDocuments();closeMenu()"><span>📁</span>Document Vault</button>
 <button class="fm-menu-item" type="button" onclick="goProfile();closeMenu()"><span>👤</span>My Profile</button>
 <button class="fm-menu-item" type="button" onclick="document.getElementById('subscriptionSection').scrollIntoView({behavior:'smooth',block:'center'});closeMenu()"><span>⭐</span>Subscription</button>
- <div class="fm-menu-note">Your workspace, organized in one place.<br>FormFill Mitra</div>
+ <div class="fm-drawer-bottom"><button class="fm-menu-item fm-logout-item" type="button" onclick="logout()"><span>↪</span>Logout</button></div><div class="fm-menu-note">Your workspace, organized in one place.<br>FormFill Mitra</div>
 </aside>
 
 
-<header class="header">
-
-    <div class="brand">
-        <div class="logo">FM</div>
-        <div>
-            <h2>FormFill Mitra</h2>
-            <small>Personal Dashboard</small>
-        </div>
-    </div>
-
-    <div class="header-right">
-        <button class="menu-trigger" type="button" aria-label="Open navigation menu" aria-expanded="false" onclick="toggleMenu(true)">☰</button>
-        <div class="profile-name" id="profileName">Personal User</div>
-        <button class="logout-btn" onclick="logout()">Logout</button>
-    </div>
-
-</header>
+<header class="header ffm-app-header">
+<button class="menu-trigger" type="button" aria-label="Open navigation menu" aria-expanded="false" onclick="toggleMenu(true)">☰</button>
+<div class="brand"><div class="logo">FM</div><div><h2>FormFill Mitra</h2><small>Personal Workspace</small></div></div>
+<div class="header-right"><div class="profile-name" id="profileName">Personal User</div></div></header>
 
 
 <main class="container">
 
     <section class="welcome">
         <h1>Welcome to FormFill Mitra 👋</h1>
-        <p>Forms भरना बनेगा Simple, Organized और Fast.</p>
+        <p>Manage your applications and documents in one organized workspace.</p>
     </section>
 
 
@@ -526,13 +521,13 @@ body{background:#f3f7ff;color:#172b4d}
         <div class="quick-card" onclick="goApplications()">
             <div class="quick-icon">📋</div>
             <h3>My Applications</h3>
-            <p>अपने applications देखें</p>
+            <p>View and track your applications.</p>
         </div>
 
         <div class="quick-card" onclick="goDocuments()">
             <div class="quick-icon">📁</div>
             <h3>Document Vault</h3>
-            <p>अपने documents manage करें</p>
+            <p>Organize and manage your documents.</p>
         </div>
 
         <div class="quick-card" onclick="goForms()">
@@ -1068,13 +1063,14 @@ function openPayment(){
 
 function logout(){
 
-    if(!confirm("Are you sure you want to logout?")){
+    if(!confirm("Are you sure you want to log out?")){
         return;
     }
 
 
     localStorage.removeItem("isLoggedIn");
     localStorage.removeItem("loginType");
+    localStorage.removeItem("ffm_admin_user");
 
     window.location.href =
         "personal-login.html";
