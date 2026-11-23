@@ -4,6 +4,7 @@ const helmet = require("helmet");
 const multer = require("multer");
 const rateLimit = require("express-rate-limit");
 const admin = require("firebase-admin");
+const crypto = require("crypto");
 
 const app = express();
 const PORT = process.env.PORT || 10000;
@@ -30,12 +31,17 @@ app.use(rateLimit({ windowMs: 60 * 1000, limit: 100, standardHeaders: "draft-7",
 
 let firebaseReady = false;
 let db = null;
+let bucket = null;
 try {
   const raw = process.env.FIREBASE_SERVICE_ACCOUNT_JSON;
   if (raw) {
     const serviceAccount = JSON.parse(raw);
-    admin.initializeApp({ credential: admin.credential.cert(serviceAccount) });
+    admin.initializeApp({
+      credential: admin.credential.cert(serviceAccount),
+      storageBucket: process.env.FIREBASE_STORAGE_BUCKET || "form-fill-mitra.firebasestorage.app"
+    });
     db = admin.firestore();
+    bucket = admin.storage().bucket();
     firebaseReady = true;
   }
 } catch (error) {
@@ -53,6 +59,7 @@ async function requireUser(req, res, next) {
   if (!match) return fail(res, 401, "Authentication required.");
   try {
     req.user = await admin.auth().verifyIdToken(match[1]);
+    if (req.user.email_verified !== true) return fail(res, 403, "Verify your email address before using this service.");
     const profileSnap = await db.collection("profiles").doc(req.user.uid).get();
     req.profile = profileSnap.exists ? profileSnap.data() : null;
     return next();
@@ -157,11 +164,31 @@ async function seedBiharRtpsForms() {
 }
 
 app.get("/", (_req, res) => res.json({ name: "Form Fill Mitra API", status: "ok", health: "/health" }));
-app.get("/health", (_req, res) => res.status(200).json({
-  status: "ok", service: "form-fill-mitra-api",
-  firebaseAdminConfigured: firebaseReady,
-  database: firebaseReady ? "connected" : "not-configured"
-}));
+app.get("/health", async (_req, res) => {
+  let database = "not-configured";
+  let storage = "not-configured";
+  if (firebaseReady && db) {
+    try {
+      await db.collection("_healthChecks").doc("connectivity").get();
+      database = "connected";
+    } catch (error) {
+      database = "unavailable";
+    }
+  }
+  if (firebaseReady && bucket) {
+    try {
+      const [exists] = await bucket.exists();
+      storage = exists ? "connected" : "bucket-missing";
+    } catch (error) {
+      storage = "unavailable";
+    }
+  }
+  return res.status(200).json({
+    status: "ok", service: "form-fill-mitra-api",
+    firebaseAdminConfigured: firebaseReady,
+    database, storage
+  });
+});
 
 // Account role is assigned once on first authenticated use. The administrator identity is fixed server-side.
 app.post("/api/profile/bootstrap", requireUser, async (req, res) => {
@@ -491,6 +518,146 @@ app.get("/api/audit-logs", requireUser, requireProfile, requireRole("admin"), as
   } catch (error) {
     console.error("Audit log read failed:", error.message);
     return fail(res, 500, "Could not load audit logs.");
+  }
+});
+
+// Private application document storage. Files are never made public; every read is authorized here.
+const documentUpload = multer({
+  storage: multer.memoryStorage(),
+  limits: { fileSize: 10 * 1024 * 1024, files: 1 },
+  fileFilter(_req, file, callback) {
+    const allowed = new Set(["application/pdf", "image/jpeg", "image/png", "image/webp"]);
+    if (!allowed.has(String(file.mimetype || "").toLowerCase())) {
+      return callback(new Error("Only PDF, JPEG, PNG, and WEBP documents are supported."));
+    }
+    callback(null, true);
+  }
+});
+
+function detectDocumentMime(buffer) {
+  if (!buffer || buffer.length < 12) return "";
+  if (buffer.subarray(0, 5).toString() === "%PDF-") return "application/pdf";
+  if (buffer[0] === 0xff && buffer[1] === 0xd8 && buffer[2] === 0xff) return "image/jpeg";
+  if (buffer.subarray(0, 8).equals(Buffer.from([137, 80, 78, 71, 13, 10, 26, 10]))) return "image/png";
+  if (buffer.subarray(0, 4).toString() === "RIFF" && buffer.subarray(8, 12).toString() === "WEBP") return "image/webp";
+  return "";
+}
+function safeFileName(value) {
+  const base = clean(value).replace(/[\\/\\?%*:|"<>\\x00-\\x1f]/g, "_").slice(0, 120);
+  return base || "document";
+}
+async function getAccessibleApplication(req, applicationId) {
+  const snap = await db.collection("applications").doc(applicationId).get();
+  if (!snap.exists) return null;
+  const data = safeDoc(snap);
+  return applicationAccess(req, data) ? { ref: snap.ref, data } : false;
+}
+function publicDocument(doc) {
+  return {
+    id: doc.id, documentKey: doc.documentKey, name: doc.name,
+    mimeType: doc.mimeType, size: doc.size, createdAt: doc.createdAt
+  };
+}
+
+app.get("/api/applications/:id/documents", requireUser, requireProfile, async (req, res) => {
+  try {
+    const application = await getAccessibleApplication(req, req.params.id);
+    if (application === false) return fail(res, 403, "You do not have access to these documents.");
+    if (!application) return fail(res, 404, "Application not found.");
+    const snap = await application.ref.collection("documents").orderBy("createdAt", "desc").limit(100).get();
+    return res.json({ documents: snap.docs.map(doc => publicDocument({ id: doc.id, ...doc.data() })) });
+  } catch (error) {
+    console.error("Application documents list failed:", error.message);
+    return fail(res, 500, "Could not load application documents.");
+  }
+});
+
+app.post("/api/applications/:id/documents", requireUser, requireProfile, documentUpload.single("document"), async (req, res) => {
+  if (!req.file) return fail(res, 400, "Choose one document to upload.");
+  if (!bucket) return fail(res, 503, "Private document storage is not configured yet.");
+  const mimeType = detectDocumentMime(req.file.buffer);
+  if (!mimeType || mimeType !== req.file.mimetype) return fail(res, 415, "The file content does not match its declared type.");
+  const documentKey = clean(req.body && req.body.documentKey);
+  if (!/^[a-zA-Z0-9_-]{1,80}$/.test(documentKey)) return fail(res, 400, "Invalid document type.");
+  try {
+    const application = await getAccessibleApplication(req, req.params.id);
+    if (application === false) return fail(res, 403, "You do not have access to this application.");
+    if (!application) return fail(res, 404, "Application not found.");
+    if (!["personal", "professional", "admin"].includes(req.profile.role)) return fail(res, 403, "This account cannot upload applicant documents.");
+    const id = crypto.randomUUID();
+    const name = safeFileName(req.file.originalname);
+    const extension = mimeType === "application/pdf" ? "pdf" : mimeType.split("/")[1];
+    const storagePath = "private-applications/" + req.params.id + "/" + id + "." + extension;
+    const file = bucket.file(storagePath);
+    await file.save(req.file.buffer, {
+      resumable: false,
+      validation: "crc32c",
+      metadata: {
+        contentType: mimeType,
+        cacheControl: "private, no-store, max-age=0",
+        metadata: { applicationId: req.params.id, uploadedBy: req.user.uid, documentKey }
+      }
+    });
+    const metadata = {
+      documentKey, name, mimeType, size: req.file.size, storagePath,
+      uploadedBy: req.user.uid, createdAt: now()
+    };
+    const docRef = await application.ref.collection("documents").add(metadata);
+    await writeAudit(req.profile, "document.uploaded", "application_document", docRef.id, { applicationId: req.params.id, documentKey });
+    return res.status(201).json({ document: publicDocument({ id: docRef.id, ...metadata }) });
+  } catch (error) {
+    console.error("Document upload failed:", error.message);
+    return fail(res, 500, "Document could not be stored securely. Please try again.");
+  }
+});
+
+app.get("/api/applications/:id/documents/:documentId/download", requireUser, requireProfile, async (req, res) => {
+  try {
+    const application = await getAccessibleApplication(req, req.params.id);
+    if (application === false) return fail(res, 403, "You do not have access to this document.");
+    if (!application) return fail(res, 404, "Application not found.");
+    const docSnap = await application.ref.collection("documents").doc(req.params.documentId).get();
+    if (!docSnap.exists) return fail(res, 404, "Document not found.");
+    const doc = docSnap.data();
+    const file = bucket.file(doc.storagePath);
+    const [exists] = await file.exists();
+    if (!exists) return fail(res, 404, "Stored document is unavailable.");
+    res.set({
+      "Content-Type": doc.mimeType || "application/octet-stream",
+      "Content-Disposition": "attachment; filename*=UTF-8''" + encodeURIComponent(safeFileName(doc.name)),
+      "Cache-Control": "private, no-store, max-age=0",
+      "X-Content-Type-Options": "nosniff"
+    });
+    return file.createReadStream().on("error", error => {
+      console.error("Document download failed:", error.message);
+      if (!res.headersSent) res.status(500).end("Document download failed.");
+      else res.destroy(error);
+    }).pipe(res);
+  } catch (error) {
+    console.error("Document download authorization failed:", error.message);
+    return fail(res, 500, "Could not download document.");
+  }
+});
+
+app.delete("/api/applications/:id/documents/:documentId", requireUser, requireProfile, async (req, res) => {
+  try {
+    const application = await getAccessibleApplication(req, req.params.id);
+    if (application === false) return fail(res, 403, "You do not have access to this document.");
+    if (!application) return fail(res, 404, "Application not found.");
+    const isOwner = ["personal", "professional"].includes(req.profile.role);
+    const canDelete = req.profile.role === "admin" || (isOwner && !["approved", "completed"].includes(application.data.status));
+    if (!canDelete) return fail(res, 403, "You cannot delete documents from this application.");
+    const ref = application.ref.collection("documents").doc(req.params.documentId);
+    const snap = await ref.get();
+    if (!snap.exists) return fail(res, 404, "Document not found.");
+    const doc = snap.data();
+    if (bucket && doc.storagePath) await bucket.file(doc.storagePath).delete({ ignoreNotFound: true });
+    await ref.delete();
+    await writeAudit(req.profile, "document.deleted", "application_document", req.params.documentId, { applicationId: req.params.id });
+    return res.json({ ok: true });
+  } catch (error) {
+    console.error("Document deletion failed:", error.message);
+    return fail(res, 500, "Could not delete document.");
   }
 });
 
