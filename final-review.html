@@ -1085,8 +1085,8 @@ function loadPortal(){
 
     const link =
         selectedForm &&
-        selectedForm.link
-        ? selectedForm.link
+        (selectedForm.officialLink || selectedForm.link)
+        ? (selectedForm.officialLink || selectedForm.link)
         : "";
 
 
@@ -1149,18 +1149,20 @@ function loadPortal(){
     }
 
 
+    const isBiharIncome = selectedForm && selectedForm.id === "bihar-income-certificate";
+    const guidance = isBiharIncome
+        ? "On the official portal, choose Apply Online → RTPS Services → General Administration Department → Issuance of Income Certificate, then select the correct Block, Sub-Division or District level."
+        : "This link opens the official service entry point. Follow the selected service's instructions and verify every field before submission.";
+
     box.innerHTML = `
-
-        <a
-            href="${escapeHTML(validURL)}"
-            target="_blank"
-            rel="noopener noreferrer"
-        >
-
-            Open Official Portal ↗
-
+        <div class="warning">
+            <strong>Important:</strong> This opens the official portal entry page, not a pre-filled government form. FormFill Mitra does not claim to have transferred your details into the government website.
+            <p>${escapeHTML(guidance)}</p>
+            <p>Enter or verify the details on the official portal yourself. Complete CAPTCHA and OTP there, and submit only after checking the final application.</p>
+        </div>
+        <a href="${escapeHTML(validURL)}" target="_blank" rel="noopener noreferrer">
+            Open Official ${escapeHTML(selectedForm.name || "Service")} Portal ↗
         </a>
-
     `;
 }
 
