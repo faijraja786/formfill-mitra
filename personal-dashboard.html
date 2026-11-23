@@ -1142,7 +1142,8 @@ onAuthStateChanged(auth, async user => {
   if (!user || !user.emailVerified || (user.email || "").toLowerCase() === "faijraja28@gmail.com") return;
   try {
     await bootstrapProfile("personal", user.displayName || "");
-    const data = await apiRequest("/api/applications");
+    const [data, formData] = await Promise.all([apiRequest("/api/applications"), apiRequest("/api/forms")]);
+    allForms = (formData.forms || []).filter(form => form.status === "published");
     localStorage.setItem("ffm_applications", JSON.stringify(data.applications || []));
     if (typeof updateStats === "function") updateStats();
     if (typeof renderApplications === "function") renderApplications();
