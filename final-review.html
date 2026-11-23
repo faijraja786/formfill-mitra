@@ -1189,7 +1189,7 @@ function showStatus(message,type){
    Final confirmation
 --------------------------------------------------------- */
 
-function completeReview(){
+async function completeReview(){
 
     const checkbox =
         document.getElementById(
@@ -1208,8 +1208,55 @@ function completeReview(){
     }
 
 
+    try {
+        const [{ auth }, { apiRequest, bootstrapProfile }] = await Promise.all([
+            import("./firebase-init.js"),
+            import("./api-client.js")
+        ]);
+        if (!auth.currentUser) {
+            await new Promise((resolve, reject) => {
+                const { onAuthStateChanged } = window.__ffmAuthModule || {};
+                if (!onAuthStateChanged) { reject(new Error("Please sign in again.")); return; }
+                const stop = onAuthStateChanged(auth, user => { stop(); user ? resolve(user) : reject(new Error("Please sign in again.")); });
+            });
+        }
+        const role = localStorage.getItem("loginType") === "professional" ? "professional" : "personal";
+        await bootstrapProfile(role, applicant.fullName || "");
+        const formId = selectedForm && selectedForm.id;
+        if (!formId) throw new Error("This form is not linked to the published catalogue. Please reopen it from Browse Forms.");
+        const result = await apiRequest("/api/applications", {
+            method: "POST",
+            body: JSON.stringify({
+                formId,
+                clientId: localStorage.getItem("currentClientId") || null,
+                applicant: {
+                    fullName: applicant.fullName || applicant.name || "",
+                    email: applicant.email || "",
+                    phone: applicant.phone || applicant.mobile || applicant.mobileNumber || "",
+                    address: applicant.address || "",
+                    dateOfBirth: applicant.dateOfBirth || applicant.dob || "",
+                    gender: applicant.gender || "",
+                    category: applicant.category || "",
+                    guardianName: applicant.guardianName || applicant.fatherName || "",
+                    education: applicant.education || applicant.qualification || ""
+                },
+                answers: getJSON("formData", {})
+            })
+        });
+        localStorage.setItem("currentApplicationId", result.applicationId);
+        localStorage.setItem("applicationReviewStatus", "submitted");
+        localStorage.setItem("finalReviewCompleted", "true");
+        showStatus("Application submitted successfully. Reference: " + result.applicationId, "success");
+        const portal = selectedForm.officialLink || selectedForm.link;
+        if (portal) setTimeout(() => window.open(portal, "_blank", "noopener,noreferrer"), 900);
+    } catch (error) {
+        console.error("Application submission failed:", error);
+        showStatus(error.message || "Application could not be submitted. Please try again.", "error");
+    }
+    return;
+
     /*
-       Save final review state
+       Legacy local-only submission code below is intentionally unreachable.
     */
 
     localStorage.setItem(
