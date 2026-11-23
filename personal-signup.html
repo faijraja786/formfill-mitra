@@ -5,15 +5,15 @@
 .card{width:100%;max-width:440px;background:#fff;border:1px solid #e5e7eb;border-radius:20px;padding:32px;box-shadow:0 16px 45px rgba(20,40,80,.08)}
 .logo{text-align:center;font-size:25px;font-weight:800;margin-bottom:8px}.logo span{color:#315efb}
 h1{text-align:center;font-size:23px;margin:22px 0 8px}.sub{text-align:center;color:#667085;margin:0 0 24px}
-label{display:block;font-weight:600;font-size:14px;margin:16px 0 7px}input{width:100%;padding:13px;border:1px solid #d0d5dd;border-radius:10px;font-size:15px}input:focus{outline:2px solid #dbe5ff;border-color:#315efb}
+label{display:block;font-weight:600;font-size:14px;margin:16px 0 7px}input{width:100%;padding:13px;border:1px solid #d0d5dd;border-radius:10px;font-size:15px}input:focus{outline:2px solid #dbe5ff;border-color:#315efb}\n.password-wrap{position:relative}.password-wrap input{padding-right:54px}.toggle-password{position:absolute;right:7px;top:50%;transform:translateY(-50%);width:40px;height:38px;margin:0;padding:0;background:#eef3ff;color:#315efb;border:0;border-radius:8px;font-size:19px;display:grid;place-items:center}.toggle-password:hover{background:#e2eaff}
 button{width:100%;padding:13px;border:0;border-radius:10px;background:#315efb;color:white;font-size:15px;font-weight:700;cursor:pointer;margin-top:18px}button:disabled{opacity:.6;cursor:wait}.google{background:#fff;color:#172033;border:1px solid #d0d5dd;margin-top:12px}
 .divider{text-align:center;color:#98a2b3;font-size:13px;margin:16px 0}.links{text-align:center;margin-top:20px;color:#667085;font-size:14px}.links a,.forgot{color:#315efb;text-decoration:none}.forgot{display:block;text-align:right;margin-top:10px;font-size:13px}
 .message{display:none;margin-top:16px;padding:12px;border-radius:9px;background:#eff6ff;color:#1d4ed8;font-size:13px;line-height:1.5}.message.error{background:#fff1f2;color:#be123c}.back{display:block;text-align:center;margin-top:20px;color:#667085;text-decoration:none;font-size:14px}
 </style></head><body><main class="card"><div class="logo">FormFill <span>Mitra</span></div><h1>Create your account</h1><p class="sub">Personal Account</p>
 <form id="authForm"><label for="name">Full name</label><input id="name" type="text" autocomplete="name" placeholder="Enter your full name" required minlength="2">
 <label for="email">Email address</label><input id="email" type="email" autocomplete="email" placeholder="Enter your email" required>
-<label for="password">Password</label><input id="password" type="password" autocomplete="new-password" placeholder="Create a password (at least 8 characters)" required minlength="8">
-<label for="confirmPassword">Confirm password</label><input id="confirmPassword" type="password" autocomplete="new-password" placeholder="Confirm your password" required minlength="8"><button id="submitBtn" type="submit">Create Account</button></form>
+<label for="password">Password</label><div class="password-wrap"><input id="password" type="password" autocomplete="new-password" placeholder="Create a password (at least 8 characters)" required minlength="8"><button class="toggle-password" type="button" data-toggle="password" aria-label="Show password" title="Show password">👁</button></div>
+<label for="confirmPassword">Confirm password</label><div class="password-wrap"><input id="confirmPassword" type="password" autocomplete="new-password" placeholder="Confirm your password" required minlength="8"><button class="toggle-password" type="button" data-toggle="confirmPassword" aria-label="Show password" title="Show password">👁</button></div><button id="submitBtn" type="submit">Create Account</button></form>
 <div class="divider">OR</div><button class="google" id="googleBtn" type="button">Continue with Google</button>
 <div id="message" class="message" role="status" aria-live="polite"></div>
 <div class="links">Already have an account? <a href="personal-login.html">Sign in</a></div>
@@ -22,7 +22,7 @@ button{width:100%;padding:13px;border:0;border-radius:10px;background:#315efb;co
 import { auth } from "./firebase-init.js";
 
 import { createUserWithEmailAndPassword, updateProfile, sendEmailVerification, GoogleAuthProvider, signInWithPopup } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-auth.js";
-const form = document.getElementById("authForm");
+\ndocument.querySelectorAll("[data-toggle]").forEach((toggle)=>{toggle.addEventListener("click",()=>{const input=document.getElementById(toggle.dataset.toggle);const reveal=input.type==="password";input.type=reveal?"text":"password";toggle.textContent=reveal?"🙈":"👁";toggle.setAttribute("aria-label",reveal?"Hide password":"Show password");toggle.title=reveal?"Hide password":"Show password";});});\nconst form = document.getElementById("authForm");
 form.addEventListener("submit", async (event) => {
   event.preventDefault();
   const name = document.getElementById("name").value.trim();
