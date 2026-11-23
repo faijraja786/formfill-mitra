@@ -166,7 +166,7 @@ button{
         <div id="documentsContainer"></div>
 
         <div class="info">
-            📄 Your documents remain in this browser temporarily until you confirm the application review. Supported formats: PDF, JPG, PNG, WEBP. Maximum file size: 10 MB each.
+            Upload only documents you are authorized to use. Supported formats: PDF, JPG, PNG and WEBP. Maximum file size: 10 MB each. Review every file before continuing. Confirm the official portal's current requirements before final submission.
         </div>
 
         <div class="buttons">
@@ -208,7 +208,9 @@ const documentNames = {
 
     address:"Address Proof",
 
-    caste:"Caste Certificate"
+    caste:"Caste Certificate",
+    income_proof:"Income Supporting Document",
+    other:"Additional Supporting Document"
 
 };
 
@@ -464,28 +466,17 @@ function loadForm(){
         );
 
 
-    const documents =
-        Array.isArray(selectedForm.documents)
-        ?
-        selectedForm.documents
-        :[];
+    const configuredDocuments =
+        Array.isArray(selectedForm.documents) ? selectedForm.documents : [];
+    const documents = configuredDocuments.length
+        ? configuredDocuments
+        : ["identity", "photograph", "address", "income_proof", "other"];
 
-
-    if(documents.length === 0){
-
-        container.innerHTML = `
-            <div class="info">
-                No documents are configured for this form
-                configured .
-            </div>
-        `;
-
-        return;
-
+    if (!configuredDocuments.length) {
+        container.innerHTML = '<div class="info">No mandatory document list has been configured for this form. Add the documents available for this application. Check the official service for the final required-document list.</div>';
     }
 
-
-    container.innerHTML =
+    container.innerHTML +=
         documents.map(function(key){
 
             const name =
@@ -501,7 +492,7 @@ function loadForm(){
                     </h3>
 
                     <p>
-                        ${escapeHTML(key)}
+                        ${escapeHTML(key)}${configuredDocuments.length ? " · Required by this form" : " · Optional upload"}
                     </p>
 
                     <input
@@ -589,30 +580,11 @@ async function continueToOCR(){
     }
 
 
-    const documents =
-        Array.isArray(selectedForm.documents)
-        ?
-        selectedForm.documents
-        :[];
-
-
-    if(documents.length === 0){
-
-        try{
-            await clearCurrentDocuments();
-        }catch(error){
-            console.warn("Previous document cleanup failed:",error);
-        }
-
-        localStorage.removeItem("uploadedDocuments");
-        localStorage.removeItem("ocrResults");
-
-        localStorage.setItem("documentsUploaded","true");
-        localStorage.setItem("ocrReady","true");
-        location.href = "ocr-processing.html";
-        return;
-    }
-
+    const configuredDocuments =
+        Array.isArray(selectedForm.documents) ? selectedForm.documents : [];
+    const documents = configuredDocuments.length
+        ? configuredDocuments
+        : ["identity", "photograph", "address", "income_proof", "other"];
 
     const selectedFiles = {};
 
@@ -625,19 +597,12 @@ async function continueToOCR(){
             );
 
 
-        if(
-            !input ||
-            !input.files ||
-            !input.files.length
-        ){
-
-            showError(
-                "Required document missing: " +
-                (documentNames[key] || key)
-            );
-
-            return;
-
+        if (!input || !input.files || !input.files.length) {
+            if (configuredDocuments.length) {
+                showError("Required document missing: " + (documentNames[key] || key));
+                return;
+            }
+            continue;
         }
 
 
@@ -675,6 +640,11 @@ async function continueToOCR(){
     }
 
 
+    if (!Object.keys(selectedFiles).length) {
+        showError("Upload at least one document or photograph before continuing.");
+        return;
+    }
+
     try{
 
         /*
@@ -688,18 +658,9 @@ async function continueToOCR(){
         Save actual File objects in IndexedDB
         */
 
-        for(const key of documents){
-
-            const input =
-                document.getElementById(
-                    "document_" + key
-                );
-
-            await saveDocument(
-                key,
-                input.files[0]
-            );
-
+        for(const key of Object.keys(selectedFiles)) {
+            const input = document.getElementById("document_" + key);
+            await saveDocument(key, input.files[0]);
         }
 
 
