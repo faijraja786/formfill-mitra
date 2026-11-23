@@ -302,6 +302,14 @@ app.post("/api/applications", requireUser, requireProfile, async (req, res) => {
   const body = req.body || {};
   const formId = clean(body.formId);
   const applicant = body.applicant && typeof body.applicant === "object" ? body.applicant : {};
+  const answers = body.answers && typeof body.answers === "object" && !Array.isArray(body.answers) ? body.answers : {};
+  const answerValue = (...keys) => {
+    for (const key of keys) {
+      const value = answers[key];
+      if (value !== undefined && value !== null && String(value).trim() !== "") return value;
+    }
+    return "";
+  };
   if (!formId) return fail(res, 400, "Select a published form.");
   try {
     const formSnap = await db.collection("forms").doc(formId).get();
@@ -316,17 +324,17 @@ app.post("/api/applications", requireUser, requireProfile, async (req, res) => {
       createdBy: req.user.uid,
       clientId: req.profile.role === "professional" ? clean(body.clientId) || null : null,
       applicant: {
-        fullName: clean(applicant.fullName).slice(0, 160),
-        email: clean(applicant.email).slice(0, 200),
-        phone: clean(applicant.phone).slice(0, 40),
-        address: clean(applicant.address).slice(0, 1000),
-        dateOfBirth: clean(applicant.dateOfBirth).slice(0, 40),
-        gender: clean(applicant.gender).slice(0, 40),
-        category: clean(applicant.category).slice(0, 80),
-        guardianName: clean(applicant.guardianName).slice(0, 160),
-        education: clean(applicant.education).slice(0, 1000)
+        fullName: clean(applicant.fullName || applicant.name || answerValue("full_name", "fullname", "name", "applicant_name", "candidate_name")).slice(0, 160),
+        email: clean(applicant.email || answerValue("email", "email_address")).slice(0, 200),
+        phone: clean(applicant.phone || applicant.mobile || applicant.mobileNumber || answerValue("mobile", "mobile_number", "phone", "phone_number", "contact_number")).slice(0, 40),
+        address: clean(applicant.address || answerValue("full_address", "address", "permanent_address", "present_address")).slice(0, 1000),
+        dateOfBirth: clean(applicant.dateOfBirth || applicant.dob || answerValue("dob", "date_of_birth", "birth_date")).slice(0, 40),
+        gender: clean(applicant.gender || answerValue("gender", "sex")).slice(0, 40),
+        category: clean(applicant.category || answerValue("category", "caste_category", "reservation_category")).slice(0, 80),
+        guardianName: clean(applicant.guardianName || applicant.fatherName || answerValue("father_name", "guardian_name", "father")).slice(0, 160),
+        education: clean(applicant.education || applicant.qualification || answerValue("education", "qualification", "education_details")).slice(0, 1000)
       },
-      answers: body.answers && typeof body.answers === "object" ? body.answers : {},
+      answers,
       status: "submitted", assignedStaffId: null,
       createdAt: now(), updatedAt: now()
     };
