@@ -1,0 +1,25 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>My Profile - FormFill Mitra</title>
+<link rel="stylesheet" href="professional-ui.css?v=20261124">
+<style>.page{max-width:850px;margin:28px auto;padding:0 18px}.profile-card{background:#fff;border:1px solid #dce7f7;border-radius:16px;padding:24px}.profile-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px;margin-top:20px}.field{padding:14px;background:#f5f9ff;border:1px solid #e1ebf8;border-radius:11px}.field small{display:block;color:#64748b;margin-bottom:5px}.field strong{overflow-wrap:anywhere}@media(max-width:600px){.profile-grid{grid-template-columns:1fr}}</style>
+</head>
+<body>
+<header style="padding:16px 22px"><strong>FormFill <span style="color:#1769e8">Mitra</span></strong><span>Personal · My Profile</span></header>
+<main class="page">
+ <div style="display:flex;justify-content:space-between;align-items:center;gap:12px;margin-bottom:20px"><div><h1>My Profile</h1><p class="muted">Your applicant information saved with FormFill Mitra.</p></div><button class="btn" type="button" onclick="history.length>1?history.back():location.href='personal-dashboard.html'">← Back</button></div>
+ <section class="profile-card"><div id="profileGrid" class="profile-grid"></div><p id="empty" class="muted" hidden style="margin-top:18px">Your applicant profile has not been created yet. Start an application to add your details.</p></section>
+</main>
+<script>
+(function(){if(localStorage.getItem("isLoggedIn")!=="true"||localStorage.getItem("loginType")!=="personal"){location.replace("personal-login.html");}})();
+function read(key){try{return JSON.parse(localStorage.getItem(key)||"{}")||{};}catch(e){return {};}}
+function esc(v){return String(v??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));}
+const a=read("currentApplicant"),name=a.fullName||a.name||localStorage.getItem("personalName")||localStorage.getItem("userName")||"";
+const fields=[["Full name",name],["Date of birth",a.dob],["Mobile number",a.mobile],["Email",a.email],["Gender",a.gender],["Address",a.address||a.fullAddress],["State",a.state],["District",a.district],["PIN code",a.pin||a.pincode]];
+const populated=fields.filter(x=>String(x[1]||"").trim());
+document.getElementById("profileGrid").innerHTML=populated.map(x=>'<div class="field"><small>'+esc(x[0])+'</small><strong>'+esc(x[1])+'</strong></div>').join("");
+document.getElementById("empty").hidden=populated.length>0;
+</script>
+</body></html>
