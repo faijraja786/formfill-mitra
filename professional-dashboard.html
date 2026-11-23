@@ -658,7 +658,7 @@ body{background:#f3f7ff;color:#172b4d}
         <h3>Tasks</h3>
 
         <p>
-            Assigned tasks manage करें
+            Manage assigned tasks
         </p>
 
     </div>
@@ -671,7 +671,7 @@ body{background:#f3f7ff;color:#172b4d}
         <h3>Staff</h3>
 
         <p>
-            Staff और operators
+            Staff and operators
         </p>
 
     </div>
@@ -684,7 +684,7 @@ body{background:#f3f7ff;color:#172b4d}
         <h3>Activity</h3>
 
         <p>
-            Work activity देखें
+            View work activity
         </p>
 
     </div>
@@ -697,7 +697,7 @@ body{background:#f3f7ff;color:#172b4d}
         <h3>Browse Forms</h3>
 
         <p>
-            सभी available forms
+            All available forms
         </p>
 
     </div>
@@ -1110,7 +1110,7 @@ function renderForms(){
             >
                 <strong>No forms found</strong>
                 <span>
-                    इस search/category में कोई form उपलब्ध नहीं है।
+                    No forms are available in this search or category.
                 </span>
             </div>
         `;
@@ -1140,7 +1140,7 @@ function renderForms(){
 
             const description =
                 form.description ||
-                "Application शुरू करने के लिए Open Form दबाएं।";
+                "Select Open Form to start an application.";
 
 
             const fields =
@@ -1320,7 +1320,7 @@ function renderTasks(){
             <div class="empty">
                 <strong>No tasks assigned</strong>
                 <span>
-                    अभी कोई task assigned नहीं है।
+                    No tasks have been assigned yet.
                 </span>
             </div>
         `;
@@ -1423,7 +1423,7 @@ function renderApplications(){
             <div class="empty">
                 <strong>No applications yet</strong>
                 <span>
-                    अभी कोई application available नहीं है।
+                    No applications are available yet.
                 </span>
             </div>
         `;
@@ -1762,33 +1762,21 @@ function openPayment(){
    LOGOUT
 ========================================= */
 
-function logout(){
-
-    if(
-        !confirm(
-            "Are you sure you want to log out?"
-        )
-    ){
-
-        return;
-
+async function logout(){
+    if(!confirm("Are you sure you want to log out?")) return;
+    try{
+        const [{auth},{signOut}] = await Promise.all([
+            import("./firebase-init.js"),
+            import("https://www.gstatic.com/firebasejs/10.12.5/firebase-auth.js")
+        ]);
+        await signOut(auth);
+    }catch(error){
+        console.error("Sign-out error:",error);
+    }finally{
+        ["isLoggedIn","loginType","ffm_admin_user"].forEach(key=>localStorage.removeItem(key));
+        window.location.replace("professional-login.html");
     }
-
-
-    localStorage.removeItem(
-        "isLoggedIn"
-    );
-
-    localStorage.removeItem(
-        "loginType"
-    );
-
-
-    window.location.href =
-        "professional-login.html";
-
 }
-
 
 /* =========================================
    INITIALIZE
