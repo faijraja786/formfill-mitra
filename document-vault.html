@@ -1,0 +1,37 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Document Vault - FormFill Mitra</title>
+<link rel="stylesheet" href="professional-ui.css?v=20261124">
+<style>
+.page{max-width:1000px;margin:28px auto;padding:0 18px}.page-head{display:flex;align-items:center;justify-content:space-between;gap:14px;margin-bottom:22px}.muted{color:#64748b}.doc-list{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:14px}.doc-card{background:#fff;border:1px solid #dce7f7;border-radius:14px;padding:18px}.doc-card h3{margin:8px 0}.doc-card a{display:inline-block;margin-top:12px;font-weight:700}.empty{padding:32px;text-align:center;background:#fff;border:1px dashed #b8cce8;border-radius:14px}
+</style>
+</head>
+<body>
+<header style="padding:16px 22px"><strong>FormFill <span style="color:#1769e8">Mitra</span></strong><span>Personal · Document Vault</span></header>
+<main class="page">
+ <div class="page-head"><div><h1>Document Vault</h1><p class="muted">Documents saved with your applications appear here.</p></div><button class="btn" type="button" onclick="goBack()">← Back to Dashboard</button></div>
+ <div id="docList" class="doc-list"><div class="empty">Loading your saved documents…</div></div>
+</main>
+<script>
+(function(){if(localStorage.getItem("isLoggedIn")!=="true"||localStorage.getItem("loginType")!=="personal"){location.replace("personal-login.html");}})();
+const DB_NAME="FormFillMitraDB",STORE_NAME="documents";
+function esc(v){return String(v??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));}
+function goBack(){location.href="personal-dashboard.html";}
+function openDB(){return new Promise((resolve,reject)=>{const req=indexedDB.open(DB_NAME,1);req.onsuccess=()=>resolve(req.result);req.onerror=()=>reject(req.error);});}
+async function loadDocs(){
+ const box=document.getElementById("docList");
+ try{
+  const db=await openDB();
+  if(!db.objectStoreNames.contains(STORE_NAME)){box.innerHTML='<div class="empty">No saved documents yet. Start an application and upload documents to see them here.</div>';return;}
+  const records=await new Promise((resolve,reject)=>{const tx=db.transaction(STORE_NAME,"readonly");const req=tx.objectStore(STORE_NAME).getAll();req.onsuccess=()=>resolve(req.result||[]);req.onerror=()=>reject(req.error);});
+  if(!records.length){box.innerHTML='<div class="empty">No saved documents yet. Start an application and upload documents to see them here.</div>';return;}
+  box.innerHTML=records.map((r,i)=>'<article class="doc-card"><div>📄</div><h3>'+esc(r.name||r.documentKey||"Saved document")+'</h3><p class="muted">'+esc(r.documentKey||"Application document")+'</p><p class="muted">'+(r.size?Math.max(1,Math.round(r.size/1024))+" KB":"Saved")+'</p><div id="download-'+i+'"></div></article>').join("");
+  records.forEach((r,i)=>{const slot=document.getElementById("download-"+i);if(r.file instanceof Blob){const url=URL.createObjectURL(r.file);const a=document.createElement("a");a.href=url;a.download=r.name||"document";a.textContent="Download document";slot.appendChild(a);}else{slot.textContent="File preview unavailable";}});
+  db.close();
+ }catch(err){console.error(err);box.innerHTML='<div class="empty">Could not load saved documents in this browser.</div>';}
+}
+loadDocs();
+</script>
+</body></html>
