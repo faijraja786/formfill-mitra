@@ -10,7 +10,7 @@
 ## Required Render environment variable
 Set `FIREBASE_SERVICE_ACCOUNT_JSON` to the complete service-account JSON for the **form-fill-mitra** Firebase project. Store it only in Render Environment; never commit it or expose it in frontend code. The service account needs Firebase Authentication user lookup, Firestore read/write, and Google Cloud Storage object read/write permissions. Set `FIREBASE_STORAGE_BUCKET` to `form-fill-mitra.firebasestorage.app` (the bucket shown in `firebase-config.js`). Restart/redeploy the Render service after changing either value.
 
-Create/enable the Firebase Storage bucket in Firebase Console → Build → Storage. In Google Cloud Console → IAM, ensure the service-account email from the JSON has **Storage Object Admin** access to this bucket. Do not make the bucket public. The API streams files only after checking the signed-in user, application ownership, and staff assignment.
+Create/enable the Firebase Storage bucket in Firebase Console → Build → Storage. In Google Cloud Console → IAM, ensure the service-account email from the JSON has **Storage Object Admin** access to this bucket and permission to view bucket metadata (for example, **Storage Bucket Viewer**). Grant only the bucket-level permissions needed; do not make the bucket public. Do not make the bucket public. The API streams files only after checking the signed-in user, application ownership, and staff assignment.
 
 ## Deploy
 1. Push/pull the repository's main branch.
