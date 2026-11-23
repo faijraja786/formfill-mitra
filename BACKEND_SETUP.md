@@ -1,36 +1,39 @@
 # Form Fill Mitra - backend setup and deployment checklist
 
 ## Architecture
-- Firebase Authentication: identity verification.
-- Render API: role checks and protected data access.
-- Firestore: profiles, forms, applications, clients, document metadata, and auditLogs.
-- Firebase Storage: private application documents; all reads and writes go through the authenticated Render API.
+- Firebase Authentication: applicant and staff identity verification.
+- Render API: verifies Firebase ID tokens, enforces roles, application ownership and staff assignment.
+- Firestore: profiles, form catalogue, applications, clients, document metadata, and audit logs.
+- Supabase Storage: private applicant document objects in the dedicated `Form Fill Mitra` project.
 - Firebase Hosting: static frontend.
 
-## Required Render environment variable
-Set `FIREBASE_SERVICE_ACCOUNT_JSON` to the complete service-account JSON for the **form-fill-mitra** Firebase project. Store it only in Render Environment; never commit it or expose it in frontend code. The service account needs Firebase Authentication user lookup, Firestore read/write, and Google Cloud Storage object read/write permissions. Set `FIREBASE_STORAGE_BUCKET` to `form-fill-mitra.firebasestorage.app` (the bucket shown in `firebase-config.js`). Restart/redeploy the Render service after changing either value.
+## Required Render environment variables
+- `FIREBASE_SERVICE_ACCOUNT_JSON`: complete service-account JSON for the **form-fill-mitra** Firebase project. Keep it only in Render Environment. It needs Firebase Authentication user lookup and Firestore read/write permissions; Firebase Storage permissions are no longer required.
+- `SUPABASE_URL`: `https://bkstbrwkmmtirfjmtzxs.supabase.co`
+- `SUPABASE_SERVICE_ROLE_KEY`: Supabase server-side secret/service-role key for the dedicated Form Fill Mitra project. Add it directly in Render Environment; never paste it into chat, commit it, or expose it in frontend code. A publishable/anon key is not sufficient for this server-only document workflow.
 
-Create/enable the Firebase Storage bucket in Firebase Console → Build → Storage. In Google Cloud Console → IAM, ensure the service-account email from the JSON has **Storage Object Admin** access to this bucket and permission to view bucket metadata (for example, **Storage Bucket Viewer**). Grant only the bucket-level permissions needed; do not make the bucket public. Do not make the bucket public. The API streams files only after checking the signed-in user, application ownership, and staff assignment.
+## Supabase Storage
+- Dedicated project: `Form Fill Mitra` (`bkstbrwkmmtirfjmtzxs`), region `ap-south-1`.
+- Private bucket: `applicant-documents`.
+- Allowed types: PDF, JPEG, PNG, WEBP. Maximum file size: 10 MB.
+- Objects are stored under `private-applications/{applicationId}/{uuid}.{ext}`.
+- The browser never receives a Supabase secret key or public document URL. All uploads, downloads and deletions pass through Render after Firebase token verification and `applicationAccess` authorization.
+- Firestore stores metadata only; the actual document bytes are stored in Supabase Storage.
+- The bucket is private. Do not make it public or add permissive `anon` policies.
 
 ## Deploy
-1. Push/pull the repository's main branch.
-2. Deploy the Render backend first.
+1. Add `SUPABASE_URL` and `SUPABASE_SERVICE_ROLE_KEY` to the existing Render API service Environment page. Preserve all existing Firebase variables.
+2. Render should deploy automatically after the GitHub commit. Wait for the deploy to finish.
 3. Check `https://form-fill-mitra-api.onrender.com/health`. It must report `firebaseAdminConfigured: true`, `database: "connected"`, and `storage: "connected"`.
-4. Deploy Firebase Hosting.
-5. Test with a verified admin account and separate personal, professional, and staff accounts.
+4. Deploy Firebase Hosting only; Firebase Storage is not used:
+   `firebase deploy --only hosting`
+5. Test with dummy files and separate verified Personal, Professional, Admin and assigned Staff accounts. Confirm upload, list, download, delete rules, and denial for unrelated accounts.
 
-## Firestore
-The existing `firestore.rules` remains default-deny for browser clients. The API uses Firebase Admin on the server. Do not loosen Firestore rules to make browser writes work.
-
-## Document handling
-- Application documents are uploaded to the private `private-applications/` Storage prefix through the authenticated API. Firestore stores metadata only; the API never returns public bucket URLs.
-- The applicant, administrator, or staff assigned to that application can list/download documents. Applicants can delete documents while the application is not approved/completed; administrators can delete them.
-- The frontend asks for explicit consent before uploading documents. File uploads are limited to PDF/JPEG/PNG/WEBP and 10 MB per file. Review these limits against the actual services you intend to support.
-
-## Important production gaps before accepting real government applications
-- Confirm `storage: "connected"` on the health endpoint and test upload, download, unauthorized access denial, and deletion with separate personal, professional, admin, and staff accounts.
-- Configure a secure staff invitation/onboarding process and test account role transitions.
-- Add a payment gateway only after server-side order creation, signature verification, refunds, and webhook verification are implemented.
-- Add retention/deletion policy, consent capture, privacy notice, backups, monitoring, and security review.
+## Privacy and production readiness
+- Use dummy documents until all access-control tests pass.
+- Keep Firestore rules default-deny for browser clients. The Render API uses Firebase Admin.
 - Do not store passwords, OTPs, or full payment card details.
-- Current application API stores submitted applicant text and answers in Firestore; restrict project console access to trusted operators.
+- Add retention/deletion policy, consent capture, privacy notice, backups for Storage objects, monitoring, quota alerts and an independent security review before accepting real government-form documents.
+- Supabase database backups do not back up Storage object files; configure a separate object backup process.
+- The current Free plan includes only 1 GB of Storage. It is for testing, not the planned 5,000-applicant workload. Do not upgrade or enable billing without guardian approval.
+- Completing Form Fill Mitra review does not itself submit an application to a government portal. Applicants must complete the official portal process and retain its acknowledgement.
