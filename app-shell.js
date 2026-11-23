@@ -68,6 +68,8 @@
     pageTitle.className = "ffm-shell-page-title";
     while (header.firstChild) pageTitle.appendChild(header.firstChild);
     pageTitle.querySelectorAll(".logo,.brand").forEach(node => node.remove());
+    pageTitle.querySelectorAll("h1,h2").forEach(node => { if (/formfill\\s*mitra/i.test(node.textContent || "")) node.remove(); });
+    if (!pageTitle.textContent.trim()) pageTitle.textContent = document.title.replace(/formfill\\s*mitra/ig, "").replace(/[|–—-]/g, " ").trim() || "Workspace";
 
     const toggle = document.createElement("button");
     toggle.className = "ffm-shell-toggle";
@@ -151,7 +153,7 @@
       .ffm-shell-header{display:grid!important;grid-template-columns:48px minmax(0,1fr) auto!important;align-items:center!important;gap:16px!important;min-height:72px!important;padding:12px clamp(16px,4vw,42px)!important;background:#fff!important;border-bottom:1px solid #dce7f7!important;box-shadow:0 3px 18px rgba(25,72,130,.06)!important}
       .ffm-shell-toggle{grid-column:1;grid-row:1;width:44px;height:44px;border:1px solid #dce7f7;border-radius:12px;background:#edf5ff;color:#1769e8;font-size:23px;cursor:pointer}
       .ffm-shell-page-title{grid-column:2;grid-row:1;min-width:0}
-      .ffm-shell-page-title h1,.ffm-shell-page-title h2{margin:0}
+      .ffm-shell-page-title h1,.ffm-shell-page-title h2{margin:0}.ffm-shell-page-title p{margin:0;color:#64748b;font-size:13px}
       .ffm-shell-brand{grid-column:3;grid-row:1;white-space:nowrap;text-decoration:none!important;font-size:22px;font-weight:850;letter-spacing:-.6px;color:#17345f!important}
       .ffm-shell-brand span{color:#1769e8}
       .ffm-shell-backdrop{position:fixed;z-index:90;inset:0;background:rgba(15,35,65,.34);opacity:0;visibility:hidden;transition:.2s}
