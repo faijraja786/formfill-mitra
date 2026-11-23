@@ -1,0 +1,11 @@
+rules_version = '2';
+
+service firebase.storage {
+  match /b/{bucket}/o {
+    // All document access is handled by the authenticated Render API.
+    // Browser clients must never read or write private application files directly.
+    match /{allPaths=**} {
+      allow read, write: if false;
+    }
+  }
+}
