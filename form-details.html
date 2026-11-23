@@ -456,7 +456,7 @@ function loadForm(){
     document.getElementById("description")
         .textContent =
         selectedForm.description ||
-        "Required documents upload करें।";
+        "Upload the required documents.";
 
 
     const container =
@@ -582,7 +582,7 @@ async function continueToOCR(){
     if(!selectedForm){
 
         showError(
-            "पहले कोई form select करें।"
+            "Please select a form first."
         );
 
         return;
@@ -657,7 +657,7 @@ async function continueToOCR(){
 
             showError(
                 (documentNames[key] || key) +
-                " 10 MB से बड़ा है।"
+                " 10 MB is too large."
             );
 
             return;
@@ -739,7 +739,7 @@ async function continueToOCR(){
         console.error(error);
 
         showError(
-            "Documents save नहीं हो सके। Browser storage permission/check करें।"
+            "The documents could not be saved. Check your browser storage permissions and try again."
         );
 
     }
