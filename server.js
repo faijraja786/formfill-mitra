@@ -616,6 +616,7 @@ app.post("/api/applications/:id/documents", requireUser, requireProfile, documen
 });
 
 app.get("/api/applications/:id/documents/:documentId/download", requireUser, requireProfile, async (req, res) => {
+  if (!supabaseStorage) return fail(res, 503, "Private document storage is not configured yet.");
   try {
     const application = await getAccessibleApplication(req, req.params.id);
     if (application === false) return fail(res, 403, "You do not have access to this document.");
@@ -642,6 +643,7 @@ app.get("/api/applications/:id/documents/:documentId/download", requireUser, req
 });
 
 app.delete("/api/applications/:id/documents/:documentId", requireUser, requireProfile, async (req, res) => {
+  if (!supabaseStorage) return fail(res, 503, "Private document storage is not configured yet.");
   try {
     const application = await getAccessibleApplication(req, req.params.id);
     if (application === false) return fail(res, 403, "You do not have access to this document.");
