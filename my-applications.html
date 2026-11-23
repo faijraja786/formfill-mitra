@@ -509,20 +509,31 @@ function escapeHTML(value){
    Load applications
 --------------------------------------------------------- */
 
-function loadApplications(){
-
-    applications =
-        getJSON(
-            "ffm_applications",
-            []
-        );
-
-    if(!Array.isArray(applications)){
+async function loadApplications(){
+    try {
+        const [{ auth }, { onAuthStateChanged }, { apiRequest, bootstrapProfile }] = await Promise.all([
+            import("./firebase-init.js"),
+            import("https://www.gstatic.com/firebasejs/10.12.5/firebase-auth.js"),
+            import("./api-client.js")
+        ]);
+        if (!auth.currentUser) {
+            await new Promise((resolve, reject) => {
+                let stop = () => {};
+                stop = onAuthStateChanged(auth, user => { stop(); user ? resolve(user) : reject(new Error("Please sign in again.")); }, reject);
+            });
+        }
+        const role = localStorage.getItem("loginType") === "professional" ? "professional" : "personal";
+        await bootstrapProfile(role);
+        const data = await apiRequest("/api/applications");
+        applications = Array.isArray(data.applications) ? data.applications : [];
+        localStorage.setItem("ffm_applications", JSON.stringify(applications));
+    } catch (error) {
+        console.error("Secure application list could not load:", error);
         applications = [];
+        const list = document.getElementById("applicationList");
+        if (list) list.innerHTML = '<div class="empty">Applications could not be loaded from the secure server. Please refresh or contact support.</div>';
     }
-
     updateStats();
-
     renderApplications();
 }
 
