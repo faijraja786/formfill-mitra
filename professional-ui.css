@@ -18,7 +18,7 @@ header small,.header small{color:var(--ffm-muted)}
 .logo,.brand h2{color:var(--ffm-ink)}
 .logo span,.brand span{color:var(--ffm-primary)!important}
 .container{width:min(100% - 36px,1200px)!important;margin-left:auto!important;margin-right:auto!important}
-.card,.panel,.stat,.nav-card,.mode-card,.progress-box,.top-card,.application,.task,.staff,.activity,.document,.doc,.form-info,.smart-box,.permission,.info,.hero,.section,.content-card,.feature-card{
+.card,.panel,.stat,.nav-card,.mode-card,.progress-box,.top-card,.application,.task,.staff,.activity,.document,.doc,.form-info,.smart-box,.permission,.info,.section,.content-card,.feature-card{
   background:var(--ffm-surface)!important;border:1px solid var(--ffm-line)!important;border-radius:var(--ffm-radius)!important;box-shadow:var(--ffm-shadow)!important
 }
 .card,.panel{padding:clamp(18px,2.5vw,26px)}
