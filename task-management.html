@@ -335,6 +335,10 @@ if (!workspaceLoggedIn || (!workspaceAdmin && !workspaceProfessional)) {
 function goDashboard() {
   window.location.href = workspaceProfessional ? "professional-dashboard.html" : "admin-panel.html";
 }
+if (workspaceProfessional) {
+  const aiNavButton = document.querySelector(".nav button:last-child");
+  if (aiNavButton) aiNavButton.hidden = true;
+}
 const TASK_KEY = "ffm_tasks";
 const STAFF_KEY = "ffm_staff";
 const FORM_KEY = "ffm_admin_forms";
