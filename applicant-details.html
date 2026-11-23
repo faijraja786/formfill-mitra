@@ -442,10 +442,10 @@ button:disabled{
             <br><br>
 
             <strong>
-                OCR suggestion final data नहीं है।
+                OCR suggestions are not final data.
             </strong>
 
-            आप हर field को manually edit कर सकते हैं।
+            You can edit every field manually.
 
         </div>
 
@@ -1199,7 +1199,7 @@ function renderOCR(){
 
         box.innerHTML = `
             <div class="empty">
-                कोई OCR result उपलब्ध नहीं है।
+                No OCR result is available.
             </div>
         `;
 
@@ -1898,7 +1898,7 @@ function applyOCR(){
         document.getElementById(
             "ocrStatus"
         ).textContent =
-            "OCR text नहीं मिला। Details manually भरें।";
+            "No OCR text was found. Enter the details manually.";
 
         return;
     }
@@ -1960,7 +1960,7 @@ function applyOCR(){
     document.getElementById(
         "ocrStatus"
     ).textContent =
-        `✓ ${applied} field(s) में OCR suggestions apply हुईं। सभी details verify करें।`;
+        `✓ ${applied} OCR suggestions were applied to the field(s). Please verify all details.`;
 }
 
 
