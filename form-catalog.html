@@ -51,7 +51,7 @@
     const form=forms[index];if(!form){alert("Form information could not be found.");return;}
     localStorage.setItem("selectedForm",JSON.stringify(form));
     localStorage.setItem("formName",form.name||"Application Form");
-    ["reviewCompleted","formFillingCompleted","finalReviewCompleted","applicantVerified","ocrCompleted"].forEach(key=>localStorage.removeItem(key));
+    ["reviewCompleted","formFillingCompleted","finalReviewCompleted","applicantVerified","ocrCompleted","ocrReady","documentsUploaded","uploadedDocuments","ocrResults"].forEach(key=>localStorage.removeItem(key));
     location.href="form-details.html";
   }
   search.addEventListener("input",renderForms);
