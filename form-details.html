@@ -598,21 +598,19 @@ async function continueToOCR(){
 
     if(documents.length === 0){
 
-        localStorage.setItem(
-            "documentsUploaded",
-            "true"
-        );
+        try{
+            await clearCurrentDocuments();
+        }catch(error){
+            console.warn("Previous document cleanup failed:",error);
+        }
 
-        localStorage.setItem(
-            "ocrReady",
-            "true"
-        );
+        localStorage.removeItem("uploadedDocuments");
+        localStorage.removeItem("ocrResults");
 
-        location.href =
-            "ocr-processing.html";
-
+        localStorage.setItem("documentsUploaded","true");
+        localStorage.setItem("ocrReady","true");
+        location.href = "ocr-processing.html";
         return;
-
     }
 
 
