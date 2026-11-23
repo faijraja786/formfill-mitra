@@ -253,6 +253,8 @@ button{
         margin-left:0;
     }
 }
+.header{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap}
+.dashboard-back{background:#fff;color:#1769e8;border:1px solid #dce7f7;border-radius:9px;padding:10px 14px;font-weight:700;cursor:pointer}
 </style>
 <link rel="stylesheet" href="professional-ui.css?v=20261123">
 </head>
@@ -260,8 +262,8 @@ button{
 <body>
 
 <header class="header">
-    <h1>FormFill Mitra</h1>
-    <p>Admin • Staff Management</p>
+    <div><h1>FormFill Mitra</h1><p>Staff Management</p></div>
+    <button class="dashboard-back" type="button" onclick="goDashboard()">← Dashboard</button>
 </header>
 
 <div class="container">
@@ -438,11 +440,18 @@ button{
     
 <script>
     
-    // 🔐 ADMIN ACCESS GUARD
-if (localStorage.getItem("ffm_admin_logged_in") !== "true") {
-    window.location.replace("admin-login.html");
+    // Workspace access: Admin (verified at sign-in) or Professional session.
+const workspaceRole = localStorage.getItem("loginType");
+const workspaceLoggedIn = localStorage.getItem("isLoggedIn") === "true";
+const workspaceAdmin = workspaceRole === "admin" &&
+  (localStorage.getItem("ffm_admin_user") || "").toLowerCase() === "faijraja28@gmail.com";
+const workspaceProfessional = workspaceRole === "professional";
+if (!workspaceLoggedIn || (!workspaceAdmin && !workspaceProfessional)) {
+  window.location.replace(workspaceRole === "professional" ? "professional-login.html" : "admin-login.html");
 }
-
+function goDashboard() {
+  window.location.href = workspaceProfessional ? "professional-dashboard.html" : "admin-panel.html";
+}
 let staff =
     JSON.parse(
         localStorage.getItem("ffm_staff")
