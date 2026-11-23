@@ -24,13 +24,10 @@ import { auth } from "./firebase-init.js";
 
 import { signInWithEmailAndPassword, GoogleAuthProvider, signInWithPopup, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-auth.js";
 const ADMIN_EMAIL = "faijraja28@gmail.com";
-// If the admin is already authenticated, never leave them on a user login page.
+// Route an existing authenticated session without asking the user to sign in again.
 onAuthStateChanged(auth, (user) => {
-  if (!user || (user.email || "").trim().toLowerCase() !== ADMIN_EMAIL || user.emailVerified !== true) return;
-  localStorage.setItem("isLoggedIn", "true");
-  localStorage.setItem("loginType", "admin");
-  localStorage.setItem("ffm_admin_user", user.email);
-  window.location.replace("admin-panel.html");
+  if (!user || user.emailVerified !== true) return;
+  routeAfterLogin(user, "professional");
 });
 
 document.querySelectorAll("[data-toggle]").forEach((toggle)=>{toggle.addEventListener("click",()=>{const input=document.getElementById(toggle.dataset.toggle);const reveal=input.type==="password";input.type=reveal?"text":"password";toggle.textContent=reveal?"🙈":"👁";toggle.setAttribute("aria-label",reveal?"Hide password":"Show password");toggle.title=reveal?"Hide password":"Show password";});});
