@@ -35,6 +35,8 @@
     const role = isAdmin ? "admin" : savedRole === "professional" ? "professional" : "personal";
     const adminOnly = new Set(["ai-assistant.html"]);
     const personalOnly = new Set(["document-vault.html", "profile.html"]);
+    if (page === "form-catalog.html" && role === "admin") { redirect("form-management.html"); return; }
+    if (page === "subscription.html" && role === "admin") { redirect("subscription-management.html"); return; }
 
     if (adminOnly.has(page) && role !== "admin") {
       redirect(role === "professional" ? "professional-dashboard.html" : "personal-dashboard.html");
@@ -52,10 +54,10 @@
 
     const dashboard = role === "admin" ? "admin-panel.html" : role === "professional" ? "professional-dashboard.html" : "personal-dashboard.html";
     const links = role === "admin"
-      ? [["Dashboard","admin-panel.html"],["Staff Management","staff-management.html"],["Task Management","task-management.html"],["Activity Monitoring","activity-monitoring.html"],["AI Assistant","ai-assistant.html"]]
+      ? [["Dashboard","admin-panel.html"],["Form Management","form-management.html"],["Subscription & Payment","subscription-management.html"],["Staff Management","staff-management.html"],["Task Management","task-management.html"],["Activity Monitoring","activity-monitoring.html"],["AI Assistant","ai-assistant.html"]]
       : role === "professional"
-        ? [["Dashboard","professional-dashboard.html"],["Applications","my-applications.html"],["Task Management","task-management.html"],["Staff Management","staff-management.html"],["Activity Monitoring","activity-monitoring.html"],["Browse Forms","professional-dashboard.html"]]
-        : [["Dashboard","personal-dashboard.html"],["My Applications","my-applications.html"],["Document Vault","document-vault.html"],["My Profile","profile.html"],["Browse Forms","personal-dashboard.html"]];
+        ? [["Dashboard","professional-dashboard.html"],["Applications","my-applications.html"],["Task Management","task-management.html"],["Staff Management","staff-management.html"],["Activity Monitoring","activity-monitoring.html"],["Browse Forms","form-catalog.html"],["Subscription","subscription.html"]]
+        : [["Dashboard","personal-dashboard.html"],["My Applications","my-applications.html"],["Document Vault","document-vault.html"],["My Profile","profile.html"],["Browse Forms","form-catalog.html"],["Subscription","subscription.html"]];
 
     const header = document.querySelector("header") || (() => {
       const node = document.createElement("header");
