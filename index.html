@@ -25,14 +25,26 @@ body{margin:0;background:#f4f8ff;color:var(--ink)}
 .features{max-width:1120px;margin:0 auto 86px;padding:0 24px}.section-heading{text-align:center;margin-bottom:28px}.section-heading h2{font-size:32px;margin:0 0 8px}.section-heading p{color:var(--muted);margin:0}
 .feature-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:16px}.feature{background:#fff;border:1px solid #dce7f7;border-radius:15px;padding:23px}.feature h3{margin:0 0 8px;font-size:17px}.feature p{margin:0;color:var(--muted);line-height:1.6;font-size:14px}
 .site-footer{text-align:center;padding:26px 20px;background:#fff;border-top:1px solid #dce7f7;color:#718096;font-size:13px}
+.site-menu-toggle{width:44px;height:44px;border:1px solid #dce7f7;border-radius:12px;background:#edf5ff;color:#1769e8;font-size:23px;cursor:pointer;display:grid;place-items:center}
+.site-header{justify-content:space-between}.site-menu{position:fixed;z-index:51;inset:0 auto 0 0;width:min(300px,86vw);background:#fff;padding:20px;box-shadow:12px 0 34px rgba(20,55,100,.16);transform:translateX(-110%);transition:transform .22s ease;display:flex;flex-direction:column;gap:8px}
+.site-menu.open{transform:translateX(0)}.site-menu a{padding:13px 12px;border-radius:10px;text-decoration:none;color:#29415f;font-weight:700}.site-menu a:hover{background:#edf5ff;color:#1769e8}
+.site-menu-head{display:flex;align-items:center;justify-content:space-between;padding-bottom:16px;border-bottom:1px solid #e7eef8;margin-bottom:10px}
+.site-menu-head button{width:36px;height:36px;border:0;border-radius:9px;background:#f1f5fb;color:#526783;font-size:24px;cursor:pointer}
+.site-menu-backdrop{position:fixed;z-index:50;inset:0;background:rgba(15,35,65,.34);opacity:0;visibility:hidden;transition:.2s}
+.site-menu-backdrop.open{opacity:1;visibility:visible}
 @media(max-width:700px){.site-header{height:66px;padding:0 17px}.header-link{padding:8px}.hero{padding:62px 20px 34px}.hero h1{letter-spacing:-1.5px}.hero p{font-size:16px}.mode-grid,.feature-grid{grid-template-columns:1fr}.mode-grid{margin-bottom:60px}.mode-card p{min-height:0}.features{margin-bottom:60px}}
 </style>
 </head>
 <body>
 <header class="site-header">
+<button class="site-menu-toggle" id="siteMenuToggle" type="button" aria-label="Open navigation menu" aria-expanded="false">☰</button>
 <a class="site-brand" href="index.html" aria-label="FormFill Mitra Home">FormFill <span>Mitra</span></a>
-<nav class="header-actions" aria-label="Main navigation"><a class="header-link" href="#features">Features</a><a class="header-link" href="personal-login.html">Sign In</a></nav>
 </header>
+<div class="site-menu-backdrop" id="siteMenuBackdrop"></div>
+<aside class="site-menu" id="siteMenu" aria-label="Main navigation">
+<div class="site-menu-head"><strong>Navigation</strong><button type="button" id="siteMenuClose" aria-label="Close menu">×</button></div>
+<a href="index.html">Home</a><a href="#features">Features</a><a href="personal-login.html">Personal Sign In</a><a href="professional-login.html">Professional Sign In</a>
+</aside>
 <main>
 <section class="hero">
 <span class="eyebrow">A smarter way to manage applications</span>
@@ -47,4 +59,6 @@ body{margin:0;background:#f4f8ff;color:var(--ink)}
 <div class="feature-grid"><article class="feature"><h3>Application Management</h3><p>Track your applications and keep important details accessible.</p></article><article class="feature"><h3>Document Organization</h3><p>Keep essential documents organized for your application workflow.</p></article><article class="feature"><h3>Professional Workspace</h3><p>Coordinate tasks and manage client work through a dedicated workspace.</p></article></div></section>
 </main>
 <footer class="site-footer">© 2026 FormFill Mitra. All rights reserved.</footer>
-</body></html>
+<script>
+(()=>{const menu=document.getElementById("siteMenu"),backdrop=document.getElementById("siteMenuBackdrop"),toggle=document.getElementById("siteMenuToggle");const close=()=>{menu.classList.remove("open");backdrop.classList.remove("open");toggle.setAttribute("aria-expanded","false")};toggle.addEventListener("click",()=>{menu.classList.add("open");backdrop.classList.add("open");toggle.setAttribute("aria-expanded","true")});document.getElementById("siteMenuClose").addEventListener("click",close);backdrop.addEventListener("click",close);menu.querySelectorAll("a").forEach(link=>link.addEventListener("click",close));document.addEventListener("keydown",e=>{if(e.key==="Escape")close()})})();
+</script></body></html>
