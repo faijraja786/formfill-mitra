@@ -252,7 +252,7 @@ button{
         <h2 class="title">Activity Overview</h2>
 
         <p class="subtitle">
-            Staff और application activity का monitoring dashboard।
+            Monitor staff and application activity.
         </p>
 
         <div class="stats">
@@ -340,7 +340,7 @@ button{
         <h2 class="title">Activity Log</h2>
 
         <p class="subtitle">
-            Recent staff and application activities।
+            Recent staff and application activity.
         </p>
 
         <div
@@ -358,7 +358,7 @@ button{
         <h2 class="title">Error Monitoring</h2>
 
         <p class="subtitle">
-            System में recorded errors और warnings।
+            Errors and warnings recorded by the system.
         </p>
 
         <div id="errorList"></div>
@@ -514,7 +514,7 @@ function renderActivities(){
     if(filtered.length === 0){
 
         list.innerHTML =
-            '<div class="empty">कोई activity नहीं मिली।</div>';
+            '<div class="empty">No activity was found.</div>';
 
         updateStats();
 
@@ -650,7 +650,7 @@ function renderErrors(){
     if(errors.length === 0){
 
         box.innerHTML =
-            '<div class="empty">कोई error recorded नहीं है।</div>';
+            '<div class="empty">No errors have been recorded.</div>';
 
         return;
     }
