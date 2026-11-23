@@ -559,6 +559,13 @@ body{background:#f3f7ff;color:#172b4d}
 .fm-menu-note{margin-top:auto;padding:13px;border-radius:12px;background:#f2f7ff;color:#64748b;font-size:12px;line-height:1.5}
 @media(max-width:600px){.header{padding:11px 13px}.header-right{gap:7px}.menu-trigger{width:39px;height:39px}.brand h2{font-size:16px}}
 
+
+/* Consistent app header: navigation left, account context center, brand right. */
+.ffm-app-header{display:grid!important;grid-template-columns:44px minmax(0,1fr) auto!important;align-items:center!important;gap:14px!important}
+.ffm-app-header .menu-trigger{grid-column:1;grid-row:1}
+.ffm-app-header .header-right{grid-column:2;grid-row:1;justify-self:end}
+.ffm-app-header .brand{grid-column:3;grid-row:1;justify-self:end;white-space:nowrap}
+@media(max-width:600px){.ffm-app-header{grid-template-columns:42px minmax(0,1fr) auto!important;gap:8px!important}.ffm-app-header .brand h2{font-size:15px}.ffm-app-header .brand small{display:none}}
 </style>
 <link rel="stylesheet" href="professional-ui.css?v=20261124">
 <style id="ffm-header-layout">
