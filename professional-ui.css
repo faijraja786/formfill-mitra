@@ -1,0 +1,75 @@
+/* FormFill Mitra — shared professional design system
+   Preserves the existing blue / sky-blue brand palette. */
+:root{
+  --ffm-primary:#1769e8;--ffm-primary-dark:#0d47a1;--ffm-sky:#90caf9;
+  --ffm-ink:#172b4d;--ffm-muted:#64748b;--ffm-line:#dce7f7;
+  --ffm-bg:#f4f8ff;--ffm-surface:#fff;--ffm-soft:#eef5ff;
+  --ffm-shadow:0 10px 30px rgba(25,72,130,.07);
+  --ffm-radius:16px;
+}
+html{scroll-behavior:smooth}
+body{background:var(--ffm-bg)!important;color:var(--ffm-ink)!important;font-family:Inter,ui-sans-serif,system-ui,-apple-system,"Segoe UI",Arial,sans-serif!important;line-height:1.55}
+::selection{background:#cfe3ff;color:#123b78}
+a{color:var(--ffm-primary)}
+a:hover{color:var(--ffm-primary-dark)}
+header,.header{background:rgba(255,255,255,.96)!important;color:var(--ffm-ink)!important;border-bottom:1px solid var(--ffm-line)!important;box-shadow:0 3px 18px rgba(25,72,130,.055)!important;backdrop-filter:blur(12px)}
+header h1,header h2,.header h1,.header h2,.header h3{color:var(--ffm-ink)}
+header small,.header small{color:var(--ffm-muted)}
+.logo,.brand h2{color:var(--ffm-ink)}
+.logo span,.brand span{color:var(--ffm-primary)!important}
+.container{width:min(100% - 36px,1200px)!important;margin-left:auto!important;margin-right:auto!important}
+.card,.panel,.stat,.nav-card,.mode-card,.progress-box,.top-card,.application,.task,.staff,.activity,.document,.doc,.form-info,.smart-box,.permission,.info,.hero,.section,.content-card,.feature-card{
+  background:var(--ffm-surface)!important;border:1px solid var(--ffm-line)!important;border-radius:var(--ffm-radius)!important;box-shadow:var(--ffm-shadow)!important
+}
+.card,.panel{padding:clamp(18px,2.5vw,26px)}
+h1,h2,h3,h4{color:var(--ffm-ink);letter-spacing:-.025em;line-height:1.25}
+h1{font-weight:780}
+h2{font-weight:740}
+p,.subtitle,.sub,.description{line-height:1.65}
+.subtitle,.sub,.muted,.description{color:var(--ffm-muted)}
+button,.btn,.header-btn,.primary,.add,.continue,.btn-primary,.submit-btn{
+  border-radius:10px!important;font-family:inherit!important;font-weight:700!important;transition:background .18s ease,box-shadow .18s ease,transform .18s ease!important
+}
+button,.btn{cursor:pointer}
+button:not(.google):not(.toggle-password):not(.menu-toggle):not(.icon-btn):not(.close-btn){
+  min-height:42px
+}
+button:hover,.btn:hover{transform:translateY(-1px)}
+button:focus-visible,a:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-visible{
+  outline:3px solid rgba(23,105,232,.22)!important;outline-offset:2px
+}
+input,select,textarea{
+  border:1px solid #cbd9ec!important;border-radius:10px!important;background:#fff!important;color:var(--ffm-ink)!important;
+  min-height:44px;font:inherit!important;transition:border-color .18s ease,box-shadow .18s ease
+}
+input:focus,select:focus,textarea:focus{border-color:var(--ffm-primary)!important;box-shadow:0 0 0 4px rgba(23,105,232,.10)!important;outline:none!important}
+label{color:#344967;font-weight:650}
+table{width:100%;border-collapse:separate;border-spacing:0;overflow:hidden;border:1px solid var(--ffm-line);border-radius:12px;background:white}
+th{background:#edf5ff!important;color:#244a7b!important;font-weight:750}
+th,td{padding:12px 14px;border-bottom:1px solid #e8eff8;text-align:left}
+tr:last-child td{border-bottom:0}
+.badge,.tag{border-radius:999px!important;font-weight:700}
+.nav,.nav-grid{gap:10px}
+.nav{background:#fff!important;border-bottom:1px solid var(--ffm-line);box-shadow:0 4px 16px rgba(25,72,130,.045)!important}
+.nav a,.nav button,.nav-card{transition:.18s ease}
+.nav a:hover,.nav button:hover,.nav-card:hover{border-color:#9cc6ff!important;background:#f3f8ff!important}
+.stat-number,.stat-value,.builder-title{color:var(--ffm-primary)!important}
+.welcome{background:linear-gradient(125deg,#0d47a1 0%,#1769e8 62%,#55a5f4 100%)!important;border:0!important;border-radius:20px!important;box-shadow:0 14px 32px rgba(13,71,161,.17)!important}
+.welcome h1,.welcome h2,.welcome p{color:#fff!important}
+.progress,.progress-bar,.progress-fill{border-radius:999px}
+hr{border:0;border-top:1px solid var(--ffm-line);margin:20px 0}
+img{max-width:100%}
+@media(max-width:900px){
+  .stats{grid-template-columns:repeat(2,minmax(0,1fr))!important}
+  .quick-grid{grid-template-columns:repeat(2,minmax(0,1fr))!important}
+}
+@media(max-width:640px){
+  body{font-size:14px}
+  header,.header{padding:12px 15px!important;gap:10px}
+  .container{width:min(100% - 24px,1200px)!important;padding-left:0!important;padding-right:0!important}
+  .card,.panel{padding:16px!important}
+  .stats,.quick-grid,.grid,.form-grid,.info-grid,.filters{grid-template-columns:1fr!important}
+  .top-card,.form-meta,.actions,.buttons,.header-inner{flex-direction:column!important;align-items:stretch!important}
+  table{display:block;overflow-x:auto;white-space:nowrap}
+  button,.btn{max-width:100%}
+}
