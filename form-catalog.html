@@ -1,0 +1,62 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Browse Forms | FormFill Mitra</title>
+<link rel="stylesheet" href="professional-ui.css?v=20261124">
+<script src="app-shell.js" defer></script>
+<style>
+.page-head{display:flex;align-items:flex-end;justify-content:space-between;gap:16px;margin:28px 0 20px}
+.toolbar{display:grid;grid-template-columns:minmax(220px,1fr) auto;gap:14px;align-items:center;margin-bottom:18px}
+.filters{display:flex;gap:8px;overflow:auto;padding-bottom:6px}
+.filter{border:1px solid var(--ffm-line);background:#fff;color:#315477;padding:9px 14px;border-radius:999px;white-space:nowrap;cursor:pointer}
+.filter.active{background:#1769e8;color:#fff;border-color:#1769e8}
+.catalog-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:16px}
+.catalog-card{display:flex;flex-direction:column;background:#fff;border:1px solid var(--ffm-line);border-radius:16px;padding:20px;box-shadow:var(--ffm-shadow);min-height:230px}
+.catalog-card h2{font-size:18px;margin:12px 0 8px}
+.catalog-card p{color:var(--ffm-muted);font-size:14px;line-height:1.6;flex:1}
+.catalog-tag{align-self:flex-start;padding:5px 10px;border-radius:999px;background:#edf5ff;color:#1559b7;font-size:12px;font-weight:750}
+.catalog-meta{color:var(--ffm-muted);font-size:12px;margin:14px 0}
+.catalog-card button{width:100%;background:#1769e8;color:#fff;border:0;padding:11px 14px}
+.empty-state{padding:48px 20px;text-align:center;background:#fff;border:1px dashed #b9cde8;border-radius:16px;color:var(--ffm-muted)}
+@media(max-width:850px){.catalog-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(max-width:600px){.page-head{align-items:flex-start;flex-direction:column}.toolbar{grid-template-columns:1fr}.catalog-grid{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+<header><div><h1>Browse Forms</h1><p class="muted">Find the form you need and start a guided application.</p></div></header>
+<main class="container">
+  <div class="page-head"><div><h2>Available Forms</h2><p class="muted">Choose a form to review its requirements and upload documents.</p></div></div>
+  <div class="toolbar"><input id="searchInput" type="search" placeholder="Search forms by name or description" aria-label="Search forms"><div class="muted" id="formCount">0 forms</div></div>
+  <div class="filters" id="categoryFilters"></div>
+  <section class="catalog-grid" id="formsGrid" aria-live="polite"></section>
+</main>
+<script>
+(function(){
+  const readForms=()=>{try{const value=JSON.parse(localStorage.getItem("ffm_admin_forms")||"[]");return Array.isArray(value)?value:[]}catch(e){return []}};
+  const forms=readForms();let category="All";
+  const esc=value=>String(value??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+  const categories=["All",...new Set(forms.map(f=>String(f.category||"General").trim()).filter(Boolean))];
+  const filters=document.getElementById("categoryFilters"),grid=document.getElementById("formsGrid"),search=document.getElementById("searchInput");
+  function renderFilters(){filters.innerHTML=categories.map(x=>'<button type="button" class="filter '+(x===category?'active':'')+'" data-category="'+esc(x)+'">'+esc(x)+'</button>').join("");filters.querySelectorAll("button").forEach(b=>b.addEventListener("click",()=>{category=b.dataset.category;renderFilters();renderForms()}));}
+  function renderForms(){
+    const term=search.value.trim().toLowerCase();
+    const filtered=forms.map((form,index)=>({form,index})).filter(({form})=>(category==="All"||String(form.category||"General")===category)&&(!term||[form.name,form.description,form.category].join(" ").toLowerCase().includes(term)));
+    document.getElementById("formCount").textContent=filtered.length+" form"+(filtered.length===1?"":"s");
+    if(!filtered.length){grid.innerHTML='<div class="empty-state" style="grid-column:1/-1"><h3>No forms found</h3><p>Try another search or category. If no forms are listed, ask the administrator to publish forms.</p></div>';return;}
+    grid.innerHTML=filtered.map(({form,index})=>'<article class="catalog-card"><span class="catalog-tag">'+esc(form.category||"General")+'</span><h2>'+esc(form.name||"Application Form")+'</h2><p>'+esc(form.description||"Review the form requirements before you begin.")+'</p><div class="catalog-meta">'+(Array.isArray(form.fields)?form.fields.length:0)+' custom fields · '+(Array.isArray(form.documents)?form.documents.length:0)+' required documents</div><button type="button" data-index="'+index+'">Open Form</button></article>').join("");
+    grid.querySelectorAll("button[data-index]").forEach(b=>b.addEventListener("click",()=>openForm(Number(b.dataset.index))));
+  }
+  function openForm(index){
+    const form=forms[index];if(!form){alert("Form information could not be found.");return;}
+    localStorage.setItem("selectedForm",JSON.stringify(form));
+    localStorage.setItem("formName",form.name||"Application Form");
+    ["reviewCompleted","formFillingCompleted","finalReviewCompleted","applicantVerified","ocrCompleted"].forEach(key=>localStorage.removeItem(key));
+    location.href="form-details.html";
+  }
+  search.addEventListener("input",renderForms);
+  renderFilters();renderForms();
+})();
+</script>
+</body>
+</html>
