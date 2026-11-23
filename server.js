@@ -171,8 +171,11 @@ app.post("/api/profile/bootstrap", requireUser, async (req, res) => {
     const email = clean(req.user.email).toLowerCase();
     if (existing.exists) {
       const oldProfile = existing.data();
-      if (email === ADMIN_EMAIL && oldProfile.role !== "admin") {
-        await ref.set({ role: "admin", status: "active", email, updatedAt: now() }, { merge: true });
+      if (email === ADMIN_EMAIL) {
+        if (oldProfile.role !== "admin") {
+          await ref.set({ role: "admin", status: "active", email, updatedAt: now() }, { merge: true });
+        }
+        await seedBiharRtpsForms();
         const refreshed = await ref.get();
         return res.json({ profile: { id: req.user.uid, ...refreshed.data() } });
       }
@@ -187,6 +190,7 @@ app.post("/api/profile/bootstrap", requireUser, async (req, res) => {
     };
     await ref.create(profile);
     await writeAudit({ ...req.user, role }, "account.created", "profile", req.user.uid);
+    if (role === "admin") await seedBiharRtpsForms();
     return res.status(201).json({ profile: { id: req.user.uid, ...profile } });
   } catch (error) {
     console.error("Profile bootstrap failed:", error.message);
