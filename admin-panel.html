@@ -551,6 +551,7 @@ textarea{
 
 
 <div class="container">
+    <div id="adminBackendNotice" class="notice" hidden style="margin-bottom:18px"></div>
 
 
     <!-- STATS -->
@@ -2568,7 +2569,7 @@ loadSubscription();
 <script type="module">
 import { auth } from "./firebase-init.js";
 import { onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-auth.js";
-import { bootstrapProfile } from "./api-client.js";
+import { bootstrapProfile, apiRequest } from "./api-client.js";
 const ADMIN_EMAIL="faijraja28@gmail.com";
 window.__ffmAdminSignOut=async()=>{await signOut(auth);["isLoggedIn","loginType","ffm_admin_user"].forEach(key=>localStorage.removeItem(key));window.location.replace("personal-login.html");};
 onAuthStateChanged(auth,async(user)=>{
@@ -2580,6 +2581,16 @@ onAuthStateChanged(auth,async(user)=>{
  localStorage.setItem("ffm_admin_user",user.email||ADMIN_EMAIL);
  const name=document.getElementById("adminUser");
  if(name)name.textContent=user.email||"Admin";
+ const notice=document.getElementById("adminBackendNotice");
+ try {
+   await bootstrapProfile("admin", user.displayName || "");
+   const data=await apiRequest("/api/forms");
+   const count=document.getElementById("totalForms");
+   if(count)count.textContent=(data.forms||[]).length;
+ } catch(error) {
+   if(notice){notice.hidden=false;notice.textContent="Backend setup issue: "+(error.message||"Admin profile could not be initialized.")+" Form management and applicant records may be unavailable until the server configuration is fixed.";}
+   console.error("Admin backend initialization failed:",error);
+ }
  document.body.style.visibility="visible";
 });
 </script>
