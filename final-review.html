@@ -1249,7 +1249,7 @@ async function completeReview(){
         localStorage.setItem("currentApplicationId", result.applicationId);
         localStorage.setItem("applicationReviewStatus", "submitted");
         localStorage.setItem("finalReviewCompleted", "true");
-        showStatus("Application submitted successfully. Reference: " + result.applicationId, "success");
+        showStatus("Preparation record saved in Form Fill Mitra. Reference: " + result.applicationId + ". Government submission is NOT complete yet. Continue on the official Bihar portal and save its acknowledgement number.", "success");
         const portal = selectedForm.officialLink || selectedForm.link;
         if (portal) setTimeout(() => window.open(portal, "_blank", "noopener,noreferrer"), 900);
     } catch (error) {
