@@ -5,6 +5,7 @@ const multer = require("multer");
 const rateLimit = require("express-rate-limit");
 const admin = require("firebase-admin");
 const crypto = require("crypto");
+const { createClient } = require("@supabase/supabase-js");
 
 const app = express();
 const PORT = process.env.PORT || 10000;
@@ -31,17 +32,20 @@ app.use(rateLimit({ windowMs: 60 * 1000, limit: 100, standardHeaders: "draft-7",
 
 let firebaseReady = false;
 let db = null;
-let bucket = null;
+let supabaseStorage = null;
+const SUPABASE_URL = String(process.env.SUPABASE_URL || "").replace(/\/+$/, "");
+const SUPABASE_SERVICE_ROLE_KEY = String(process.env.SUPABASE_SERVICE_ROLE_KEY || "").trim();
+if (SUPABASE_URL && SUPABASE_SERVICE_ROLE_KEY) {
+  supabaseStorage = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, {
+    auth: { autoRefreshToken: false, persistSession: false }
+  });
+}
 try {
   const raw = process.env.FIREBASE_SERVICE_ACCOUNT_JSON;
   if (raw) {
     const serviceAccount = JSON.parse(raw);
-    admin.initializeApp({
-      credential: admin.credential.cert(serviceAccount),
-      storageBucket: process.env.FIREBASE_STORAGE_BUCKET || "form-fill-mitra.firebasestorage.app"
-    });
+    admin.initializeApp({ credential: admin.credential.cert(serviceAccount) });
     db = admin.firestore();
-    bucket = admin.storage().bucket();
     firebaseReady = true;
   }
 } catch (error) {
@@ -166,7 +170,7 @@ async function seedBiharRtpsForms() {
 app.get("/", (_req, res) => res.json({ name: "Form Fill Mitra API", status: "ok", health: "/health" }));
 app.get("/health", async (_req, res) => {
   let database = "not-configured";
-  let storage = "not-configured";
+  let storage = supabaseStorage ? "checking" : "not-configured";
   if (firebaseReady && db) {
     try {
       await db.collection("_healthChecks").doc("connectivity").get();
@@ -175,11 +179,13 @@ app.get("/health", async (_req, res) => {
       database = "unavailable";
     }
   }
-  if (firebaseReady && bucket) {
+  if (supabaseStorage) {
     try {
-      const [exists] = await bucket.exists();
-      storage = exists ? "connected" : "bucket-missing";
+      const { data: buckets, error } = await supabaseStorage.storage.listBuckets();
+      if (error) throw error;
+      storage = (buckets || []).some(item => item.name === "applicant-documents") ? "connected" : "bucket-missing";
     } catch (error) {
+      console.error("Supabase Storage health check failed:", error.message);
       storage = "unavailable";
     }
   }
@@ -574,7 +580,7 @@ app.get("/api/applications/:id/documents", requireUser, requireProfile, async (r
 
 app.post("/api/applications/:id/documents", requireUser, requireProfile, documentUpload.single("document"), async (req, res) => {
   if (!req.file) return fail(res, 400, "Choose one document to upload.");
-  if (!bucket) return fail(res, 503, "Private document storage is not configured yet.");
+  if (!supabaseStorage) return fail(res, 503, "Private document storage is not configured yet.");
   const mimeType = detectDocumentMime(req.file.buffer);
   if (!mimeType || mimeType !== req.file.mimetype) return fail(res, 415, "The file content does not match its declared type.");
   const documentKey = clean(req.body && req.body.documentKey);
@@ -588,16 +594,14 @@ app.post("/api/applications/:id/documents", requireUser, requireProfile, documen
     const name = safeFileName(req.file.originalname);
     const extension = mimeType === "application/pdf" ? "pdf" : mimeType.split("/")[1];
     const storagePath = "private-applications/" + req.params.id + "/" + id + "." + extension;
-    const file = bucket.file(storagePath);
-    await file.save(req.file.buffer, {
-      resumable: false,
-      validation: "crc32c",
-      metadata: {
+    const { error: storageError } = await supabaseStorage.storage
+      .from("applicant-documents")
+      .upload(storagePath, req.file.buffer, {
         contentType: mimeType,
-        cacheControl: "private, no-store, max-age=0",
-        metadata: { applicationId: req.params.id, uploadedBy: req.user.uid, documentKey }
-      }
-    });
+        cacheControl: "0",
+        upsert: false
+      });
+    if (storageError) throw storageError;
     const metadata = {
       documentKey, name, mimeType, size: req.file.size, storagePath,
       uploadedBy: req.user.uid, createdAt: now()
@@ -619,20 +623,18 @@ app.get("/api/applications/:id/documents/:documentId/download", requireUser, req
     const docSnap = await application.ref.collection("documents").doc(req.params.documentId).get();
     if (!docSnap.exists) return fail(res, 404, "Document not found.");
     const doc = docSnap.data();
-    const file = bucket.file(doc.storagePath);
-    const [exists] = await file.exists();
-    if (!exists) return fail(res, 404, "Stored document is unavailable.");
+    const { data: fileData, error: storageError } = await supabaseStorage.storage
+      .from("applicant-documents")
+      .download(doc.storagePath);
+    if (storageError || !fileData) return fail(res, 404, "Stored document is unavailable.");
     res.set({
       "Content-Type": doc.mimeType || "application/octet-stream",
       "Content-Disposition": "attachment; filename*=UTF-8''" + encodeURIComponent(safeFileName(doc.name)),
       "Cache-Control": "private, no-store, max-age=0",
       "X-Content-Type-Options": "nosniff"
     });
-    return file.createReadStream().on("error", error => {
-      console.error("Document download failed:", error.message);
-      if (!res.headersSent) res.status(500).end("Document download failed.");
-      else res.destroy(error);
-    }).pipe(res);
+    const fileBuffer = Buffer.from(await fileData.arrayBuffer());
+    return res.status(200).send(fileBuffer);
   } catch (error) {
     console.error("Document download authorization failed:", error.message);
     return fail(res, 500, "Could not download document.");
@@ -651,7 +653,10 @@ app.delete("/api/applications/:id/documents/:documentId", requireUser, requirePr
     const snap = await ref.get();
     if (!snap.exists) return fail(res, 404, "Document not found.");
     const doc = snap.data();
-    if (bucket && doc.storagePath) await bucket.file(doc.storagePath).delete({ ignoreNotFound: true });
+    if (supabaseStorage && doc.storagePath) {
+      const { error: storageError } = await supabaseStorage.storage.from("applicant-documents").remove([doc.storagePath]);
+      if (storageError) throw storageError;
+    }
     await ref.delete();
     await writeAudit(req.profile, "document.deleted", "application_document", req.params.documentId, { applicationId: req.params.id });
     return res.json({ ok: true });
