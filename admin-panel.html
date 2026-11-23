@@ -520,6 +520,7 @@ textarea{
 
 </style>
 <link rel="stylesheet" href="professional-ui.css?v=20261124">
+<style id="admin-dashboard-view">#formBuilderPanel,#configuredFormsPanel,#subscriptionPanel,#securityPanel{display:none!important}</style>
 <style>.ffm-admin-header{display:grid!important;grid-template-columns:48px 1fr auto!important;align-items:center!important}.ffm-admin-header>.menu-toggle{grid-column:1;grid-row:1}.ffm-admin-header>.admin-info{grid-column:2;justify-self:center}.ffm-admin-header>.logo{grid-column:3;justify-self:end}@media(max-width:700px){.ffm-admin-header{grid-template-columns:44px 1fr auto!important}.ffm-admin-header .admin-name{font-size:11px}}</style></head>
 
 <body>
@@ -534,6 +535,8 @@ textarea{
     </div>
     <nav class="drawer-nav">
         <button onclick="goTo('admin-panel.html')"><span>⌂</span> Dashboard</button>
+        <button onclick="goTo('form-management.html')"><span>▦</span> Form Management</button>
+        <button onclick="goTo('subscription-management.html')"><span>＄</span> Subscription & Payment</button>
         <button onclick="goTo('staff-management.html')"><span>♙</span> Staff Management</button>
         <button onclick="goTo('task-management.html')"><span>▤</span> Task Management</button>
         <button onclick="goTo('activity-monitoring.html')"><span>▥</span> Activity Monitoring</button>
@@ -551,7 +554,7 @@ textarea{
 
     <!-- STATS -->
 
-    <div class="stats">
+    <div class="stats" id="adminStats">
 
         <div class="stat">
 
@@ -617,7 +620,7 @@ textarea{
 
     <!-- FORM MANAGEMENT -->
 
-    <div class="panel">
+    <div class="panel" id="formBuilderPanel">
 
         <h2 id="formHeading">
             ➕ Add New Form
@@ -821,7 +824,7 @@ textarea{
 
     <!-- FORMS -->
 
-    <div class="panel">
+    <div class="panel" id="configuredFormsPanel">
 
         <h2>
             📋 Configured Forms
@@ -838,7 +841,7 @@ textarea{
 
     <!-- SUBSCRIPTION CONTROL -->
 
-    <div class="panel">
+    <div class="panel" id="subscriptionPanel">
 
         <h2>
             💳 Subscription & Payment Control
@@ -953,7 +956,7 @@ textarea{
 
     <!-- QUICK CONTROLS -->
 
-    <div class="panel">
+    <div class="panel" id="quickControlsPanel">
 
         <h2>
             ⚙️ Quick Controls
@@ -1003,7 +1006,7 @@ textarea{
 
     <!-- SECURITY -->
 
-    <div class="panel">
+    <div class="panel" id="securityPanel">
 
         <div class="notice">
 
