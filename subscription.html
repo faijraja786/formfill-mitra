@@ -1,0 +1,48 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Subscription | FormFill Mitra</title>
+<link rel="stylesheet" href="professional-ui.css?v=20261124">
+<script src="app-shell.js" defer></script>
+<style>
+.subscription-layout{max-width:850px;margin:34px auto}
+.plan-card{padding:clamp(22px,4vw,36px);border:1px solid var(--ffm-line);border-radius:20px;background:#fff;box-shadow:var(--ffm-shadow)}
+.plan-status{display:inline-flex;padding:7px 12px;border-radius:999px;background:#edf5ff;color:#1559b7;font-weight:750;font-size:13px}
+.plan-card h2{font-size:28px;margin:16px 0 8px}
+.plan-card p{color:var(--ffm-muted);line-height:1.7}
+.plan-details{display:grid;grid-template-columns:repeat(2,1fr);gap:12px;margin:22px 0}
+.detail{padding:16px;background:#f5f9ff;border:1px solid var(--ffm-line);border-radius:12px}
+.detail small{display:block;color:var(--ffm-muted);margin-bottom:5px}
+.notice{margin-top:18px;padding:14px;border-radius:12px;background:#fff8e6;border:1px solid #f1d58b;color:#735400;line-height:1.6}
+@media(max-width:600px){.plan-details{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+<header><div><h1>Subscription</h1><p class="muted">View the subscription availability for your workspace.</p></div></header>
+<main class="container subscription-layout">
+<section class="plan-card">
+<span class="plan-status" id="statusBadge">Checking status…</span>
+<h2 id="planTitle">Workspace access</h2>
+<p id="planDescription">Your administrator controls subscription availability for this service.</p>
+<div class="plan-details">
+<div class="detail"><small>Subscription</small><strong id="subscriptionValue">Not enabled</strong></div>
+<div class="detail"><small>Configured Trial Period</small><strong id="trialValue">—</strong></div>
+</div>
+<div class="notice"><strong>Payment status:</strong> Online payment processing is not connected yet. No payment can be made from this page. Contact the service administrator for plan information.</div>
+</section>
+</main>
+<script>
+(function(){
+ let settings={enabled:false,trialDays:180};
+ try{const parsed=JSON.parse(localStorage.getItem("ffm_subscription_settings")||"{}");settings={...settings,...parsed};}catch(e){}
+ const enabled=settings.enabled===true;
+ document.getElementById("statusBadge").textContent=enabled?"Subscription Enabled":"Subscription Not Enabled";
+ document.getElementById("planTitle").textContent=enabled?"Subscription is available":"Subscription is not currently available";
+ document.getElementById("planDescription").textContent=enabled?"The administrator has enabled subscription settings for this workspace. The configured trial period is shown below.":"The administrator has not enabled subscription settings. You can continue using the features currently available to your account.";
+ document.getElementById("subscriptionValue").textContent=enabled?"Enabled":"Not enabled";
+ document.getElementById("trialValue").textContent=enabled?(Number(settings.trialDays)||180)+" days":"—";
+})();
+</script>
+</body>
+</html>
