@@ -691,7 +691,7 @@ app.post("/api/ocr/image", ocrLimiter, requireUser, upload.single("document"), a
 app.use((error, _req, res, _next) => {
   if (error instanceof multer.MulterError) return fail(res, error.code === "LIMIT_FILE_SIZE" ? 413 : 400, error.message);
   if (error.message === "Origin not allowed by CORS") return fail(res, 403, "This website origin is not allowed.");
-  if (error.message && error.message.startsWith("Only JPEG")) return fail(res, 415, error.message);
+  if (error.message && (error.message.startsWith("Only JPEG") || error.message.startsWith("Only PDF"))) return fail(res, 415, error.message);
   console.error("Request failed:", error.message);
   return fail(res, 400, "Request could not be processed.");
 });
