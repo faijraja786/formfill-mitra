@@ -227,8 +227,8 @@ textarea{
 
 <nav class="nav">
 
-    <button onclick="go('admin-panel.html')">
-        📝 Forms
+    <button onclick="goDashboard()">
+        🏠 Dashboard
     </button>
 
     <button onclick="go('staff-management.html')">
@@ -323,11 +323,18 @@ textarea{
 
 <script>
     
-    // 🔐 ADMIN ACCESS GUARD
-if (localStorage.getItem("ffm_admin_logged_in") !== "true") {
-    window.location.replace("admin-login.html");
+    // Workspace access: Admin (verified at sign-in) or Professional session.
+const workspaceRole = localStorage.getItem("loginType");
+const workspaceLoggedIn = localStorage.getItem("isLoggedIn") === "true";
+const workspaceAdmin = workspaceRole === "admin" &&
+  (localStorage.getItem("ffm_admin_user") || "").toLowerCase() === "faijraja28@gmail.com";
+const workspaceProfessional = workspaceRole === "professional";
+if (!workspaceLoggedIn || (!workspaceAdmin && !workspaceProfessional)) {
+  window.location.replace(workspaceRole === "professional" ? "professional-login.html" : "admin-login.html");
 }
-    
+function goDashboard() {
+  window.location.href = workspaceProfessional ? "professional-dashboard.html" : "admin-panel.html";
+}
 const TASK_KEY = "ffm_tasks";
 const STAFF_KEY = "ffm_staff";
 const FORM_KEY = "ffm_admin_forms";
