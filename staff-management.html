@@ -272,8 +272,8 @@ button{
     <div class="notice">
         <strong>Admin Control</strong><br>
         Manage staff accounts and their permissions here.
-        Production version में authentication और server-side access control
-        आवश्यक होगा।
+        Production use requires authentication and server-side access controls
+        
     </div>
 
 
@@ -785,7 +785,7 @@ function deleteStaff(id){
 
     const confirmDelete =
         confirm(
-            `क्या ${member.name} को delete करना चाहते हैं?`
+            `Are you sure you want to delete ${member.name}?`
         );
 
 
