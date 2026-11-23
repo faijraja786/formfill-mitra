@@ -283,7 +283,7 @@ button{
         <h2 class="title">Add Staff Member</h2>
 
         <p class="subtitle">
-            नया staff account और उसकी permissions configure करें।
+            Create a staff account and configure its permissions.
         </p>
 
         <div class="grid">
@@ -425,7 +425,7 @@ button{
         <h2 class="title">Staff Members</h2>
 
         <p class="subtitle">
-            सभी staff accounts और उनकी current permissions।
+            View all staff accounts and their current permissions.
         </p>
 
         <div
@@ -486,7 +486,7 @@ function saveStaff(){
     if(!name || !username){
 
         alert(
-            "Staff Name और Username जरूरी हैं।"
+            "Staff name and username are required."
         );
 
         return;
@@ -573,7 +573,7 @@ function renderStaff(){
     if(staff.length === 0){
 
         list.innerHTML =
-            '<div class="empty">अभी कोई staff member नहीं है।</div>';
+            '<div class="empty">There are no staff members yet.</div>';
 
         return;
     }
