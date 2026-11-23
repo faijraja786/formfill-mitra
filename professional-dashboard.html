@@ -1836,8 +1836,6 @@ document.addEventListener("keydown",function(event){if(event.key==="Escape")clos
 
 </script>
 
-</body>
-</html>
 <script type="module">
 import { auth } from "./firebase-init.js";
 import { onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-auth.js";
@@ -1856,3 +1854,5 @@ onAuthStateChanged(auth, async user => {
   } catch (error) { console.error("Secure dashboard sync failed:", error); }
 });
 </script>
+</body>
+</html>
