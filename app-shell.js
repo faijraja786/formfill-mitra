@@ -68,8 +68,8 @@
     pageTitle.className = "ffm-shell-page-title";
     while (header.firstChild) pageTitle.appendChild(header.firstChild);
     pageTitle.querySelectorAll(".logo,.brand").forEach(node => node.remove());
-    pageTitle.querySelectorAll("h1,h2").forEach(node => { if (/formfill\\s*mitra/i.test(node.textContent || "")) node.remove(); });
-    if (!pageTitle.textContent.trim()) pageTitle.textContent = document.title.replace(/formfill\\s*mitra/ig, "").replace(/[|–—-]/g, " ").trim() || "Workspace";
+    pageTitle.querySelectorAll("h1,h2").forEach(node => { if (/formfill\s*mitra/i.test(node.textContent || "")) node.remove(); });
+    if (!pageTitle.textContent.trim()) pageTitle.textContent = document.title.replace(/formfill\s*mitra/ig, "").replace(/[|–—-]/g, " ").trim() || "Workspace";
 
     const toggle = document.createElement("button");
     toggle.className = "ffm-shell-toggle";
