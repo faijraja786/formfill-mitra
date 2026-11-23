@@ -1209,15 +1209,18 @@ async function completeReview(){
 
 
     try {
-        const [{ auth }, { apiRequest, bootstrapProfile }] = await Promise.all([
+        const [{ auth }, { onAuthStateChanged }, { apiRequest, bootstrapProfile }] = await Promise.all([
             import("./firebase-init.js"),
+            import("https://www.gstatic.com/firebasejs/10.12.5/firebase-auth.js"),
             import("./api-client.js")
         ]);
         if (!auth.currentUser) {
             await new Promise((resolve, reject) => {
-                const { onAuthStateChanged } = window.__ffmAuthModule || {};
-                if (!onAuthStateChanged) { reject(new Error("Please sign in again.")); return; }
-                const stop = onAuthStateChanged(auth, user => { stop(); user ? resolve(user) : reject(new Error("Please sign in again.")); });
+                let stop = () => {};
+                stop = onAuthStateChanged(auth, user => {
+                    stop();
+                    user ? resolve(user) : reject(new Error("Please sign in again."));
+                }, reject);
             });
         }
         const role = localStorage.getItem("loginType") === "professional" ? "professional" : "personal";
