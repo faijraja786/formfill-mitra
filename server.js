@@ -101,6 +101,61 @@ function applicationAccess(req, appData) {
   return false;
 }
 
+async function seedBiharRtpsForms() {
+  if (!db) return;
+  const sharedFields = [
+    { key: "full_name", label: "Applicant Full Name (as per records)", type: "text", required: true, options: [] },
+    { key: "father_name", label: "Father / Guardian Name", type: "text", required: true, options: [] },
+    { key: "dob", label: "Date of Birth", type: "date", required: false, options: [] },
+    { key: "gender", label: "Gender", type: "select", required: true, options: ["Male", "Female", "Other"] },
+    { key: "mobile", label: "Mobile Number", type: "tel", required: true, options: [] },
+    { key: "email", label: "Email Address", type: "email", required: false, options: [] },
+    { key: "state", label: "State", type: "text", required: true, options: [] },
+    { key: "district", label: "District", type: "text", required: true, options: [] },
+    { key: "block_circle", label: "Block / Circle", type: "text", required: true, options: [] },
+    { key: "village_ward", label: "Village / Ward", type: "text", required: true, options: [] },
+    { key: "full_address", label: "Full Residential Address", type: "textarea", required: true, options: [] },
+    { key: "application_purpose", label: "Purpose of Certificate", type: "textarea", required: true, options: [] }
+  ];
+  const definitions = [
+    {
+      id: "bihar-income-certificate",
+      name: "Bihar Income Certificate",
+      category: "Bihar RTPS",
+      description: "Guided preparation for the Bihar Income Certificate service. Select the correct issuing level and verify current requirements on the official ServicePlus portal before applying.",
+      officialLink: "https://serviceonline.bihar.gov.in/",
+      fields: [...sharedFields, { key: "occupation", label: "Occupation", type: "text", required: true, options: [] }, { key: "annual_family_income", label: "Approximate Annual Family Income (INR)", type: "number", required: true, options: [] }, { key: "income_source", label: "Main Source of Income", type: "textarea", required: true, options: [] }]
+    },
+    {
+      id: "bihar-residential-certificate",
+      name: "Bihar Residential Certificate",
+      category: "Bihar RTPS",
+      description: "Guided preparation for the Bihar Residential Certificate service. Choose the appropriate Circle, Sub-Division or District level and confirm document requirements on the official portal.",
+      officialLink: "https://serviceonline.bihar.gov.in/",
+      fields: [...sharedFields, { key: "residence_since", label: "Since when have you lived at this address?", type: "text", required: true, options: [] }, { key: "residence_proof_type", label: "Available Residence Proof", type: "text", required: false, options: [] }]
+    },
+    {
+      id: "bihar-caste-certificate",
+      name: "Bihar Caste Certificate",
+      category: "Bihar RTPS",
+      description: "Guided preparation for the Bihar Caste Certificate service. Confirm the eligible category, issuing level and current supporting-document list on the official portal.",
+      officialLink: "https://serviceonline.bihar.gov.in/",
+      fields: [...sharedFields, { key: "caste_community", label: "Caste / Community Name (as recorded)", type: "text", required: true, options: [] }, { key: "category", label: "Category", type: "select", required: true, options: ["BC", "EBC", "SC", "ST", "Other / As per official list"] }, { key: "caste_proof_type", label: "Available Supporting Record", type: "text", required: false, options: [] }]
+    }
+  ];
+  for (const form of definitions) {
+    const ref = db.collection("forms").doc(form.id);
+    const existing = await ref.get();
+    if (!existing.exists) {
+      await ref.create({
+        ...form, documents: [], status: "published", version: 1,
+        systemSeed: "bihar-rtps-v1", createdBy: "system",
+        updatedBy: "system", createdAt: now(), updatedAt: now()
+      });
+    }
+  }
+}
+
 app.get("/", (_req, res) => res.json({ name: "Form Fill Mitra API", status: "ok", health: "/health" }));
 app.get("/health", (_req, res) => res.status(200).json({
   status: "ok", service: "form-fill-mitra-api",
@@ -162,6 +217,7 @@ app.patch("/api/me", requireUser, requireProfile, async (req, res) => {
 // Forms: published forms are visible to signed-in applicants; only admins can manage the catalogue.
 app.get("/api/forms", requireUser, requireProfile, async (req, res) => {
   try {
+    if (req.profile.role === "admin") await seedBiharRtpsForms();
     const snap = await db.collection("forms").get();
     const forms = snap.docs.map(safeDoc)
       .filter(form => req.profile.role === "admin" || form.status === "published")
