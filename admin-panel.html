@@ -475,6 +475,27 @@ textarea{
     border-radius:12px;
 }
 
+/* Clean admin top bar and slide-out navigation */
+.topbar{position:sticky;top:0;z-index:30;min-height:76px;padding:12px 22px;flex-wrap:nowrap}
+.brand-group{display:flex;align-items:center;gap:16px}
+.menu-toggle{width:44px;height:44px;border:1px solid #dce7f7;border-radius:12px;background:#f2f7ff;color:#1769e8;font-size:24px;cursor:pointer;display:grid;place-items:center}
+.drawer-backdrop{position:fixed;inset:0;background:rgba(15,35,65,.34);z-index:39;opacity:0;visibility:hidden;transition:.22s}
+.admin-drawer{position:fixed;z-index:40;inset:0 auto 0 0;width:min(310px,86vw);background:#fff;box-shadow:12px 0 35px rgba(20,55,100,.16);transform:translateX(-105%);transition:transform .24s ease;display:flex;flex-direction:column;padding:20px}
+.drawer-open .drawer-backdrop{opacity:1;visibility:visible}
+.drawer-open .admin-drawer{transform:translateX(0)}
+.drawer-heading{display:flex;align-items:center;justify-content:space-between;padding-bottom:20px;border-bottom:1px solid #e7eef8}
+.drawer-heading .logo{font-size:22px;color:#17345f}
+.drawer-close{border:0;background:#f1f5fb;color:#526783;border-radius:9px;width:36px;height:36px;font-size:25px;cursor:pointer}
+.drawer-nav{display:grid;gap:7px;padding-top:18px}
+.drawer-nav button,.drawer-logout{display:flex;align-items:center;gap:13px;width:100%;border:0;background:transparent;color:#29415f;text-align:left;padding:13px 12px;border-radius:10px;font-size:14px;font-weight:700;cursor:pointer}
+.drawer-nav button:hover{background:#edf4ff;color:#1769e8}
+.drawer-nav button span,.drawer-logout span{width:22px;text-align:center;font-size:19px}
+.drawer-bottom{margin-top:auto;border-top:1px solid #e7eef8;padding-top:14px}
+.drawer-logout{background:#fff1f1;color:#c62828}
+.drawer-logout:hover{background:#ffe3e3}
+@media(max-width:700px){.topbar{padding:11px 14px;min-height:68px}.logo{font-size:21px}.admin-name{font-size:12px}.container{padding:14px}}
+
+
 @media(max-width:700px){
 
     .container{
@@ -502,89 +523,37 @@ textarea{
 
 <body>
 
-<header>
-
-    <div class="logo">
-        FormFill <span>Mitra</span>
+<header class="topbar">
+    <div class="brand-group">
+        <button class="menu-toggle" id="menuToggle" type="button" aria-label="Open navigation menu" aria-expanded="false">☰</button>
+        <div class="logo">FormFill <span>Mitra</span></div>
     </div>
-
     <div class="admin-info">
-
-        <div class="admin-name">
-            Admin:
-            <strong id="adminUser">Admin</strong>
-        </div>
-
-        <button
-            class="logout-btn"
-            onclick="adminLogout()">
-
-            Logout
-
-        </button>
-
+        <div class="admin-name">Admin: <strong id="adminUser">Admin</strong></div>
     </div>
-
 </header>
+
+<div class="drawer-backdrop" id="drawerBackdrop" onclick="closeAdminMenu()"></div>
+<aside class="admin-drawer" id="adminDrawer" aria-label="Admin navigation">
+    <div class="drawer-heading">
+        <div class="logo">FormFill <span>Mitra</span></div>
+        <button class="drawer-close" type="button" onclick="closeAdminMenu()" aria-label="Close menu">×</button>
+    </div>
+    <nav class="drawer-nav">
+        <button onclick="goTo('admin-panel.html')"><span>⌂</span> Dashboard</button>
+        <button onclick="goTo('staff-management.html')"><span>♙</span> Staff Management</button>
+        <button onclick="goTo('task-management.html')"><span>▤</span> Task Management</button>
+        <button onclick="goTo('activity-monitoring.html')"><span>▥</span> Activity Monitoring</button>
+        <button onclick="goTo('ai-assistant.html')"><span>✧</span> AI Assistant</button>
+        <button onclick="goTo('index.html')"><span>⌂</span> Home</button>
+    </nav>
+    <div class="drawer-bottom">
+        <button class="drawer-logout" onclick="adminLogout()"><span>↪</span> Logout</button>
+    </div>
+</aside>
 
 
 <div class="container">
-
-
-    <!-- NAVIGATION -->
-
-    <div class="nav-grid">
-
-        <div
-            class="nav-card"
-            onclick="goTo('staff-management.html')">
-
-            <div class="nav-icon">👥</div>
-            <div class="nav-title">Staff Management</div>
-
-        </div>
-
-
-        <div
-            class="nav-card"
-            onclick="goTo('task-management.html')">
-
-            <div class="nav-icon">📋</div>
-            <div class="nav-title">Task Management</div>
-
-        </div>
-
-
-        <div
-            class="nav-card"
-            onclick="goTo('activity-monitoring.html')">
-
-            <div class="nav-icon">📊</div>
-            <div class="nav-title">Activity Monitoring</div>
-
-        </div>
-
-
-        <div
-            class="nav-card"
-            onclick="goTo('ai-assistant.html')">
-
-            <div class="nav-icon">🤖</div>
-            <div class="nav-title">AI Assistant</div>
-
-        </div>
-
-
-        <div
-            class="nav-card"
-            onclick="goTo('index.html')">
-
-            <div class="nav-icon">🏠</div>
-            <div class="nav-title">Home</div>
-
-        </div>
-
-    </div>
 
 
     <!-- STATS -->
@@ -1205,6 +1174,21 @@ function goTo(page){
     window.location.href = page;
 
 }
+
+function openAdminMenu(){
+    document.body.classList.add("drawer-open");
+    document.getElementById("menuToggle").setAttribute("aria-expanded","true");
+}
+function closeAdminMenu(){
+    document.body.classList.remove("drawer-open");
+    const toggle=document.getElementById("menuToggle");
+    if(toggle)toggle.setAttribute("aria-expanded","false");
+}
+document.getElementById("menuToggle").addEventListener("click",()=>{
+    document.body.classList.contains("drawer-open")?closeAdminMenu():openAdminMenu();
+});
+document.addEventListener("keydown",event=>{if(event.key==="Escape")closeAdminMenu();});
+
 
 
 
