@@ -973,21 +973,7 @@ function goApplications(){
 
 
 function goDocuments(){
-
-    /*
-       If a dedicated Document Vault page is later connected,
-       this route can be changed without changing the dashboard.
-    */
-
-    const selectedForm =
-        localStorage.getItem("selectedForm");
-
-    if(selectedForm){
-        window.location.href = "form-details.html";
-    }else{
-        alert("Document Vault will be available after starting an application.");
-    }
-
+    window.location.href = "document-vault.html";
 }
 
 
@@ -1002,35 +988,7 @@ function goForms(){
 
 
 function goProfile(){
-
-    const applicant =
-        safeParse("currentApplicant", {});
-
-
-    if(
-        applicant &&
-        Object.keys(applicant).length > 0
-    ){
-
-        alert(
-            "Applicant Profile\n\n" +
-            "Name: " +
-            (applicant.fullName || "-") +
-            "\nDOB: " +
-            (applicant.dob || "-") +
-            "\nMobile: " +
-            (applicant.mobile || "-")
-        );
-
-    }else{
-
-        alert(
-            "Applicant profile अभी create नहीं हुआ है। " +
-            "पहले कोई application शुरू करें।"
-        );
-
-    }
-
+    window.location.href = "profile.html";
 }
 
 
