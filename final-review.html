@@ -507,6 +507,13 @@ button:disabled{
 
         </div>
 
+        <div class="confirm" style="margin-top:14px">
+            <input type="checkbox" id="documentConsent">
+            <label for="documentConsent">
+                I consent to securely store the documents I upload with this application. Access is limited to my account, the administrator, and staff assigned to this application.
+            </label>
+        </div>
+
         <div id="status"
              class="status">
         </div>
@@ -1191,22 +1198,22 @@ function showStatus(message,type){
 
 async function completeReview(){
 
-    const checkbox =
-        document.getElementById(
-            "confirmCheckbox"
-        );
-
-
+    const checkbox = document.getElementById("confirmCheckbox");
+    const consent = document.getElementById("documentConsent");
     if(!checkbox.checked){
-
-        showStatus(
-            "Please confirm that you have reviewed all information.",
-            "error"
-        );
-
+        showStatus("Please confirm that you have reviewed all information.", "error");
         return;
     }
 
+    const uploaded = getJSON("uploadedDocuments", {});
+    const documentKeys = Object.keys(uploaded || {});
+    if(documentKeys.length && !consent.checked){
+        showStatus("Please provide consent before securely uploading your documents.", "error");
+        return;
+    }
+
+    const button = document.querySelector(".btn-success");
+    if(button){ button.disabled = true; button.textContent = "Saving securely…"; }
 
     try {
         const [{ auth }, { onAuthStateChanged }, { apiRequest, bootstrapProfile }] = await Promise.all([
@@ -1223,40 +1230,100 @@ async function completeReview(){
                 }, reject);
             });
         }
+        const user = auth.currentUser;
+        if (!user) throw new Error("Please sign in again.");
         const role = localStorage.getItem("loginType") === "professional" ? "professional" : "personal";
         await bootstrapProfile(role, applicant.fullName || "");
         const formId = selectedForm && selectedForm.id;
         if (!formId) throw new Error("This form is not linked to the published catalogue. Please reopen it from Browse Forms.");
-        const result = await apiRequest("/api/applications", {
-            method: "POST",
-            body: JSON.stringify({
-                formId,
-                clientId: localStorage.getItem("currentClientId") || null,
-                applicant: {
-                    fullName: applicant.fullName || applicant.name || "",
-                    email: applicant.email || "",
-                    phone: applicant.phone || applicant.mobile || applicant.mobileNumber || "",
-                    address: applicant.address || "",
-                    dateOfBirth: applicant.dateOfBirth || applicant.dob || "",
-                    gender: applicant.gender || "",
-                    category: applicant.category || "",
-                    guardianName: applicant.guardianName || applicant.fatherName || "",
-                    education: applicant.education || applicant.qualification || ""
-                },
-                answers: getJSON("formData", {})
-            })
-        });
-        localStorage.setItem("currentApplicationId", result.applicationId);
+
+        let applicationId = localStorage.getItem("currentApplicationId");
+        const canResume = applicationId &&
+            localStorage.getItem("currentApplicationFormId") === formId &&
+            localStorage.getItem("finalReviewCompleted") !== "true";
+        if (canResume) {
+            try {
+                const existing = await apiRequest("/api/applications/" + encodeURIComponent(applicationId));
+                if (!existing.application || existing.application.formId !== formId) applicationId = null;
+            } catch (_) { applicationId = null; }
+        } else {
+            applicationId = null;
+        }
+
+        if (!applicationId) {
+            const result = await apiRequest("/api/applications", {
+                method: "POST",
+                body: JSON.stringify({
+                    formId,
+                    clientId: localStorage.getItem("currentClientId") || null,
+                    applicant: {
+                        fullName: applicant.fullName || applicant.name || "",
+                        email: applicant.email || "",
+                        phone: applicant.phone || applicant.mobile || applicant.mobileNumber || "",
+                        address: applicant.address || "",
+                        dateOfBirth: applicant.dateOfBirth || applicant.dob || "",
+                        gender: applicant.gender || "",
+                        category: applicant.category || "",
+                        guardianName: applicant.guardianName || applicant.fatherName || "",
+                        education: applicant.education || applicant.qualification || ""
+                    },
+                    answers: getJSON("formData", {})
+                })
+            });
+            applicationId = result.applicationId;
+            localStorage.setItem("currentApplicationId", applicationId);
+            localStorage.setItem("currentApplicationFormId", formId);
+        }
+
+        if (documentKeys.length) {
+            const existing = await apiRequest("/api/applications/" + encodeURIComponent(applicationId) + "/documents");
+            const alreadySaved = new Set((existing.documents || []).map(doc => doc.documentKey));
+            for (const key of documentKeys) {
+                if (alreadySaved.has(key)) continue;
+                const openRequest = indexedDB.open("FormFillMitraDB", 1);
+                const db = await new Promise((resolve, reject) => {
+                    openRequest.onsuccess = () => resolve(openRequest.result);
+                    openRequest.onerror = () => reject(openRequest.error);
+                });
+                if (!db.objectStoreNames.contains("documents")) {
+                    db.close();
+                    throw new Error("A selected document could not be found in browser storage. Please upload it again.");
+                }
+                const record = await new Promise((resolve, reject) => {
+                    const tx = db.transaction("documents", "readonly");
+                    const request = tx.objectStore("documents").get("current_" + key);
+                    request.onsuccess = () => resolve(request.result);
+                    request.onerror = () => reject(request.error);
+                });
+                db.close();
+                if (!record || !(record.file instanceof Blob)) {
+                    throw new Error("The file for " + key.replace(/_/g, " ") + " is missing. Please upload it again.");
+                }
+                const formData = new FormData();
+                formData.append("documentKey", key);
+                formData.append("document", record.file, record.name || (key + ".bin"));
+                await apiRequest("/api/applications/" + encodeURIComponent(applicationId) + "/documents", {
+                    method: "POST",
+                    body: formData
+                });
+            }
+        }
+
         localStorage.setItem("applicationReviewStatus", "submitted");
         localStorage.setItem("finalReviewCompleted", "true");
-        showStatus("Preparation record saved in Form Fill Mitra. Reference: " + result.applicationId + ". Government submission is NOT complete yet. Continue on the official Bihar portal and save its acknowledgement number.", "success");
+        showStatus(
+            "Preparation record and " + documentKeys.length + " document(s) saved securely. Reference: " + applicationId + ". Government submission is NOT complete yet. Continue on the official portal and save its acknowledgement number.",
+            "success"
+        );
         const portal = selectedForm.officialLink || selectedForm.link;
         if (portal) setTimeout(() => window.open(portal, "_blank", "noopener,noreferrer"), 900);
     } catch (error) {
         console.error("Application submission failed:", error);
         showStatus(error.message || "Application could not be submitted. Please try again.", "error");
+    } finally {
+        if(button){ button.disabled = false; button.textContent = "✓ Confirm & Continue"; }
     }
-    return;
+}
 
     /*
        Legacy local-only submission code below is intentionally unreachable.
