@@ -32,22 +32,25 @@ form.addEventListener("submit", async (event) => {
       setBusy(false);
       return;
     }
-    localStorage.setItem("isLoggedIn", "true");
-    localStorage.setItem("loginType", "professional");
-    window.location.href = "professional-dashboard.html";
+    await routeAfterLogin(credential.user, "professional");
   } catch (error) { showMessage(authMessage(error), true); }
   finally { setBusy(false); }
 });
 document.getElementById("googleBtn").addEventListener("click", async () => {
   setBusy(true);
   try {
-    await signInWithPopup(auth, new GoogleAuthProvider());
-    localStorage.setItem("isLoggedIn", "true");
-    localStorage.setItem("loginType", "professional");
-    window.location.href = "professional-dashboard.html";
+    const credential = await signInWithPopup(auth, new GoogleAuthProvider());
+    await routeAfterLogin(credential.user, "professional");
   } catch (error) { showMessage(authMessage(error), true); }
   finally { setBusy(false); }
 });
+async function routeAfterLogin(user, mode){
+  if(!user.emailVerified){showMessage("Please verify your email first.", true);return;}
+  const isAdmin=(user.email||"").trim().toLowerCase()==="faijraja28@gmail.com";
+  localStorage.setItem("isLoggedIn","true");
+  localStorage.setItem("loginType",isAdmin?"admin":mode);
+  window.location.replace(isAdmin?"admin-panel.html":"professional-dashboard.html");
+}
 function showMessage(message, isError){const el=document.getElementById("message");el.textContent=message;el.className="message"+(isError?" error":"");el.style.display="block";}
 function setBusy(busy){document.getElementById("submitBtn").disabled=busy;document.getElementById("googleBtn").disabled=busy;document.getElementById("submitBtn").textContent=busy?"Please wait...":"Professional Login";}
 function authMessage(error){const map={"auth/email-already-in-use":"An account with this email already exists.","auth/invalid-email":"Please enter a valid email address.","auth/weak-password":"Choose a stronger password.","auth/invalid-credential":"Incorrect email or password.","auth/user-not-found":"No account found. Please sign up first.","auth/wrong-password":"Incorrect password.","auth/popup-closed-by-user":"Google sign-in was cancelled.","auth/unauthorized-domain":"This website domain is not authorized in Firebase Authentication."};return map[error.code]||"Something went wrong. Please try again.";}
