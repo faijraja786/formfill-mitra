@@ -1,308 +1,50 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-
-    <title>FormFill Mitra</title>
-
-    <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-            font-family: Arial, sans-serif;
-        }
-
-        body {
-            min-height: 100vh;
-            background: #f5f7fb;
-            color: #172033;
-        }
-
-        header {
-            background: #ffffff;
-            border-bottom: 1px solid #e5e7eb;
-            padding: 16px 6%;
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            position: sticky;
-            top: 0;
-            z-index: 100;
-        }
-
-        .logo {
-            font-size: 22px;
-            font-weight: 800;
-        }
-
-        .logo span {
-            color: #315efb;
-        }
-
-        .header-btn {
-            border: none;
-            background: #315efb;
-            color: white;
-            padding: 10px 18px;
-            border-radius: 8px;
-            cursor: pointer;
-            font-weight: 600;
-        }
-
-        .hero {
-            padding: 70px 6% 50px;
-            text-align: center;
-        }
-
-        .hero h1 {
-            font-size: clamp(34px, 6vw, 62px);
-            line-height: 1.05;
-            margin-bottom: 18px;
-        }
-
-        .hero h1 span {
-            color: #315efb;
-        }
-
-        .hero p {
-            max-width: 650px;
-            margin: auto;
-            color: #667085;
-            font-size: 17px;
-            line-height: 1.7;
-        }
-
-        .mode-container {
-            max-width: 950px;
-            margin: 20px auto 70px;
-            padding: 0 20px;
-            display: grid;
-            grid-template-columns: repeat(2, 1fr);
-            gap: 22px;
-        }
-
-        .mode-card {
-            background: white;
-            border: 1px solid #e5e7eb;
-            border-radius: 18px;
-            padding: 30px;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.05);
-            transition: 0.25s;
-        }
-
-        .mode-card:hover {
-            transform: translateY(-5px);
-            box-shadow: 0 15px 35px rgba(0,0,0,0.08);
-        }
-
-        .icon {
-            width: 55px;
-            height: 55px;
-            border-radius: 14px;
-            background: #eef2ff;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 27px;
-            margin-bottom: 20px;
-        }
-
-        .mode-card h2 {
-            margin-bottom: 10px;
-        }
-
-        .mode-card p {
-            color: #667085;
-            line-height: 1.6;
-            margin-bottom: 22px;
-        }
-
-        .mode-btn {
-            width: 100%;
-            padding: 13px;
-            border: none;
-            border-radius: 9px;
-            background: #315efb;
-            color: white;
-            font-size: 15px;
-            font-weight: 700;
-            cursor: pointer;
-        }
-
-        .mode-btn.secondary {
-            background: #172033;
-        }
-
-        .features {
-            max-width: 1100px;
-            margin: 0 auto 70px;
-            padding: 0 20px;
-        }
-
-        .features h2 {
-            text-align: center;
-            margin-bottom: 28px;
-            font-size: 30px;
-        }
-
-        .feature-grid {
-            display: grid;
-            grid-template-columns: repeat(3, 1fr);
-            gap: 18px;
-        }
-
-        .feature {
-            background: white;
-            padding: 23px;
-            border-radius: 14px;
-            border: 1px solid #e5e7eb;
-        }
-
-        .feature h3 {
-            margin-bottom: 8px;
-        }
-
-        .feature p {
-            color: #667085;
-            line-height: 1.5;
-            font-size: 14px;
-        }
-
-        footer {
-            text-align: center;
-            padding: 30px 20px;
-            border-top: 1px solid #e5e7eb;
-            color: #667085;
-            background: white;
-        }
-
-        @media (max-width: 700px) {
-            .mode-container,
-            .feature-grid {
-                grid-template-columns: 1fr;
-            }
-
-            .hero {
-                padding-top: 50px;
-            }
-
-            header {
-                padding: 14px 20px;
-            }
-        }
-    </style>
-<link rel="stylesheet" href="professional-ui.css?v=20261123">
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="theme-color" content="#1769e8"><meta name="description" content="FormFill Mitra helps individuals and service professionals organize forms, applications and documents in one secure workspace.">
+<title>FormFill Mitra | Smart Form & Application Management</title>
+<link rel="stylesheet" href="professional-ui.css?v=20261124">
+<style>
+:root{--brand:#1769e8;--ink:#172b4d;--muted:#667892}
+body{margin:0;background:#f4f8ff;color:var(--ink)}
+.site-header{height:76px;padding:0 clamp(18px,5vw,72px);display:flex;align-items:center;justify-content:space-between;background:#fff;border-bottom:1px solid #dce7f7;position:sticky;top:0;z-index:20}
+.site-brand{font-size:23px;font-weight:850;letter-spacing:-.7px;color:#17345f}.site-brand span{color:var(--brand)}
+.header-actions{display:flex;align-items:center;gap:12px}.header-link{color:#315477;text-decoration:none;font-weight:650;padding:10px 13px;border-radius:9px}.header-link:hover{background:#edf5ff;color:var(--brand)}
+.hero{max-width:1180px;margin:0 auto;padding:88px 24px 58px;text-align:center}
+.eyebrow{display:inline-flex;align-items:center;gap:8px;padding:8px 13px;border-radius:999px;background:#e8f2ff;color:#1559b7;font-weight:750;font-size:13px}
+.hero h1{max-width:850px;margin:22px auto 16px;font-size:clamp(38px,6vw,66px);line-height:1.06;letter-spacing:-2.8px;color:#142c4c}
+.hero h1 span{color:var(--brand)}.hero p{max-width:690px;margin:0 auto;color:var(--muted);font-size:18px;line-height:1.75}
+.mode-grid{max-width:980px;margin:24px auto 86px;padding:0 24px;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:22px}
+.mode-card{background:#fff;border:1px solid #dce7f7;border-radius:20px;padding:30px;box-shadow:0 12px 34px rgba(23,72,130,.07);text-align:left;transition:.2s}
+.mode-card:hover{transform:translateY(-4px);box-shadow:0 18px 40px rgba(23,72,130,.12);border-color:#a9ccfa}
+.mode-icon{width:54px;height:54px;border-radius:15px;display:grid;place-items:center;background:#edf5ff;font-size:26px}
+.mode-card h2{margin:20px 0 8px;font-size:23px}.mode-card p{color:var(--muted);line-height:1.65;min-height:52px}
+.mode-btn{display:flex;justify-content:center;align-items:center;width:100%;min-height:48px;margin-top:22px;border-radius:11px;background:var(--brand);color:#fff;text-decoration:none;font-weight:750}
+.mode-btn:hover{background:#0d47a1;color:#fff}
+.features{max-width:1120px;margin:0 auto 86px;padding:0 24px}.section-heading{text-align:center;margin-bottom:28px}.section-heading h2{font-size:32px;margin:0 0 8px}.section-heading p{color:var(--muted);margin:0}
+.feature-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:16px}.feature{background:#fff;border:1px solid #dce7f7;border-radius:15px;padding:23px}.feature h3{margin:0 0 8px;font-size:17px}.feature p{margin:0;color:var(--muted);line-height:1.6;font-size:14px}
+.site-footer{text-align:center;padding:26px 20px;background:#fff;border-top:1px solid #dce7f7;color:#718096;font-size:13px}
+@media(max-width:700px){.site-header{height:66px;padding:0 17px}.header-link{padding:8px}.hero{padding:62px 20px 34px}.hero h1{letter-spacing:-1.5px}.hero p{font-size:16px}.mode-grid,.feature-grid{grid-template-columns:1fr}.mode-grid{margin-bottom:60px}.mode-card p{min-height:0}.features{margin-bottom:60px}}
+</style>
 </head>
-
 <body>
-
-<header>
-    <div class="logo">
-        FormFill <span>Mitra</span>
-    </div>
-
-    <button class="header-btn" onclick="showMessage()">
-        Login
-    </button>
+<header class="site-header">
+<a class="site-brand" href="index.html" aria-label="FormFill Mitra Home">FormFill <span>Mitra</span></a>
+<nav class="header-actions" aria-label="Main navigation"><a class="header-link" href="#features">Features</a><a class="header-link" href="personal-login.html">Sign In</a></nav>
 </header>
-
+<main>
 <section class="hero">
-    <h1>
-        Forms भरना बनेगा<br>
-        <span>Simple & Organized</span>
-    </h1>
-
-    <p>
-        अपने forms को manage करने के लिए Personal या Professional
-        mode चुनें और application process को एक जगह से व्यवस्थित करें।
-    </p>
+<span class="eyebrow">A smarter way to manage applications</span>
+<h1>Every form. Every document.<br><span>One organized workspace.</span></h1>
+<p>Manage applications, keep important documents organized, and simplify your form-filling workflow with FormFill Mitra.</p>
 </section>
-
-<section class="mode-container">
-
-    <div class="mode-card">
-        <div class="icon">👤</div>
-
-        <h2>Personal</h2>
-
-        <p>
-            अपने applications और documents को manage करने के लिए
-            Personal mode का इस्तेमाल करें।
-        </p>
-
-        <button class="mode-btn" onclick="location.href='personal-login.html'">
-    Continue as Personal
-</button>
-    </div>
-
-    <div class="mode-card">
-        <div class="icon">💼</div>
-
-        <h2>Professional</h2>
-
-        <p>
-            Applicants के forms को manage करने वाले operators के लिए
-            Professional mode।
-        </p>
-
-        <button class="mode-btn" onclick="location.href='professional-login.html'">
-    Continue as Professional
-</button>
-         
-    </div>
-
+<section class="mode-grid" aria-label="Choose your workspace">
+<article class="mode-card"><div class="mode-icon" aria-hidden="true">👤</div><h2>Personal Workspace</h2><p>Keep your applications, personal documents and progress organized in one secure place.</p><a class="mode-btn" href="personal-login.html">Continue as Personal <span aria-hidden="true">&nbsp;→</span></a></article>
+<article class="mode-card"><div class="mode-icon" aria-hidden="true">💼</div><h2>Professional Workspace</h2><p>Manage client applications, organize work, and coordinate your professional workflow.</p><a class="mode-btn" href="professional-login.html">Continue as Professional <span aria-hidden="true">&nbsp;→</span></a></article>
 </section>
-
-<section class="features">
-
-    <h2>Platform Features</h2>
-
-    <div class="feature-grid">
-
-        <div class="feature">
-            <h3>📋 Form Management</h3>
-            <p>
-                उपलब्ध forms को एक जगह से access करने के लिए बनाया गया
-                centralized system।
-            </p>
-        </div>
-
-        <div class="feature">
-            <h3>📄 Document Ready</h3>
-            <p>
-                आगे चलकर supported forms के लिए required documents
-                और upload requirements व्यवस्थित किए जाएंगे।
-            </p>
-        </div>
-
-        <div class="feature">
-            <h3>🤖 AI Assistant</h3>
-            <p>
-                Future versions में configuration और system management
-                के लिए controlled AI assistant जोड़ा जाएगा।
-            </p>
-        </div>
-
-    </div>
-
-</section>
-
-<footer>
-    © 2026 FormFill Mitra — All Rights Reserved<br>
-    <a href="admin-login.html" style="display:inline-block;margin-top:10px;color:#1769e8;font-size:13px;font-weight:700;text-decoration:none">Admin Login</a>
-</footer>
-
-<script>
-    function selectMode(mode) {
-        alert(mode + " mode selected.");
-    }
-
-    function showMessage() {
-        document.querySelector(".mode-container").scrollIntoView({ behavior: "smooth", block: "center" });
-    }
-</script>
-
-</body>
-</html>
+<section class="features" id="features"><div class="section-heading"><h2>Everything in its place</h2><p>Tools designed to make application management clearer and easier.</p></div>
+<div class="feature-grid"><article class="feature"><h3>Application Management</h3><p>Track your applications and keep important details accessible.</p></article><article class="feature"><h3>Document Organization</h3><p>Keep essential documents organized for your application workflow.</p></article><article class="feature"><h3>Professional Workspace</h3><p>Coordinate tasks and manage client work through a dedicated workspace.</p></article></div></section>
+</main>
+<footer class="site-footer">© 2026 FormFill Mitra. All rights reserved.</footer>
+</body></html>
