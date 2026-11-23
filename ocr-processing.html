@@ -394,7 +394,7 @@ function loadFileList(){
 
         container.innerHTML = `
             <div class="empty">
-                कोई uploaded document नहीं मिला।
+                No uploaded document was found.
             </div>
         `;
 
@@ -454,7 +454,7 @@ function waitForSignedInUser(){
 ============================== */
 async function startOCR(){
     if(!selectedForm){
-        setProgress(100, "Form selected नहीं है।");
+        setProgress(100, "No form is selected.");
         return;
     }
 
