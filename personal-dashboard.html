@@ -1143,7 +1143,9 @@ onAuthStateChanged(auth, async user => {
   try {
     await bootstrapProfile("personal", user.displayName || "");
     const [data, formData] = await Promise.all([apiRequest("/api/applications"), apiRequest("/api/forms")]);
-    allForms = (formData.forms || []).filter(form => form.status === "published");
+    const publishedForms = (formData.forms || []).filter(form => form.status === "published");
+    localStorage.setItem("ffm_admin_forms", JSON.stringify(publishedForms));
+    if (typeof loadForms === "function") loadForms();
     localStorage.setItem("ffm_applications", JSON.stringify(data.applications || []));
     if (typeof updateStats === "function") updateStats();
     if (typeof renderApplications === "function") renderApplications();
