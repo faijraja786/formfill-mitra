@@ -460,6 +460,7 @@ body{background:#f3f7ff;color:#172b4d}
 .fm-drawer-bottom{margin-top:auto;border-top:1px solid #e3ebf6;padding-top:12px}
 .fm-logout-item{color:#b42318!important;background:#fff2f1!important}
 @media(max-width:640px){.ffm-app-header{grid-template-columns:44px 1fr!important;min-height:66px!important}.ffm-app-header>.brand{grid-column:2;justify-self:end!important}.ffm-app-header>.header-right{display:none!important}.ffm-app-header .brand h2{font-size:16px}.ffm-app-header .brand small{font-size:11px}}
+ #formsSection,#subscriptionSection{display:none!important}
 </style></head>
 
 <body>
@@ -472,7 +473,7 @@ body{background:#f3f7ff;color:#172b4d}
 <button class="fm-menu-item" type="button" onclick="goApplications();closeMenu()"><span>📋</span>My Applications</button>
 <button class="fm-menu-item" type="button" onclick="goDocuments();closeMenu()"><span>📁</span>Document Vault</button>
 <button class="fm-menu-item" type="button" onclick="goProfile();closeMenu()"><span>👤</span>My Profile</button>
-<button class="fm-menu-item" type="button" onclick="document.getElementById('subscriptionSection').scrollIntoView({behavior:'smooth',block:'center'});closeMenu()"><span>⭐</span>Subscription</button>
+<button class="fm-menu-item" type="button" onclick="window.location.href='subscription.html';closeMenu()"><span>⭐</span>Subscription</button>
  <div class="fm-menu-note">Your workspace, organized in one place.<br>FormFill Mitra</div><div class="fm-drawer-bottom"><button class="fm-menu-item fm-logout-item" type="button" onclick="logout()"><span>↪</span>Logout</button></div>
 </aside>
 
@@ -1000,12 +1001,7 @@ function goDocuments(){
 
 
 function goForms(){
-
-    document.getElementById("formsSection")
-        .scrollIntoView({
-            behavior:"smooth"
-        });
-
+    window.location.href = "form-catalog.html";
 }
 
 
