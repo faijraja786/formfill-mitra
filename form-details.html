@@ -166,7 +166,7 @@ button{
         <div id="documentsContainer"></div>
 
         <div class="info">
-            Upload only documents you are authorized to use. Supported formats: PDF, JPG, PNG and WEBP. Maximum file size: 10 MB each. Review every file before continuing. Confirm the official portal's current requirements before final submission.
+            Document upload is optional. Upload only files you already have; do not arrange extra documents just for this step. PDF, JPG, PNG and WEBP are supported (10 MB per file). You can skip OCR and enter details manually. The official portal determines final requirements.
         </div>
 
         <div class="buttons">
@@ -178,9 +178,15 @@ button{
             </button>
 
             <button
+                class="secondary"
+                onclick="skipOCR()">
+                Skip OCR · Fill manually
+            </button>
+
+            <button
                 class="primary"
                 onclick="continueToOCR()">
-                Continue to OCR →
+                Continue with OCR →
             </button>
 
         </div>
@@ -466,39 +472,16 @@ function loadForm(){
         );
 
 
-    const configuredDocuments =
-        Array.isArray(selectedForm.documents) ? selectedForm.documents : [];
-    const documents = configuredDocuments.length
-        ? configuredDocuments.map(function(item, index) {
-            if (typeof item === "string") return { key: item, label: documentNames[item] || item, required: true };
-            return { key: item.key || ("document_" + index), label: item.label || item.key || "Supporting Document", required: Boolean(item.required) };
-        })
-        : [
-            { key: "identity", label: "Identity Document", required: false },
-            { key: "photograph", label: "Photograph", required: false },
-            { key: "address", label: "Address Proof", required: false },
-            { key: "income_proof", label: "Income Supporting Document", required: false },
-            { key: "other", label: "Additional Supporting Document", required: false }
-          ];
+    container.innerHTML = `
+        <div class="document">
+            <h3>Upload available documents (optional)</h3>
+            <p>You do not need to upload every document here. Add only the files you already have; the official portal will show the final requirements.</p>
+            <input type="file" id="documentsUpload" multiple
+              accept=".jpg,.jpeg,.png,.webp,.pdf,image/jpeg,image/png,image/webp,application/pdf"
+              onchange="showSelectedFiles()">
+            <div class="file-info" id="selectedFilesInfo"></div>
+        </div>`;
 
-    if (!configuredDocuments.length) {
-        container.innerHTML = '<div class="info">No service-specific mandatory checklist has been verified. Upload the documents available to you and confirm the final list on the official portal.</div>';
-    }
-
-    container.innerHTML +=
-        documents.map(function(document){
-            const key = document.key;
-            const name = document.label;
-            return `
-
-                <div class="document">
-                    <h3>${escapeHTML(name)}</h3>
-                    <p>${escapeHTML(key)} · ${document.required ? "Required" : "Optional"}</p>
-                    <input type="file" id="document_${escapeHTML(key)}" accept=".jpg,.jpeg,.png,.webp,.pdf,image/jpeg,image/png,image/webp,application/pdf" onchange="showFileInfo('${escapeHTML(key)}')">
-                    <div class="file-info" id="info_${escapeHTML(key)}"></div>
-                </div>
-            `;
-        }).join("");
 
 }
 
@@ -552,146 +535,64 @@ function showFileInfo(key){
    CONTINUE TO OCR
 ============================== */
 
+async function collectAndSaveFiles(){
+    const input = document.getElementById("documentsUpload");
+    const files = input && input.files ? Array.from(input.files) : [];
+    for (const file of files) {
+        if (file.size > 10 * 1024 * 1024) throw new Error(file.name + " is larger than 10 MB.");
+    }
+    await clearCurrentDocuments();
+    const metadata = {};
+    for (let i = 0; i < files.length; i++) {
+        const key = "file_" + (i + 1);
+        await saveDocument(key, files[i]);
+        metadata[key] = { name: files[i].name, type: files[i].type, size: files[i].size };
+    }
+    localStorage.setItem("uploadedDocuments", JSON.stringify(metadata));
+    localStorage.setItem("documentsUploaded", files.length ? "true" : "false");
+    localStorage.setItem("ocrReady", "true");
+    return files.length;
+}
+
+function showSelectedFiles(){
+    const input = document.getElementById("documentsUpload");
+    const info = document.getElementById("selectedFilesInfo");
+    const files = input && input.files ? Array.from(input.files) : [];
+    info.textContent = files.length
+        ? files.map(file => file.name + " (" + (file.size / 1048576).toFixed(2) + " MB)").join(" · ")
+        : "No documents selected. You can continue without uploading.";
+}
+
 async function continueToOCR(){
-
     hideError();
-
-
-    if(!selectedForm){
-
-        showError(
-            "Please select a form first."
-        );
-
-        return;
-
-    }
-
-
-    const configuredDocuments =
-        Array.isArray(selectedForm.documents) ? selectedForm.documents : [];
-    const documents = configuredDocuments.length
-        ? configuredDocuments.map(function(item, index) {
-            if (typeof item === "string") return { key: item, label: documentNames[item] || item, required: true };
-            return { key: item.key || ("document_" + index), label: item.label || item.key || "Supporting Document", required: Boolean(item.required) };
-        })
-        : [
-            { key: "identity", label: "Identity Document", required: false },
-            { key: "photograph", label: "Photograph", required: false },
-            { key: "address", label: "Address Proof", required: false },
-            { key: "income_proof", label: "Income Supporting Document", required: false },
-            { key: "other", label: "Additional Supporting Document", required: false }
-          ];
-    const selectedFiles = {};
-
-    for(const document of documents){
-        const key = document.key;
-        const actualInput = window.document.getElementById("document_" + key);
-        if (!actualInput || !actualInput.files || !actualInput.files.length) {
-            if (document.required) {
-                showError("Required document missing: " + document.label);
-                return;
-            }
-            continue;
-        }
-
-
-        const file =
-            actualInput.files[0];
-
-
-        /* Basic size protection */
-
-        if(
-            file.size >
-            10 * 1024 * 1024
-        ){
-
-            showError(
-                (documentNames[key] || key) +
-                " 10 MB is too large."
-            );
-
+    if(!selectedForm){ showError("Please select a form first."); return; }
+    try {
+        const count = await collectAndSaveFiles();
+        if (!count) {
+            localStorage.setItem("ocrResults", "{}");
+            localStorage.setItem("ocrCompleted", "true");
+            location.href = "form-filling.html";
             return;
-
         }
-
-
-        selectedFiles[key] = {
-
-            name:file.name,
-
-            type:file.type,
-
-            size:file.size
-
-        };
-
-    }
-
-
-    if (!Object.keys(selectedFiles).length) {
-        showError("Upload at least one document or photograph before continuing.");
-        return;
-    }
-
-    try{
-
-        /*
-        Remove previous current documents
-        */
-
-        await clearCurrentDocuments();
-
-
-        /*
-        Save actual File objects in IndexedDB
-        */
-
-        for(const key of Object.keys(selectedFiles)) {
-            const input = document.getElementById("document_" + key);
-            await saveDocument(key, input.files[0]);
-        }
-
-
-        /*
-        Store metadata as well
-        */
-
-        localStorage.setItem(
-            "uploadedDocuments",
-            JSON.stringify(
-                selectedFiles
-            )
-        );
-
-
-        localStorage.setItem(
-            "documentsUploaded",
-            "true"
-        );
-
-
-        localStorage.setItem(
-            "ocrReady",
-            "true"
-        );
-
-
-        location.href =
-            "ocr-processing.html";
-
-
-    }catch(error){
-
+        location.href = "ocr-processing.html";
+    } catch(error) {
         console.error(error);
-
-        showError(
-            "The documents could not be saved. Check your browser storage permissions and try again."
-        );
-
+        showError(error.message || "Could not save the selected documents.");
     }
+}
 
+async function skipOCR(){
+    hideError();
+    if(!selectedForm){ showError("Please select a form first."); return; }
+    try {
+        await collectAndSaveFiles();
+        localStorage.setItem("ocrResults", "{}");
+        localStorage.setItem("ocrCompleted", "true");
+        location.href = "form-filling.html";
+    } catch(error) {
+        console.error(error);
+        showError(error.message || "Could not save the selected documents.");
+    }
 }
 
 
