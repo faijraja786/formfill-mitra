@@ -283,7 +283,7 @@ app.patch("/api/me", requireUser, requireProfile, async (req, res) => {
 // Forms: published forms are visible to signed-in applicants; only admins can manage the catalogue.
 app.get("/api/forms", requireUser, requireProfile, async (req, res) => {
   try {
-    if (req.profile.role === "admin") await seedBiharRtpsForms();
+    await seedBiharRtpsForms();
     const snap = await db.collection("forms").get();
     const forms = snap.docs.map(safeDoc)
       .filter(form => req.profile.role === "admin" || form.status === "published")
@@ -726,19 +726,25 @@ const upload = multer({
   }
 });
 const ocrLimiter = rateLimit({ windowMs: 15 * 60 * 1000, limit: 20, standardHeaders: "draft-7", legacyHeaders: false });
+let ocrWorkerPromise = null;
+let ocrQueue = Promise.resolve();
 app.post("/api/ocr/image", ocrLimiter, requireUser, upload.single("document"), async (req, res) => {
   if (!req.file) return fail(res, 400, "Upload one image in the document field.");
-  let worker;
   try {
-    const { createWorker } = require("tesseract.js");
-    worker = await createWorker("eng+hin");
-    const result = await worker.recognize(req.file.buffer);
+    const runOCR = async () => {
+      if (!ocrWorkerPromise) {
+        const { createWorker } = require("tesseract.js");
+        ocrWorkerPromise = createWorker("eng+hin");
+      }
+      const worker = await ocrWorkerPromise;
+      return worker.recognize(req.file.buffer);
+    };
+    const result = await (ocrQueue = ocrQueue.then(runOCR, runOCR));
     return res.status(200).json({ text: result.data.text || "", confidence: result.data.confidence ?? null, reviewRequired: true, message: "Please verify every extracted field against the original document." });
   } catch (error) {
+    ocrWorkerPromise = null;
     console.error("OCR processing failed:", error.message);
     return fail(res, 500, "OCR could not process this image. Please enter details manually.");
-  } finally {
-    if (worker) await worker.terminate().catch(() => {});
   }
 });
 
