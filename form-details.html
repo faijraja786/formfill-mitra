@@ -586,10 +586,6 @@ async function continueToOCR(){
 
     for(const document of documents){
         const key = document.key;
-        const input = document.getElementById
-            ? null
-            : document.getElementById;
-        const fileInput = document.getElementById ? null : document.getElementById;
         const actualInput = window.document.getElementById("document_" + key);
         if (!actualInput || !actualInput.files || !actualInput.files.length) {
             if (document.required) {
@@ -601,7 +597,7 @@ async function continueToOCR(){
 
 
         const file =
-            input.files[0];
+            actualInput.files[0];
 
 
         /* Basic size protection */
