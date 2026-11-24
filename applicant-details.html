@@ -452,7 +452,7 @@ button:disabled{
             style="margin-top:14px"
             onclick="applyOCR()">
 
-            Apply / Re-apply OCR
+            Apply OCR to empty fields
 
         </button>
 
@@ -1632,7 +1632,7 @@ function extractGender(text){
 
 
     if(
-        /\bmale\b|\bman\b|\bm\b/
+        /\bmale\b|\bman\b/
             .test(value)
     ){
 
@@ -1641,7 +1641,7 @@ function extractGender(text){
 
 
     if(
-        /\bfemale\b|\bwoman\b|\bf\b/
+        /\bfemale\b|\bwoman\b/
             .test(value)
     ){
 
@@ -1853,30 +1853,12 @@ function extractApplicantFromOCR(text){
    APPLY ONLY GOOD OCR VALUES
 ===================================================== */
 
-function applySuggestedField(
-    key,
-    value
-){
-
-    value =
-        clean(value);
-
-
-    if(!value)
-        return false;
-
-
-    /*
-       Don't replace existing user-entered data
-       unless user explicitly presses Re-apply OCR.
-    */
-
-    setField(
-        key,
-        value,
-        true
-    );
-
+function applySuggestedField(key, value) {
+    value = clean(value);
+    if (!value) return false;
+    // Preserve anything already entered or previously verified by the applicant.
+    if (getField(key)) return false;
+    setField(key, value, true);
     return true;
 }
 
