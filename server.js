@@ -104,6 +104,22 @@ function validFields(fields) {
     (field.type !== "select" || (Array.isArray(field.options) && field.options.length > 0 && field.options.length <= 100))
   );
 }
+function validDocuments(documents) {
+  if (!Array.isArray(documents) || documents.length > 50) return false;
+  const seen = new Set();
+  return documents.every((item) => {
+    if (typeof item === "string") return clean(item).length > 0 && clean(item).length <= 160;
+    if (!item || typeof item !== "object" || Array.isArray(item)) return false;
+    const key = clean(item.key);
+    const label = clean(item.label);
+    if (!/^[a-zA-Z0-9_-]{1,80}$/.test(key) || !label || label.length > 160) return false;
+    if (item.required !== undefined && typeof item.required !== "boolean") return false;
+    if (seen.has(key)) return false;
+    seen.add(key);
+    return true;
+  });
+}
+
 function applicationAccess(req, appData) {
   if (req.profile.role === "admin") return true;
   if (req.profile.role === "personal") return appData.userId === req.user.uid;
@@ -286,11 +302,13 @@ app.post("/api/forms", requireUser, requireProfile, requireRole("admin"), async 
   const fields = body.fields;
   if (!name || name.length > 180 || !category || category.length > 100) return fail(res, 400, "Enter a valid form name and category.");
   if (!validFields(fields)) return fail(res, 400, "Add valid form fields. Each field needs a label and type.");
+  const documents = body.documents === undefined ? [] : body.documents;
+  if (!validDocuments(documents)) return fail(res, 400, "Add a valid document checklist. Each item needs a unique key and label.");
   const status = body.status === "published" ? "published" : "draft";
   const data = {
     name, category, description: clean(body.description).slice(0, 2000),
     officialLink: clean(body.officialLink).slice(0, 1000),
-    fields, documents: Array.isArray(body.documents) ? body.documents.slice(0, 50) : [],
+    fields, documents,
     status, version: 1, createdBy: req.user.uid, updatedBy: req.user.uid,
     createdAt: now(), updatedAt: now()
   };
@@ -313,6 +331,15 @@ app.patch("/api/forms/:id", requireUser, requireProfile, requireRole("admin"), a
   if (updates.name !== undefined && (!clean(updates.name) || clean(updates.name).length > 180)) return fail(res, 400, "Invalid form name.");
   if (updates.category !== undefined && (!clean(updates.category) || clean(updates.category).length > 100)) return fail(res, 400, "Invalid form category.");
   if (updates.fields !== undefined && !validFields(updates.fields)) return fail(res, 400, "Invalid form fields.");
+  if (updates.documents !== undefined && !validDocuments(updates.documents)) return fail(res, 400, "Invalid document checklist.");
+  if (updates.officialLink !== undefined && clean(updates.officialLink)) {
+    try {
+      const url = new URL(clean(updates.officialLink));
+      if (!["http:", "https:"].includes(url.protocol)) throw new Error("Unsupported protocol");
+    } catch (_) {
+      return fail(res, 400, "Official portal link must be a valid HTTPS or HTTP URL.");
+    }
+  }
   if (updates.status !== undefined && !["draft", "published", "archived"].includes(updates.status)) return fail(res, 400, "Invalid form status.");
   updates.updatedAt = now(); updates.updatedBy = req.user.uid;
   try {
@@ -362,13 +389,20 @@ app.post("/api/applications", requireUser, requireProfile, async (req, res) => {
     if (!formSnap.exists || formSnap.data().status !== "published") return fail(res, 404, "Published form not found.");
     const form = safeDoc(formSnap);
     const professionalId = req.profile.role === "professional" ? req.user.uid : null;
+    const clientId = req.profile.role === "professional" ? clean(body.clientId) : "";
+    if (clientId) {
+      const clientSnap = await db.collection("clients").doc(clientId).get();
+      if (!clientSnap.exists || clientSnap.data().professionalId !== req.user.uid) {
+        return fail(res, 403, "The selected client does not belong to your professional account.");
+      }
+    }
     const data = {
       formId, formName: form.name, formVersion: form.version || 1,
       formSnapshot: { name: form.name, category: form.category, fields: form.fields || [] },
       userId: req.profile.role === "personal" ? req.user.uid : null,
       professionalId,
       createdBy: req.user.uid,
-      clientId: req.profile.role === "professional" ? clean(body.clientId) || null : null,
+      clientId: clientId || null,
       applicant: {
         fullName: clean(applicant.fullName || applicant.name || answerValue("full_name", "fullname", "name", "applicant_name", "candidate_name")).slice(0, 160),
         email: clean(applicant.email || answerValue("email", "email_address")).slice(0, 200),
@@ -381,12 +415,12 @@ app.post("/api/applications", requireUser, requireProfile, async (req, res) => {
         education: clean(applicant.education || applicant.qualification || answerValue("education", "qualification", "education_details")).slice(0, 1000)
       },
       answers,
-      status: "submitted", assignedStaffId: null,
+      status: "preparation", assignedStaffId: null,
       createdAt: now(), updatedAt: now()
     };
     if (req.profile.role === "staff") return fail(res, 403, "Staff cannot create unassigned applications.");
     const ref = await db.collection("applications").add(data);
-    await writeAudit(req.profile, "application.submitted", "application", ref.id, { formId });
+    await writeAudit(req.profile, "application.created", "application", ref.id, { formId, status: data.status });
     return res.status(201).json({ applicationId: ref.id, status: data.status });
   } catch (error) {
     console.error("Application create failed:", error.message);
@@ -426,7 +460,7 @@ app.patch("/api/applications/:id", requireUser, requireProfile, async (req, res)
   const body = req.body || {};
   const updates = {};
   if (body.status !== undefined) {
-    if (!["submitted", "under_review", "needs_correction", "approved", "rejected", "completed"].includes(body.status)) return fail(res, 400, "Invalid application status.");
+    if (!["preparation", "submitted", "portal_submitted", "under_review", "needs_correction", "approved", "rejected", "completed"].includes(body.status)) return fail(res, 400, "Invalid application status.");
     updates.status = body.status;
   }
   if (body.reviewNotes !== undefined) updates.reviewNotes = clean(body.reviewNotes).slice(0, 3000);
