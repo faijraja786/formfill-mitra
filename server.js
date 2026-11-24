@@ -135,6 +135,13 @@ async function seedBiharRtpsForms() {
       category: "Bihar RTPS",
       description: "Guided preparation for the Bihar Income Certificate service. Select the correct issuing level and verify current requirements on the official ServicePlus portal before applying.",
       officialLink: "https://serviceonline.bihar.gov.in/",
+      documents: [
+        { key: "identity_proof", label: "Identity Proof", required: false },
+        { key: "photograph", label: "Recent Photograph", required: false },
+        { key: "address_proof", label: "Address Proof", required: false },
+        { key: "income_support", label: "Income Supporting Document", required: false },
+        { key: "self_declaration", label: "Self-declaration / Other Supporting Record", required: false }
+      ],
       fields: [...sharedFields, { key: "occupation", label: "Occupation", type: "text", required: true, options: [] }, { key: "annual_family_income", label: "Approximate Annual Family Income (INR)", type: "number", required: true, options: [] }, { key: "income_source", label: "Main Source of Income", type: "textarea", required: true, options: [] }]
     },
     {
@@ -159,10 +166,16 @@ async function seedBiharRtpsForms() {
     const existing = await ref.get();
     if (!existing.exists) {
       await ref.create({
-        ...form, documents: [], status: "published", version: 1,
+        ...form, documents: form.documents || [], status: "published", version: 1,
         systemSeed: "bihar-rtps-v1", createdBy: "system",
         updatedBy: "system", createdAt: now(), updatedAt: now()
       });
+    } else if (
+      form.id === "bihar-income-certificate" &&
+      existing.data().systemSeed === "bihar-rtps-v1" &&
+      (!Array.isArray(existing.data().documents) || existing.data().documents.length === 0)
+    ) {
+      await ref.update({ documents: form.documents, updatedAt: now() });
     }
   }
 }
