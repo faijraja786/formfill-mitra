@@ -469,47 +469,35 @@ function loadForm(){
     const configuredDocuments =
         Array.isArray(selectedForm.documents) ? selectedForm.documents : [];
     const documents = configuredDocuments.length
-        ? configuredDocuments
-        : ["identity", "photograph", "address", "income_proof", "other"];
+        ? configuredDocuments.map(function(item, index) {
+            if (typeof item === "string") return { key: item, label: documentNames[item] || item, required: true };
+            return { key: item.key || ("document_" + index), label: item.label || item.key || "Supporting Document", required: Boolean(item.required) };
+        })
+        : [
+            { key: "identity", label: "Identity Document", required: false },
+            { key: "photograph", label: "Photograph", required: false },
+            { key: "address", label: "Address Proof", required: false },
+            { key: "income_proof", label: "Income Supporting Document", required: false },
+            { key: "other", label: "Additional Supporting Document", required: false }
+          ];
 
     if (!configuredDocuments.length) {
-        container.innerHTML = '<div class="info">No mandatory document list has been configured for this form. Add the documents available for this application. Check the official service for the final required-document list.</div>';
+        container.innerHTML = '<div class="info">No service-specific mandatory checklist has been verified. Upload the documents available to you and confirm the final list on the official portal.</div>';
     }
 
     container.innerHTML +=
-        documents.map(function(key){
-
-            const name =
-                documentNames[key] || key;
-
-
-            return `
+        documents.map(function(document){
+            const key = document.key;
+            const name = document.label;
+            return \`
 
                 <div class="document">
-
-                    <h3>
-                        ${escapeHTML(name)}
-                    </h3>
-
-                    <p>
-                        ${escapeHTML(key)}${configuredDocuments.length ? " · Required by this form" : " · Optional upload"}
-                    </p>
-
-                    <input
-                        type="file"
-                        id="document_${escapeHTML(key)}"
-                        accept=".jpg,.jpeg,.png,.webp,.pdf,image/jpeg,image/png,image/webp,application/pdf"
-                        onchange="showFileInfo('${escapeHTML(key)}')">
-
-                    <div
-                        class="file-info"
-                        id="info_${escapeHTML(key)}">
-                    </div>
-
+                    <h3>\${escapeHTML(name)}</h3>
+                    <p>\${escapeHTML(key)} · \${document.required ? "Required" : "Optional"}</p>
+                    <input type="file" id="document_\${escapeHTML(key)}" accept=".jpg,.jpeg,.png,.webp,.pdf,image/jpeg,image/png,image/webp,application/pdf" onchange="showFileInfo('\${escapeHTML(key)}')">
+                    <div class="file-info" id="info_\${escapeHTML(key)}"></div>
                 </div>
-
-            `;
-
+            \`;
         }).join("");
 
 }
@@ -583,23 +571,29 @@ async function continueToOCR(){
     const configuredDocuments =
         Array.isArray(selectedForm.documents) ? selectedForm.documents : [];
     const documents = configuredDocuments.length
-        ? configuredDocuments
-        : ["identity", "photograph", "address", "income_proof", "other"];
-
+        ? configuredDocuments.map(function(item, index) {
+            if (typeof item === "string") return { key: item, label: documentNames[item] || item, required: true };
+            return { key: item.key || ("document_" + index), label: item.label || item.key || "Supporting Document", required: Boolean(item.required) };
+        })
+        : [
+            { key: "identity", label: "Identity Document", required: false },
+            { key: "photograph", label: "Photograph", required: false },
+            { key: "address", label: "Address Proof", required: false },
+            { key: "income_proof", label: "Income Supporting Document", required: false },
+            { key: "other", label: "Additional Supporting Document", required: false }
+          ];
     const selectedFiles = {};
 
-
-    for(const key of documents){
-
-        const input =
-            document.getElementById(
-                "document_" + key
-            );
-
-
-        if (!input || !input.files || !input.files.length) {
-            if (configuredDocuments.length) {
-                showError("Required document missing: " + (documentNames[key] || key));
+    for(const document of documents){
+        const key = document.key;
+        const input = document.getElementById
+            ? null
+            : document.getElementById;
+        const fileInput = document.getElementById ? null : document.getElementById;
+        const actualInput = window.document.getElementById("document_" + key);
+        if (!actualInput || !actualInput.files || !actualInput.files.length) {
+            if (document.required) {
+                showError("Required document missing: " + document.label);
                 return;
             }
             continue;
