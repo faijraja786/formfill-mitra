@@ -489,15 +489,15 @@ function loadForm(){
         documents.map(function(document){
             const key = document.key;
             const name = document.label;
-            return \`
+            return `
 
                 <div class="document">
-                    <h3>\${escapeHTML(name)}</h3>
-                    <p>\${escapeHTML(key)} · \${document.required ? "Required" : "Optional"}</p>
-                    <input type="file" id="document_\${escapeHTML(key)}" accept=".jpg,.jpeg,.png,.webp,.pdf,image/jpeg,image/png,image/webp,application/pdf" onchange="showFileInfo('\${escapeHTML(key)}')">
-                    <div class="file-info" id="info_\${escapeHTML(key)}"></div>
+                    <h3>${escapeHTML(name)}</h3>
+                    <p>${escapeHTML(key)} · ${document.required ? "Required" : "Optional"}</p>
+                    <input type="file" id="document_${escapeHTML(key)}" accept=".jpg,.jpeg,.png,.webp,.pdf,image/jpeg,image/png,image/webp,application/pdf" onchange="showFileInfo('${escapeHTML(key)}')">
+                    <div class="file-info" id="info_${escapeHTML(key)}"></div>
                 </div>
-            \`;
+            `;
         }).join("");
 
 }
