@@ -484,6 +484,7 @@ async function startOCR(){
     const keys = Object.keys(uploadedDocuments);
     if(keys.length === 0){
         setProgress(100, "No documents available.");
+        document.getElementById("runAiButton").disabled = false;
         enableContinue();
         return;
     }
@@ -492,7 +493,8 @@ async function startOCR(){
     if(!user){
         setProgress(100, "Please sign in again to process documents.");
         document.getElementById("results").textContent =
-            "Your sign-in session is not available. Sign in and reopen this page.";
+            "Your sign-in session is not available. Sign in again, then retry AI reading.";
+        document.getElementById("runAiButton").disabled = false;
         return;
     }
 
@@ -506,9 +508,11 @@ async function startOCR(){
             setProgress(percent, "Preparing " + fileRecord.name + "...");
 
             const file = fileRecord.file;
+            const extension = String(fileRecord.name || "").split(".").pop().toLowerCase();
+            const mimeByExtension = {jpg:"image/jpeg",jpeg:"image/jpeg",png:"image/png",webp:"image/webp",pdf:"application/pdf"};
+            const expectedMime = mimeByExtension[extension] || "";
             const supportedMime = ["image/jpeg","image/png","image/webp","application/pdf"].includes(file && file.type);
-            const supportedExtension = /\.(jpe?g|png|webp|pdf)$/i.test(fileRecord.name || "");
-            if(!file || (!supportedMime && !supportedExtension)){
+            if(!file || (!supportedMime && !expectedMime)){
                 ocrResults[key] = {
                     name: fileRecord.name,
                     status: "manual",
@@ -519,7 +523,10 @@ async function startOCR(){
 
             const token = await user.getIdToken();
             const formData = new FormData();
-            formData.append("document", file, fileRecord.name);
+            const uploadFile = file.type === expectedMime || !expectedMime
+                ? file
+                : new File([file], fileRecord.name, { type: expectedMime });
+            formData.append("document", uploadFile, fileRecord.name);
             formData.append("aiConsent", "true");
             formData.append("formFields", JSON.stringify(
                 (Array.isArray(selectedForm.fields) ? selectedForm.fields : [])
