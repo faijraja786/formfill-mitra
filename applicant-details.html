@@ -1770,17 +1770,15 @@ function applySuggestedField(key, value) {
 
 function applyOCR(){
 
-    const text =
-        getAllOCRText();
+    const text = getAllOCRText();
+    const hasStructuredValues = Object.values(ocrResults || {}).some(item =>
+        item && typeof item === "object" && item.extracted &&
+        Object.values(item.extracted).some(value => value !== null && value !== undefined && clean(value))
+    );
 
-
-    if(!text){
-
-        document.getElementById(
-            "ocrStatus"
-        ).textContent =
-            "No OCR text was found. Enter the details manually.";
-
+    if(!text && !hasStructuredValues){
+        document.getElementById("ocrStatus").textContent =
+            "No readable information was returned. Enter the details manually or try a clearer image.";
         return;
     }
 
