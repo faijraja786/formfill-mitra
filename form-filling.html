@@ -483,6 +483,7 @@ button{
 
 let selectedForm = null;
 let applicant = {};
+let savedAnswers = {};
 let fields = [];
 
 
@@ -561,8 +562,11 @@ const aliases = {
     dob:[
         "dob",
         "date_of_birth",
+        "dateofbirth",
         "birth_date",
-        "dateofbirth"
+        "birthdate",
+        "birth_day",
+        "date_birth"
     ],
 
     gender:[
@@ -653,102 +657,80 @@ const aliases = {
    Find applicant value
 --------------------------------------------------------- */
 
-function findApplicantValue(fieldKey){
+function findApplicantValue(fieldKey, fieldLabel = ""){
+    const keys = [normalizeKey(fieldKey), normalizeKey(fieldLabel)].filter(Boolean);
+    const normalizedApplicant = {};
+    Object.keys(applicant || {}).forEach(rawKey => {
+        normalizedApplicant[normalizeKey(rawKey)] = applicant[rawKey];
+    });
 
-    const key = normalizeKey(fieldKey);
-
-    if(
-        applicant[key] !== undefined &&
-        applicant[key] !== null &&
-        String(applicant[key]).trim() !== ""
-    ){
-        return applicant[key];
+    // Exact field-key or field-label matches come first.
+    for(const key of keys){
+        const value = normalizedApplicant[key];
+        if(value !== undefined && value !== null && String(value).trim() !== "") return value;
     }
 
+    // Match common aliases even when the administrator chose a custom field key.
+    for(const group of Object.keys(aliases)){
+        const groupAliases = aliases[group].map(normalizeKey);
+        if(!keys.some(key => groupAliases.includes(key))) continue;
+        for(const alias of groupAliases){
+            const value = normalizedApplicant[alias];
+            if(value !== undefined && value !== null && String(value).trim() !== "") return value;
+        }
+        const canonical = normalizedApplicant[normalizeKey(group)];
+        if(canonical !== undefined && canonical !== null && String(canonical).trim() !== "") return canonical;
+    }
 
-    for(const group in aliases){
-
-        if(aliases[group].includes(key)){
-
-            for(const possibleKey of aliases[group]){
-
-                if(
-                    applicant[possibleKey] !== undefined &&
-                    applicant[possibleKey] !== null &&
-                    String(applicant[possibleKey]).trim() !== ""
-                ){
-
-                    return applicant[possibleKey];
-                }
-            }
+    // Also map common labels to known applicant profile properties.
+    const label = keys[1] || "";
+    const labelGroups = {
+        date_of_birth:"dob", birth_date:"dob", birthdate:"dob",
+        applicant_name:"full_name", candidate_name:"full_name",
+        father_name:"father_name", guardian_name:"father_name",
+        phone_number:"mobile", contact_number:"mobile",
+        postal_code:"pin", pin_code:"pin",
+        complete_address:"full_address", permanent_address:"full_address"
+    };
+    const canonical = labelGroups[label];
+    if(canonical){
+        for(const alias of [canonical, ...(aliases[canonical] || [])]){
+            const value = normalizedApplicant[normalizeKey(alias)];
+            if(value !== undefined && value !== null && String(value).trim() !== "") return value;
         }
     }
-
-
     return "";
 }
-
 
 /* ---------------------------------------------------------
    Format date for input[type=date]
 --------------------------------------------------------- */
 
 function normalizeDateForInput(value){
-
-    if(!value){
-        return "";
-    }
-
+    if(!value) return "";
     const text = String(value).trim();
-
-    /*
-       Already YYYY-MM-DD
-    */
-
-    if(/^\d{4}-\d{2}-\d{2}$/.test(text)){
-        return text;
+    let match, year, month, day;
+    match = text.match(/\b(\d{4})[-/.](\d{1,2})[-/.](\d{1,2})\b/);
+    if(match){ year=Number(match[1]); month=Number(match[2]); day=Number(match[3]); }
+    else {
+        match = text.match(/\b(\d{1,2})[/.\-](\d{1,2})[/.\-](\d{4})\b/);
+        if(match){ day=Number(match[1]); month=Number(match[2]); year=Number(match[3]); }
+        else {
+            const months={jan:1,january:1,feb:2,february:2,mar:3,march:3,apr:4,april:4,may:5,jun:6,june:6,jul:7,july:7,aug:8,august:8,sep:9,sept:9,september:9,oct:10,october:10,nov:11,november:11,dec:12,december:12};
+            match=text.match(/\b(\d{1,2})\s+([A-Za-z]+)\.?[,]?\s+(\d{4})\b/i);
+            if(match && months[match[2].toLowerCase()]){day=Number(match[1]);month=months[match[2].toLowerCase()];year=Number(match[3]);}
+            else {
+                match=text.match(/\b([A-Za-z]+)\.?\s+(\d{1,2}),?\s+(\d{4})\b/i);
+                if(!match || !months[match[1].toLowerCase()]) return "";
+                month=months[match[1].toLowerCase()];day=Number(match[2]);year=Number(match[3]);
+            }
+        }
     }
-
-
-    /*
-       DD/MM/YYYY
-    */
-
-    let match = text.match(
-        /^(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{4})$/
-    );
-
-    if(match){
-
-        const day = match[1].padStart(2,"0");
-        const month = match[2].padStart(2,"0");
-        const year = match[3];
-
-        return `${year}-${month}-${day}`;
-    }
-
-
-    /*
-       YYYY/MM/DD
-    */
-
-    match = text.match(
-        /^(\d{4})[\/\-](\d{1,2})[\/\-](\d{1,2})$/
-    );
-
-    if(match){
-
-        const year = match[1];
-        const month = match[2].padStart(2,"0");
-        const day = match[3].padStart(2,"0");
-
-        return `${year}-${month}-${day}`;
-    }
-
-
-    return "";
+    if(!Number.isInteger(year)||!Number.isInteger(month)||!Number.isInteger(day)||year<1900||year>new Date().getFullYear()||month<1||month>12||day<1||day>31) return "";
+    const date=new Date(Date.UTC(year,month-1,day));
+    if(date.getUTCFullYear()!==year||date.getUTCMonth()!==month-1||date.getUTCDate()!==day) return "";
+    return String(year).padStart(4,"0")+"-"+String(month).padStart(2,"0")+"-"+String(day).padStart(2,"0");
 }
-
 
 /* ---------------------------------------------------------
    Create field HTML
@@ -782,10 +764,16 @@ function createField(field, index){
         "";
 
     const value =
-        findApplicantValue(key);
+        findApplicantValue(key, label);
 
+    const savedValue =
+        savedAnswers && Object.prototype.hasOwnProperty.call(savedAnswers, key)
+            ? savedAnswers[key]
+            : "";
 
-    let finalValue = value;
+    let finalValue = savedValue !== undefined && savedValue !== null && String(savedValue).trim() !== ""
+        ? savedValue
+        : value;
 
 
     if(type === "date"){
@@ -960,6 +948,9 @@ function loadForm(){
 
     applicant =
         getJSON("currentApplicant", {});
+
+    savedAnswers =
+        getJSON("formData", {});
 
 
     if(!selectedForm){
