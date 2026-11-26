@@ -377,6 +377,103 @@ app.post("/api/profile/bootstrap", requireUser, async (req, res) => {
   }
 });
 
+const DEFAULT_SITE_CONTENT = {
+  eyebrow: "A smarter way to manage applications",
+  heroTitle: "Every form. Every document.",
+  heroHighlight: "One organized workspace.",
+  heroDescription: "Manage applications, keep important documents organized, and simplify your form-filling workflow with Form Fill Mitra.",
+  personalTitle: "Personal Workspace",
+  personalDescription: "Keep your applications, personal documents and progress organized in one place.",
+  professionalTitle: "Professional Workspace",
+  professionalDescription: "Manage client applications, organize work, and coordinate your professional workflow.",
+  featureHeading: "Everything in its place",
+  featureSubheading: "Tools designed to make application management clearer and easier.",
+  feature1Title: "Application Management",
+  feature1Description: "Track your applications and keep important details accessible.",
+  feature2Title: "Document Organization",
+  feature2Description: "Keep essential documents organized for your application workflow.",
+  feature3Title: "Professional Workspace",
+  feature3Description: "Coordinate tasks and manage client work through a dedicated workspace."
+};
+const SITE_CONTENT_KEYS = Object.keys(DEFAULT_SITE_CONTENT);
+function sanitizeSiteContent(input) {
+  const out = {};
+  for (const key of SITE_CONTENT_KEYS) {
+    const value = input && input[key] !== undefined ? clean(input[key]) : DEFAULT_SITE_CONTENT[key];
+    out[key] = value.slice(0, key.toLowerCase().includes("description") || key === "heroDescription" ? 500 : 180);
+  }
+  return out;
+}
+app.get("/api/site-content", async (_req, res) => {
+  try {
+    if (!db) return res.json({ content: DEFAULT_SITE_CONTENT });
+    const snap = await db.collection("siteContent").doc("public").get();
+    return res.json({ content: sanitizeSiteContent(snap.exists ? snap.data() : DEFAULT_SITE_CONTENT) });
+  } catch (error) {
+    console.error("Public site content read failed:", error.message);
+    return res.json({ content: DEFAULT_SITE_CONTENT });
+  }
+});
+app.get("/api/admin/site-content", requireUser, requireProfile, requireRole("admin"), async (_req, res) => {
+  try {
+    const snap = await db.collection("siteContent").doc("public").get();
+    return res.json({ content: sanitizeSiteContent(snap.exists ? snap.data() : DEFAULT_SITE_CONTENT) });
+  } catch (error) {
+    console.error("Admin site content read failed:", error.message);
+    return fail(res, 500, "Could not load website content.");
+  }
+});
+app.patch("/api/admin/site-content", requireUser, requireProfile, requireRole("admin"), async (req, res) => {
+  const content = sanitizeSiteContent(req.body && req.body.content);
+  if (SITE_CONTENT_KEYS.some(key => !content[key].trim())) return fail(res, 400, "Every website content field must contain text.");
+  try {
+    await db.collection("siteContent").doc("public").set({ ...content, updatedAt: now(), updatedBy: req.user.uid }, { merge: true });
+    await writeAudit(req.profile, "site_content.updated", "site_content", "public", { fields: SITE_CONTENT_KEYS });
+    return res.json({ content });
+  } catch (error) {
+    console.error("Website content update failed:", error.message);
+    return fail(res, 500, "Could not publish website content.");
+  }
+});
+const siteAiLimiter = rateLimit({ windowMs: 60 * 60 * 1000, limit: 10, standardHeaders: "draft-7", legacyHeaders: false });
+app.post("/api/admin/site-content/ai-draft", siteAiLimiter, requireUser, requireProfile, requireRole("admin"), async (req, res) => {
+  const apiKey = String(process.env.GEMINI_API_KEY || "").trim();
+  if (!apiKey) return fail(res, 503, "AI editing is not configured. Set GEMINI_API_KEY in the backend environment.");
+  const request = clean(req.body && req.body.request).slice(0, 1500);
+  if (!request) return fail(res, 400, "Describe the website content change you want.");
+  const current = sanitizeSiteContent(req.body && req.body.current);
+  const model = String(process.env.GEMINI_MODEL || "gemini-3.8-flash").trim();
+  const prompt = [
+    "You are an editor for Form Fill Mitra's homepage text only.",
+    "Return a single JSON object containing exactly these keys and string values: " + SITE_CONTENT_KEYS.join(", "),
+    "Keep the content accurate, concise, professional, English, and safe for a public Indian application-preparation website.",
+    "Do not create or change code, HTML, scripts, links, login, permissions, payment, privacy/security claims, official requirements, or government branding.",
+    "Do not claim that Form Fill Mitra submits government forms or guarantees approval. Explain preparation and user review only.",
+    "Preserve current content unless the administrator's request asks to change it.",
+    "Current homepage content JSON: " + JSON.stringify(current),
+    "Administrator request: " + request
+  ].join("\n");
+  try {
+    const response = await fetch("https://generativelanguage.googleapis.com/v1beta/models/" + encodeURIComponent(model) + ":generateContent", {
+      method: "POST",
+      headers: { "Content-Type": "application/json", "x-goog-api-key": apiKey },
+      body: JSON.stringify({ contents: [{ role: "user", parts: [{ text: prompt }] }], generationConfig: { responseMimeType: "application/json", maxOutputTokens: 1200, temperature: 0.3 } })
+    });
+    const data = await response.json().catch(() => ({}));
+    if (!response.ok) {
+      console.error("Gemini site editor request failed:", response.status, data.error && data.error.message);
+      return fail(res, response.status === 429 ? 429 : 502, response.status === 429 ? "AI usage limit reached. Try later or review your Gemini usage." : "AI could not prepare a draft. Check the Gemini model and API key settings.");
+    }
+    const textOutput = data.candidates && data.candidates[0] && data.candidates[0].content && data.candidates[0].content.parts && data.candidates[0].content.parts.map(part => part.text || "").join("");
+    const draft = sanitizeSiteContent(JSON.parse(String(textOutput || "").trim()));
+    if (SITE_CONTENT_KEYS.some(key => !draft[key].trim())) return fail(res, 502, "AI returned an incomplete content draft.");
+    return res.json({ draft, reviewRequired: true, message: "Review the draft and publish it manually." });
+  } catch (error) {
+    console.error("AI website content draft failed:", error.message);
+    return fail(res, 502, "AI draft could not be created. You can edit website content manually.");
+  }
+});
+
 app.get("/api/me", requireUser, requireProfile, (req, res) => res.json({
   profile: { id: req.user.uid, email: req.user.email, ...req.profile }
 }));
