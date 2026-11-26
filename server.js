@@ -633,7 +633,13 @@ app.post("/api/applications", requireUser, requireProfile, async (req, res) => {
     }
     const data = {
       formId, formName: form.name, formVersion: form.version || 1,
-      formSnapshot: { name: form.name, category: form.category, fields: form.fields || [] },
+      formSnapshot: {
+        id: form.id, name: form.name, category: form.category,
+        description: form.description || "", officialLink: form.officialLink || "",
+        fields: form.fields || [], documents: form.documents || [],
+        verificationInstructions: form.verificationInstructions || "",
+        paymentInstructions: form.paymentInstructions || ""
+      },
       userId: req.profile.role === "personal" ? req.user.uid : null,
       professionalId,
       createdBy: req.user.uid,
