@@ -1120,7 +1120,7 @@ app.delete("/api/applications/:id/documents/:documentId", requireUser, requirePr
 
 const upload = multer({
   storage: multer.memoryStorage(),
-  limits: { fileSize: 8 * 1024 * 1024, files: 1 },
+  limits: { fileSize: 10 * 1024 * 1024, files: 1 },
   fileFilter(_req, file, callback) {
     if (!file.mimetype || !/^image\/(jpeg|png|webp|tiff|bmp)$/i.test(file.mimetype)) {
       return callback(new Error("Only JPEG, PNG, WEBP, TIFF, and BMP images are supported."));
