@@ -599,7 +599,7 @@ body{background:#f3f7ff;color:#172b4d}
 <header class="header ffm-app-header">
 <button class="menu-trigger" type="button" aria-label="Open navigation menu" aria-expanded="false" onclick="toggleMenu(true)">☰</button>
 <div class="brand"><div class="logo">FM</div><div><h2>FormFill Mitra</h2><small>Professional Workspace</small></div></div>
-<div class="header-right"><div class="user-name" id="userName">Professional User</div></div></header>
+<div class="header-right" style="display:flex;flex-direction:column;align-items:flex-end;gap:3px"><div class="user-name" id="userName">Professional User</div><small id="accountEmail" style="font-size:12px;opacity:.85;max-width:230px;overflow-wrap:anywhere">Account email</small></div></header>
 
 
 <main class="container">
@@ -1838,10 +1838,14 @@ import { onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.5/f
 import { apiRequest, bootstrapProfile } from "./api-client.js";
 onAuthStateChanged(auth, async user => {
   if (!user || !user.emailVerified || (user.email || "").toLowerCase() === "faijraja28@gmail.com") return;
+  const emailElement=document.getElementById("accountEmail");
+  if(emailElement) emailElement.textContent=user.email||"Email not available";
   try {
     await bootstrapProfile("professional", user.displayName || "");
     const [applicationData, formData] = await Promise.all([apiRequest("/api/applications"), apiRequest("/api/forms")]);
     const publishedForms = (formData.forms || []).filter(form => form.status === "published");
+    const formsCount=document.getElementById("formsCount");
+    if(formsCount) formsCount.textContent=String(publishedForms.length);
     localStorage.setItem("ffm_admin_forms", JSON.stringify(publishedForms));
     if (typeof loadForms === "function") loadForms();
     localStorage.setItem("ffm_applications", JSON.stringify(applicationData.applications || []));

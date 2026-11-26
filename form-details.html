@@ -479,14 +479,19 @@ function loadForm(){
 
 
     const checklist = Array.isArray(selectedForm.documents) ? selectedForm.documents : [];
+    const normalizeDocKey = value=>String(value||"document").toLowerCase().replace(/[^a-z0-9_-]+/g,"_").replace(/^_+|_+$/g,"").slice(0,80)||"document";
     const checklistHtml = checklist.length ? `<div class="document"><h3>Document checklist</h3><ul>${checklist.map(d=>{const label=typeof d==="string"?d:(d.label||d.key||"Document");const required=typeof d==="object"&&d.required;return `<li>${escapeHTML(label)}${required?" · Required by this form template":" · Optional / verify official requirement"}</li>`;}).join("")}</ul><p>Do not upload documents you do not have. Check the official portal for the final list.</p></div>` : "";
+    const slots = checklist.map((d,index)=>{
+        const key=normalizeDocKey(typeof d==="string"?d:(d.key||d.label||("document_"+index)));
+        const label=typeof d==="string"?d:(d.label||d.key||"Document");
+        return `<div class="document upload-slot"><label for="upload_${escapeHTML(key)}"><strong>${escapeHTML(label)}</strong>${typeof d==="object"&&d.required?" · Required by this form template":" · Optional"}<input id="upload_${escapeHTML(key)}" class="document-upload-input" type="file" data-document-key="${escapeHTML(key)}" data-document-label="${escapeHTML(label)}" accept=".jpg,.jpeg,.png,.webp,.pdf,image/jpeg,image/png,image/webp,application/pdf" onchange="showSelectedFiles()"></label><div class="file-info"></div></div>`;
+    }).join("");
     container.innerHTML = checklistHtml + `
         <div class="document">
-            <h3>Upload available documents (optional)</h3>
-            <p>Match each uploaded file to the document checklist below. The checklist is a preparation guide; the official portal determines final requirements.</p>
-            <input type="file" id="documentsUpload" multiple
-              accept=".jpg,.jpeg,.png,.webp,.pdf,image/jpeg,image/png,image/webp,application/pdf"
-              onchange="showSelectedFiles()">
+            <h3>Upload documents one by one (optional)</h3>
+            <p>Each checklist item has its own upload field. Upload only documents you have; these are preparation aids, not a guarantee of official requirements.</p>
+            ${slots || '<p>No document checklist is configured for this form.</p>'}
+            <div class="document upload-slot" style="margin-top:12px"><label for="additionalDocumentsUpload"><strong>Other / Additional documents</strong><input type="file" id="additionalDocumentsUpload" multiple accept=".jpg,.jpeg,.png,.webp,.pdf,image/jpeg,image/png,image/webp,application/pdf" onchange="showSelectedFiles()"></label><div class="file-info"></div></div>
             <div class="file-info" id="selectedFilesInfo"></div>
         </div>`;
 
@@ -544,52 +549,47 @@ function showFileInfo(key){
 ============================== */
 
 async function collectAndSaveFiles(){
-    const input = document.getElementById("documentsUpload");
-    const files = input && input.files ? Array.from(input.files) : [];
-    const mapping = files.map((file,index)=>({file,select:document.getElementById("documentMap_"+index)}));
+    const inputs = Array.from(document.querySelectorAll(".document-upload-input, #additionalDocumentsUpload"));
+    const mapping = [];
+    inputs.forEach(input=>{
+        Array.from(input.files||[]).forEach(file=>mapping.push({
+            file,
+            documentKey:input.dataset.documentKey||"other",
+            documentLabel:input.dataset.documentLabel||"Other / Additional document"
+        }));
+    });
     const allowedTypes = new Set(["application/pdf","image/jpeg","image/png","image/webp"]);
     for (const item of mapping) {
         if (item.file.size > 10 * 1024 * 1024) throw new Error(item.file.name + " is larger than 10 MB.");
         const ext = item.file.name.split(".").pop().toLowerCase();
         if (!allowedTypes.has(item.file.type) && !["pdf","jpg","jpeg","png","webp"].includes(ext)) throw new Error(item.file.name + " is not a supported PDF or image.");
-        if (!item.select || !item.select.value) throw new Error("Please select the document type for every uploaded file.");
     }
     await clearCurrentDocuments();
     const metadata = {};
     for (let i = 0; i < mapping.length; i++) {
-        const {file,select} = mapping[i];
+        const {file,documentKey,documentLabel} = mapping[i];
         const key = "file_" + (i + 1);
-        const normalizeDocKey = value=>String(value||"document").toLowerCase().replace(/[^a-z0-9_-]+/g,"_").replace(/^_+|_+$/g,"").slice(0,80)||"document";
-        const chosen = selectedForm.documents && selectedForm.documents.find(d=>normalizeDocKey(typeof d==="string"?d:(d.key||d.label))===select.value);
-        const label = chosen ? (typeof chosen==="string"?chosen:chosen.label) : select.options[select.selectedIndex].textContent;
         await saveDocument(key, file);
-        metadata[key] = { name:file.name, type:file.type, size:file.size, documentKey:select.value, documentLabel:label };
+        metadata[key] = { name:file.name, type:file.type, size:file.size, documentKey, documentLabel };
     }
     localStorage.setItem("uploadedDocuments", JSON.stringify(metadata));
-    localStorage.setItem("documentsUploaded", files.length ? "true" : "false");
+    localStorage.setItem("documentsUploaded", mapping.length ? "true" : "false");
     localStorage.setItem("ocrReady", "true");
-    return files.length;
+    return mapping.length;
 }
 
 function showSelectedFiles(){
-    const input = document.getElementById("documentsUpload");
-    const info = document.getElementById("selectedFilesInfo");
-    const files = input && input.files ? Array.from(input.files) : [];
-    if(!files.length){info.textContent="No documents selected. You can continue without uploading.";return;}
-    const docs = Array.isArray(selectedForm.documents)?selectedForm.documents:[];
-    const normalizeDocKey = value=>String(value||"document").toLowerCase().replace(/[^a-z0-9_-]+/g,"_").replace(/^_+|_+$/g,"").slice(0,80)||"document";
-    const options = docs.map(d=>({key:normalizeDocKey(typeof d==="string"?d:(d.key||d.label)),label:typeof d==="string"?d:(d.label||d.key),required:typeof d==="object"&&d.required}));
-    info.innerHTML="";
-    files.forEach((file,index)=>{
-        const row=document.createElement("div");row.className="document";row.style.marginTop="10px";
-        const name=document.createElement("strong");name.textContent=file.name+" ("+(file.size/1048576).toFixed(2)+" MB)";row.appendChild(name);
-        const label=document.createElement("label");label.textContent="Document type";label.style.display="block";label.style.marginTop="10px";
-        const select=document.createElement("select");select.id="documentMap_"+index;select.required=true;select.style.width="100%";
-        const initial=document.createElement("option");initial.value="";initial.textContent="Select document type";select.appendChild(initial);
-        options.forEach(d=>{const opt=document.createElement("option");opt.value=d.key;opt.textContent=d.label+(d.required?" · Required by checklist":"");select.appendChild(opt);});
-        const other=document.createElement("option");other.value="other_"+(index+1);other.textContent="Other / Additional document";select.appendChild(other);
-        label.appendChild(select);row.appendChild(label);info.appendChild(row);
+    document.querySelectorAll(".document-upload-input, #additionalDocumentsUpload").forEach(input=>{
+        const info=input.closest(".upload-slot")?.querySelector(".file-info");
+        if(!info)return;
+        const files=Array.from(input.files||[]);
+        info.textContent=files.length?files.map(file=>file.name+" ("+(file.size/1048576).toFixed(2)+" MB)").join(", "):"";
     });
+    const info=document.getElementById("selectedFilesInfo");
+    if(info){
+        const count=Array.from(document.querySelectorAll(".document-upload-input, #additionalDocumentsUpload")).reduce((sum,input)=>sum+(input.files?.length||0),0);
+        info.textContent=count?count+" document(s) selected.":"You can continue without uploading documents.";
+    }
 }
 
 async function continueToOCR(){
