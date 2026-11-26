@@ -1122,8 +1122,9 @@ const upload = multer({
   storage: multer.memoryStorage(),
   limits: { fileSize: 10 * 1024 * 1024, files: 1 },
   fileFilter(_req, file, callback) {
-    if (!file.mimetype || !/^image\/(jpeg|png|webp|tiff|bmp)$/i.test(file.mimetype)) {
-      return callback(new Error("Only JPEG, PNG, WEBP, TIFF, and BMP images are supported."));
+    const allowedMime = /^image\/(jpeg|png|webp)$/i.test(file.mimetype || "") || file.mimetype === "application/pdf";
+    if (!allowedMime) {
+      return callback(new Error("Only PDF, JPEG, PNG, and WEBP files are supported."));
     }
     callback(null, true);
   }
@@ -1266,7 +1267,7 @@ app.post("/api/ocr/image", ocrLimiter, requireUser, requireProfile, upload.singl
 app.use((error, _req, res, _next) => {
   if (error instanceof multer.MulterError) return fail(res, error.code === "LIMIT_FILE_SIZE" ? 413 : 400, error.message);
   if (error.message === "Origin not allowed by CORS") return fail(res, 403, "This website origin is not allowed.");
-  if (error.message && (error.message.startsWith("Only JPEG") || error.message.startsWith("Only PDF"))) return fail(res, 415, error.message);
+  if (error.message && error.message.startsWith("Only PDF")) return fail(res, 415, error.message);
   console.error("Request failed:", error.message);
   return fail(res, 400, "Request could not be processed.");
 });
