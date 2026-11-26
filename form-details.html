@@ -559,7 +559,8 @@ async function collectAndSaveFiles(){
     for (let i = 0; i < mapping.length; i++) {
         const {file,select} = mapping[i];
         const key = "file_" + (i + 1);
-        const chosen = selectedForm.documents && selectedForm.documents.find(d=>String(typeof d==="string"?d:(d.key||d.label))===select.value);
+        const normalizeDocKey = value=>String(value||"document").toLowerCase().replace(/[^a-z0-9_-]+/g,"_").replace(/^_+|_+$/g,"").slice(0,80)||"document";
+        const chosen = selectedForm.documents && selectedForm.documents.find(d=>normalizeDocKey(typeof d==="string"?d:(d.key||d.label))===select.value);
         const label = chosen ? (typeof chosen==="string"?chosen:chosen.label) : select.options[select.selectedIndex].textContent;
         await saveDocument(key, file);
         metadata[key] = { name:file.name, type:file.type, size:file.size, documentKey:select.value, documentLabel:label };
@@ -576,7 +577,8 @@ function showSelectedFiles(){
     const files = input && input.files ? Array.from(input.files) : [];
     if(!files.length){info.textContent="No documents selected. You can continue without uploading.";return;}
     const docs = Array.isArray(selectedForm.documents)?selectedForm.documents:[];
-    const options = docs.map(d=>({key:typeof d==="string"?d:(d.key||d.label),label:typeof d==="string"?d:(d.label||d.key),required:typeof d==="object"&&d.required}));
+    const normalizeDocKey = value=>String(value||"document").toLowerCase().replace(/[^a-z0-9_-]+/g,"_").replace(/^_+|_+$/g,"").slice(0,80)||"document";
+    const options = docs.map(d=>({key:normalizeDocKey(typeof d==="string"?d:(d.key||d.label)),label:typeof d==="string"?d:(d.label||d.key),required:typeof d==="object"&&d.required}));
     info.innerHTML="";
     files.forEach((file,index)=>{
         const row=document.createElement("div");row.className="document";row.style.marginTop="10px";
