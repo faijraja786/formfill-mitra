@@ -1277,6 +1277,9 @@ async function completeReview(){
             localStorage.setItem("currentApplicationFormId", formId);
         }
 
+        localStorage.removeItem("currentApplicant");
+        localStorage.removeItem("professionalApplicant");
+
         if (documentKeys.length) {
             const existing = await apiRequest("/api/applications/" + encodeURIComponent(applicationId) + "/documents");
             const alreadySaved = new Set((existing.documents || []).map(doc => doc.documentKey));
