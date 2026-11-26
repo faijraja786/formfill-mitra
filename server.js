@@ -604,6 +604,8 @@ app.post("/api/applications", requireUser, requireProfile, async (req, res) => {
     const form = safeDoc(formSnap);
     const professionalId = req.profile.role === "professional" ? req.user.uid : null;
     const clientId = req.profile.role === "professional" ? clean(body.clientId) : "";
+    if (req.profile.role === "professional" && !clientId) return fail(res, 400, "Select a client before starting a Professional application.");
+    if (req.profile.role === "personal" && clean(body.clientId)) return fail(res, 400, "Personal applications cannot be linked to Professional client records.");
     if (clientId) {
       const clientSnap = await db.collection("clients").doc(clientId).get();
       if (!clientSnap.exists || clientSnap.data().professionalId !== req.user.uid) {
