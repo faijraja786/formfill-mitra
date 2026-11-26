@@ -1191,7 +1191,23 @@ app.post("/api/ocr/image", ocrLimiter, requireUser, requireProfile, upload.singl
     // before returning a stable API contract to the browser.
     // Merge rather than choose one envelope: some model responses include an
     // empty "fields" object while placing values in "extracted" or "data".
-    const sourceCandidates = [parsed.fields, parsed.extracted, parsed.data?.fields, parsed.applicant, parsed];
+    const normalizeKey = key => clean(key).toLowerCase().replace(/[^a-z0-9]/g, "");
+    const normalizeLabel = label => normalizeKey(clean(label).replace(/\\([^)]*\\)/g, " "));
+    const requestedKeyMap = new Map();
+    requestedFields.forEach(field => {
+      requestedKeyMap.set(normalizeKey(field.key), field.key);
+      requestedKeyMap.set(normalizeLabel(field.label), field.key);
+    });
+    const resolveFieldKey = rawKey => {
+      const normalized = normalizeKey(rawKey);
+      return requestedKeyMap.get(normalized) ||
+        requestedKeyMap.get(normalizeLabel(rawKey)) ||
+        clean(rawKey);
+    };
+    const sourceCandidates = [
+      parsed.fields, parsed.extracted, parsed.data?.fields, parsed.data?.extracted,
+      parsed.applicant, parsed.data, parsed
+    ];
     const fields = {};
     for (let sourceFields of sourceCandidates) {
       if (typeof sourceFields === "string") {
@@ -1200,13 +1216,15 @@ app.post("/api/ocr/image", ocrLimiter, requireUser, requireProfile, upload.singl
       if (Array.isArray(sourceFields)) {
         for (const item of sourceFields) {
           if (!item || typeof item !== "object") continue;
-          const key = clean(item.key || item.name || item.field || item.label);
+          const rawKey = item.key || item.name || item.field || item.label;
           const value = item.value ?? item.text ?? item.answer;
+          const key = resolveFieldKey(rawKey);
           if (key && value !== undefined && value !== null && clean(value)) fields[key] = value;
         }
       } else if (sourceFields && typeof sourceFields === "object") {
-        for (const [key, value] of Object.entries(sourceFields)) {
+        for (const [rawKey, value] of Object.entries(sourceFields)) {
           if (value === null || value === undefined || !clean(value)) continue;
+          const key = resolveFieldKey(rawKey);
           fields[key] = value;
         }
       }
@@ -1217,7 +1235,6 @@ app.post("/api/ocr/image", ocrLimiter, requireUser, requireProfile, upload.singl
         fields[key] = value.value ?? value.text ?? value.answer ?? "";
       }
     }
-    const normalizeKey = key => clean(key).toLowerCase().replace(/[^a-z0-9]/g, "");
     const fieldEntries = Object.entries(fields);
     const aliases = {
       fullName: ["fullname","applicantname","candidatename","nameofapplicant","name"],
@@ -1250,13 +1267,13 @@ app.post("/api/ocr/image", ocrLimiter, requireUser, requireProfile, upload.singl
       const maxLength = key === "address" || (requested && requested.type === "textarea") ? 1000 : 300;
       safeFields[key] = value === null || value === undefined || typeof value === "object" ? "" : clean(String(value)).slice(0, maxLength);
     }
-    const text = String(parsed.rawText || parsed.text || parsed.ocrText || parsed.transcription || "").slice(0, 20000);
+    const text = String(parsed.rawText || parsed.data?.rawText || parsed.text || parsed.data?.text || parsed.ocrText || parsed.transcription || "").slice(0, 20000);
     const extractedCount = Object.values(safeFields).filter(value => clean(value)).length;
     if (!text.trim() && extractedCount === 0) {
       console.error("Gemini document extraction returned an empty result", { model, responseKeys: Object.keys(parsed).slice(0, 20) });
       return fail(res, 502, "AI could not detect readable details in this image. Try a clearer, full-page image or enter details manually.");
     }
-    await writeAudit(req.profile, "ai_document_extraction.completed", "document_image", null, { mimeType: req.file.mimetype, size: req.file.size, model });
+    await writeAudit(req.profile, "ai_document_extraction.completed", "document_image", null, { mimeType: req.file.mimetype, size: req.file.size, model, extractedFieldCount: extractedCount, textLength: text.length, requestedFieldCount: requestedFields.length });
     return res.status(200).json({ text, extracted: safeFields, confidence: null, reviewRequired: true, message: "AI reading completed. Review and correct every suggested field before continuing." });
   } catch (error) {
     console.error("Gemini document extraction request failed:", error.message);
