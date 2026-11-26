@@ -684,6 +684,43 @@ app.delete("/api/my-documents/:documentId", requireUser, requireProfile, require
   }
 });
 
+app.post("/api/applications/:id/documents/from-vault", requireUser, requireProfile, requireRole("personal"), async (req, res) => {
+  if (!supabaseStorage) return fail(res, 503, "Private document storage is not configured.");
+  const ids = Array.isArray(req.body && req.body.documentIds) ? req.body.documentIds.slice(0, 30) : [];
+  if (!ids.length || ids.some(id => !/^[a-zA-Z0-9_-]{1,150}$/.test(clean(id)))) return fail(res, 400, "Select valid saved documents.");
+  try {
+    const application = await getAccessibleApplication(req, req.params.id);
+    if (application === false) return fail(res, 403, "You do not have access to this application.");
+    if (!application) return fail(res, 404, "Application not found.");
+    if (application.data.userId !== req.user.uid) return fail(res, 403, "Only the owner can reuse saved documents.");
+    const appDocs = application.ref.collection("documents");
+    const existingSnap = await appDocs.get();
+    const existingKeys = new Set(existingSnap.docs.map(doc => doc.data().documentKey));
+    const saved = db.collection("profiles").doc(req.user.uid).collection("personalDocuments");
+    const results = [];
+    for (const id of [...new Set(ids)]) {
+      const sourceSnap = await saved.doc(id).get();
+      if (!sourceSnap.exists) return fail(res, 404, "A selected saved document is no longer available.");
+      const source = sourceSnap.data();
+      if (existingKeys.has(source.documentKey)) continue;
+      const extension = String(source.storagePath || "").split(".").pop().replace(/[^a-z0-9]/gi, "").slice(0, 8) || "bin";
+      const newId = crypto.randomUUID();
+      const destination = "private-applications/" + req.params.id + "/" + newId + "." + extension;
+      const { error } = await supabaseStorage.storage.from("applicant-documents").copy(source.storagePath, destination);
+      if (error) throw error;
+      const metadata = { documentKey: source.documentKey, name: source.name, mimeType: source.mimeType, size: source.size, storagePath: destination, uploadedBy: req.user.uid, reusedFromVault: true, createdAt: now() };
+      await appDocs.doc(newId).set(metadata);
+      existingKeys.add(source.documentKey);
+      results.push(publicDocument({ id: newId, ...metadata }));
+    }
+    await writeAudit(req.profile, "personal_documents.reused", "application", req.params.id, { count: results.length });
+    return res.json({ documents: results, reusedCount: results.length });
+  } catch (error) {
+    console.error("Vault document reuse failed:", error.message);
+    return fail(res, 500, "Saved documents could not be added to this application.");
+  }
+});
+
 app.get("/api/applications/:id/documents", requireUser, requireProfile, async (req, res) => {
   try {
     const application = await getAccessibleApplication(req, req.params.id);
