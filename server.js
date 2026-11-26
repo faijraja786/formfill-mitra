@@ -612,6 +612,78 @@ function publicDocument(doc) {
   };
 }
 
+
+/* Personal account document vault. These files belong only to the signed-in Personal account. */
+app.get("/api/my-documents", requireUser, requireProfile, requireRole("personal"), async (req, res) => {
+  try {
+    const snap = await db.collection("profiles").doc(req.user.uid).collection("personalDocuments").orderBy("createdAt", "desc").limit(100).get();
+    return res.json({ documents: snap.docs.map(doc => publicDocument({ id: doc.id, ...doc.data() })) });
+  } catch (error) {
+    console.error("Personal vault list failed:", error.message);
+    return fail(res, 500, "Could not load your saved documents.");
+  }
+});
+
+app.post("/api/my-documents", requireUser, requireProfile, requireRole("personal"), documentUpload.single("document"), async (req, res) => {
+  if (!req.file) return fail(res, 400, "Choose one document to save.");
+  if (!supabaseStorage) return fail(res, 503, "Private document storage is not configured.");
+  const mimeType = detectDocumentMime(req.file.buffer);
+  if (!mimeType || mimeType !== req.file.mimetype) return fail(res, 415, "The file content does not match its declared type.");
+  const documentKey = clean(req.body && req.body.documentKey);
+  if (!/^[a-zA-Z0-9_-]{1,80}$/.test(documentKey)) return fail(res, 400, "Choose a valid document category.");
+  try {
+    const id = crypto.randomUUID();
+    const name = safeFileName(req.file.originalname);
+    const extension = mimeType === "application/pdf" ? "pdf" : mimeType.split("/")[1];
+    const storagePath = "personal-vault/" + req.user.uid + "/" + id + "." + extension;
+    const { error } = await supabaseStorage.storage.from("applicant-documents").upload(storagePath, req.file.buffer, { contentType: mimeType, cacheControl: "0", upsert: false });
+    if (error) throw error;
+    const metadata = { documentKey, name, mimeType, size: req.file.size, storagePath, uploadedBy: req.user.uid, createdAt: now() };
+    const ref = await db.collection("profiles").doc(req.user.uid).collection("personalDocuments").doc(id);
+    await ref.set(metadata);
+    await writeAudit(req.profile, "personal_document.saved", "personal_document", id, { documentKey });
+    return res.status(201).json({ document: publicDocument({ id, ...metadata }) });
+  } catch (error) {
+    console.error("Personal vault upload failed:", error.message);
+    return fail(res, 500, "Document could not be saved securely.");
+  }
+});
+
+app.get("/api/my-documents/:documentId/download", requireUser, requireProfile, requireRole("personal"), async (req, res) => {
+  if (!supabaseStorage) return fail(res, 503, "Private document storage is not configured.");
+  try {
+    const ref = db.collection("profiles").doc(req.user.uid).collection("personalDocuments").doc(req.params.documentId);
+    const snap = await ref.get();
+    if (!snap.exists) return fail(res, 404, "Saved document not found.");
+    const doc = snap.data();
+    const { data, error } = await supabaseStorage.storage.from("applicant-documents").download(doc.storagePath);
+    if (error || !data) return fail(res, 404, "Stored document is unavailable.");
+    res.set({ "Content-Type": doc.mimeType || "application/octet-stream", "Content-Disposition": "attachment; filename*=UTF-8''" + encodeURIComponent(safeFileName(doc.name)), "Cache-Control": "private, no-store, max-age=0", "X-Content-Type-Options": "nosniff" });
+    return res.status(200).send(Buffer.from(await data.arrayBuffer()));
+  } catch (error) {
+    console.error("Personal vault download failed:", error.message);
+    return fail(res, 500, "Could not download this document.");
+  }
+});
+
+app.delete("/api/my-documents/:documentId", requireUser, requireProfile, requireRole("personal"), async (req, res) => {
+  if (!supabaseStorage) return fail(res, 503, "Private document storage is not configured.");
+  try {
+    const ref = db.collection("profiles").doc(req.user.uid).collection("personalDocuments").doc(req.params.documentId);
+    const snap = await ref.get();
+    if (!snap.exists) return fail(res, 404, "Saved document not found.");
+    const doc = snap.data();
+    const { error } = await supabaseStorage.storage.from("applicant-documents").remove([doc.storagePath]);
+    if (error) throw error;
+    await ref.delete();
+    await writeAudit(req.profile, "personal_document.deleted", "personal_document", req.params.documentId, { documentKey: doc.documentKey });
+    return res.json({ ok: true });
+  } catch (error) {
+    console.error("Personal vault delete failed:", error.message);
+    return fail(res, 500, "Could not delete this saved document.");
+  }
+});
+
 app.get("/api/applications/:id/documents", requireUser, requireProfile, async (req, res) => {
   try {
     const application = await getAccessibleApplication(req, req.params.id);
