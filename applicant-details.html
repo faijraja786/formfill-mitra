@@ -1924,6 +1924,7 @@ function clearApplicantFields(){
     if(!confirm("Clear the applicant details entered on this page? Uploaded documents will remain.")) return;
     FIELD_KEYS.forEach(key=>setField(key,"",false));
     localStorage.removeItem("currentApplicant");
+    localStorage.removeItem("ocrApplicantSuggestions");
     localStorage.removeItem("applicantVerified");
     localStorage.removeItem("applicantDraftSavedAt");
     const box=document.getElementById("validationBox");
