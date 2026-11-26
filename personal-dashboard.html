@@ -1141,8 +1141,13 @@ onAuthStateChanged(auth, async user => {
   if (!user || !user.emailVerified || (user.email || "").toLowerCase() === "faijraja28@gmail.com") return;
   const emailElement=document.getElementById("accountEmail");
   if(emailElement) emailElement.textContent=user.email||"Email not available";
+  if(user.displayName) localStorage.setItem("personalName", user.displayName);
   try {
-    await bootstrapProfile("personal", user.displayName || "");
+    const bootstrapResult = await bootstrapProfile("personal", user.displayName || "");
+    const accountName = user.displayName || bootstrapResult.profile?.name || localStorage.getItem("personalName") || (user.email || "").split("@")[0] || "Personal User";
+    const nameElement = document.getElementById("profileName");
+    if(nameElement) nameElement.textContent = accountName;
+    localStorage.setItem("userName", accountName);
     const [data, formData] = await Promise.all([apiRequest("/api/applications"), apiRequest("/api/forms")]);
     const publishedForms = (formData.forms || []).filter(form => form.status === "published");
     const formsCount=document.getElementById("formsCount");
