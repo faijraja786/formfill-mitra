@@ -727,7 +727,7 @@ app.post("/api/applications/:id/assign", requireUser, requireProfile, requireRol
 app.get("/api/clients", requireUser, requireProfile, requireRole("professional"), async (req, res) => {
   try {
     const snap = await db.collection("clients").where("professionalId", "==", req.user.uid).limit(500).get();
-    return res.json({ clients: snap.docs.map(safeDoc) });
+    return res.json({ clients: snap.docs.map(safeDoc).filter(client => client.status !== "archived") });
   } catch (error) {
     console.error("Clients read failed:", error.message);
     return fail(res, 500, "Could not load clients.");
@@ -743,7 +743,7 @@ app.post("/api/clients", requireUser, requireProfile, requireRole("professional"
     phone: clean(body.phone).slice(0, 40),
     address: clean(body.address).slice(0, 1000),
     notes: clean(body.notes).slice(0, 1000),
-    createdAt: now(), updatedAt: now()
+    status: "active", createdAt: now(), updatedAt: now()
   };
   try {
     const ref = await db.collection("clients").add(data);
@@ -752,6 +752,35 @@ app.post("/api/clients", requireUser, requireProfile, requireRole("professional"
   } catch (error) {
     console.error("Client create failed:", error.message);
     return fail(res, 500, "Could not save client.");
+  }
+});
+app.patch("/api/clients/:id", requireUser, requireProfile, requireRole("professional"), async (req, res) => {
+  const body = req.body || {};
+  const updates = {};
+  for (const key of ["name", "email", "phone", "address", "notes"]) {
+    if (body[key] !== undefined) updates[key] = clean(body[key]);
+  }
+  if (body.status !== undefined) {
+    if (!["active", "archived"].includes(body.status)) return fail(res, 400, "Invalid client status.");
+    updates.status = body.status;
+  }
+  if (updates.name !== undefined && (!updates.name || updates.name.length > 160)) return fail(res, 400, "Enter a valid client name.");
+  if (updates.email !== undefined && updates.email.length > 200) return fail(res, 400, "Email is too long.");
+  if (updates.phone !== undefined && updates.phone.length > 40) return fail(res, 400, "Phone number is too long.");
+  if (updates.address !== undefined && updates.address.length > 1000) return fail(res, 400, "Address is too long.");
+  if (updates.notes !== undefined && updates.notes.length > 1000) return fail(res, 400, "Notes are too long.");
+  if (!Object.keys(updates).length) return fail(res, 400, "No client changes were supplied.");
+  try {
+    const ref = db.collection("clients").doc(req.params.id);
+    const snap = await ref.get();
+    if (!snap.exists || snap.data().professionalId !== req.user.uid) return fail(res, 404, "Client not found in your workspace.");
+    updates.updatedAt = now();
+    await ref.update(updates);
+    await writeAudit(req.profile, "client.updated", "client", req.params.id, { fields: Object.keys(updates) });
+    return res.json({ ok: true });
+  } catch (error) {
+    console.error("Client update failed:", error.message);
+    return fail(res, 500, "Could not update client.");
   }
 });
 
