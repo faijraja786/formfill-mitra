@@ -1079,8 +1079,13 @@ function setField(
     if(!element)
         return;
 
+    const normalizedValue =
+        id === "dob" && value
+            ? toISODate(value) || String(value)
+            : (value ?? "");
+
     element.value =
-        value ?? "";
+        normalizedValue;
 
     const wrapper =
         document.getElementById(
@@ -1326,12 +1331,14 @@ function findLabeledValue(
 
 
             if(match && match[1]){
-
-                const value =
-                    clean(match[1]);
-
-                if(value)
-                    return value;
+                const value = clean(match[1]);
+                if(value) return value;
+            }
+            // Some scanned IDs put the value on the line immediately after the label.
+            const labelOnly = new RegExp("^\\s*" + label + "\\s*[:\\-]?\\s*$", "i");
+            if(labelOnly.test(line)){
+                const nextLine = lines[lines.indexOf(line) + 1] || "";
+                if(nextLine && clean(nextLine)) return clean(nextLine);
             }
         }
     }
@@ -1435,120 +1442,47 @@ function extractPIN(text){
 ===================================================== */
 
 function toISODate(value){
+    const text = clean(value);
+    if(!text) return "";
 
-    value =
-        clean(value)
-        .replace(/[.]/g,"/")
-        .replace(/-/g,"/");
-
-
-    let match;
-
-
-    /* DD/MM/YYYY */
-
-    match =
-        value.match(
-            /^(\d{1,2})\/(\d{1,2})\/(\d{4})$/
-        );
-
-
+    let year, month, day, match;
+    // ISO format, including OCR text with surrounding labels.
+    match = text.match(/\b(\d{4})[-/.](\d{1,2})[-/.](\d{1,2})\b/);
     if(match){
-
-        const day =
-            match[1].padStart(2,"0");
-
-        const month =
-            match[2].padStart(2,"0");
-
-        const year =
-            match[3];
-
-        return `${year}-${month}-${day}`;
+        year = Number(match[1]); month = Number(match[2]); day = Number(match[3]);
+        return validISODateParts(year, month, day);
     }
 
-
-    /* YYYY/MM/DD */
-
-    match =
-        value.match(
-            /^(\d{4})\/(\d{1,2})\/(\d{1,2})$/
-        );
-
-
+    // Indian document format: DD/MM/YYYY, DD-MM-YYYY, or DD.MM.YYYY.
+    match = text.match(/\b(\d{1,2})[/.\-](\d{1,2})[/.\-](\d{4})\b/);
     if(match){
-
-        const year =
-            match[1];
-
-        const month =
-            match[2].padStart(2,"0");
-
-        const day =
-            match[3].padStart(2,"0");
-
-        return `${year}-${month}-${day}`;
+        day = Number(match[1]); month = Number(match[2]); year = Number(match[3]);
+        return validISODateParts(year, month, day);
     }
 
-
-    /* YYYY-MM-DD */
-
-    if(
-        /^\d{4}-\d{2}-\d{2}$/
-            .test(value)
-    ){
-
-        return value;
+    const months = {jan:1,january:1,feb:2,february:2,mar:3,march:3,apr:4,april:4,may:5,jun:6,june:6,jul:7,july:7,aug:8,august:8,sep:9,sept:9,september:9,oct:10,october:10,nov:11,november:11,dec:12,december:12};
+    // DD Month YYYY
+    match = text.match(/\b(\d{1,2})\s+([A-Za-z]+)\.?[,]?\s+(\d{4})\b/i);
+    if(match && months[match[2].toLowerCase()]){
+        day = Number(match[1]); month = months[match[2].toLowerCase()]; year = Number(match[3]);
+        return validISODateParts(year, month, day);
     }
-
-
-    /* DD Month YYYY */
-
-    const months = {
-        january:"01",
-        february:"02",
-        march:"03",
-        april:"04",
-        may:"05",
-        june:"06",
-        july:"07",
-        august:"08",
-        september:"09",
-        october:"10",
-        november:"11",
-        december:"12"
-    };
-
-
-    match =
-        value.match(
-            /^(\d{1,2})\s+([A-Za-z]+)\s+(\d{4})$/i
-        );
-
-
-    if(match){
-
-        const day =
-            match[1].padStart(2,"0");
-
-        const month =
-            months[
-                match[2].toLowerCase()
-            ];
-
-        const year =
-            match[3];
-
-        if(month){
-
-            return `${year}-${month}-${day}`;
-        }
+    // Month DD, YYYY
+    match = text.match(/\b([A-Za-z]+)\.?\s+(\d{1,2}),?\s+(\d{4})\b/i);
+    if(match && months[match[1].toLowerCase()]){
+        month = months[match[1].toLowerCase()]; day = Number(match[2]); year = Number(match[3]);
+        return validISODateParts(year, month, day);
     }
-
-
     return "";
 }
 
+function validISODateParts(year, month, day){
+    if(!Number.isInteger(year) || !Number.isInteger(month) || !Number.isInteger(day) ||
+       year < 1900 || year > new Date().getFullYear() || month < 1 || month > 12 || day < 1 || day > 31) return "";
+    const date = new Date(Date.UTC(year, month - 1, day));
+    if(date.getUTCFullYear() !== year || date.getUTCMonth() !== month - 1 || date.getUTCDate() !== day) return "";
+    return String(year).padStart(4,"0") + "-" + String(month).padStart(2,"0") + "-" + String(day).padStart(2,"0");
+}
 
 function extractDOB(text){
 
@@ -1576,26 +1510,15 @@ function extractDOB(text){
 
 
     /*
-       Search common date formats.
+       OCR may place the date beside the DOB label or use dots/month names.
+       If no DOB label exists, only use a date when the document has one
+       unambiguous date candidate (avoid choosing issue/expiry dates).
     */
-
-    const dateMatches =
-        text.match(
-            /\b\d{1,2}[\/\-]\d{1,2}[\/\-]\d{4}\b/g
-        ) || [];
-
-
-    for(const date of dateMatches){
-
-        const iso =
-            toISODate(date);
-
-        if(iso)
-            return iso;
-    }
-
-
-    return "";
+    const dateMatches = text.match(
+        /\b(?:\d{4}[/.\-]\d{1,2}[/.\-]\d{1,2}|\d{1,2}[/.\-]\d{1,2}[/.\-]\d{4}|\d{1,2}\s+[A-Za-z]{3,9}\.?[,]?\s+\d{4}|[A-Za-z]{3,9}\.?\s+\d{1,2},?\s+\d{4})\b/g
+    ) || [];
+    const candidates = [...new Set(dateMatches.map(toISODate).filter(Boolean))];
+    return candidates.length === 1 ? candidates[0] : "";
 }
 
 
@@ -2208,6 +2131,12 @@ function init(){
     fillExistingData();
 
     renderOCR();
+
+    // Automatically apply OCR suggestions to empty fields.
+    // Existing applicant values are preserved by applySuggestedField().
+    if (Object.keys(ocrResults).length) {
+        applyOCR();
+    }
 
 }
 
