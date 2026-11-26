@@ -1188,20 +1188,33 @@ app.post("/api/ocr/image", ocrLimiter, requireUser, requireProfile, upload.singl
     catch (_) { return fail(res, 502, "AI returned an unreadable result. Please try again or enter details manually."); }
     // Gemini may vary the JSON envelope slightly. Normalize common response shapes
     // before returning a stable API contract to the browser.
-    let sourceFields = parsed.fields ?? parsed.extracted ?? parsed.data?.fields ?? parsed.applicant ?? parsed;
-    if (typeof sourceFields === "string") {
-      try { sourceFields = JSON.parse(sourceFields); } catch (_) { sourceFields = {}; }
-    }
+    // Merge rather than choose one envelope: some model responses include an
+    // empty "fields" object while placing values in "extracted" or "data".
+    const sourceCandidates = [parsed.fields, parsed.extracted, parsed.data?.fields, parsed.applicant, parsed];
     const fields = {};
-    if (Array.isArray(sourceFields)) {
-      for (const item of sourceFields) {
-        if (!item || typeof item !== "object") continue;
-        const key = clean(item.key || item.name || item.field || item.label);
-        const value = item.value ?? item.text ?? item.answer;
-        if (key && value !== undefined) fields[key] = value;
+    for (let sourceFields of sourceCandidates) {
+      if (typeof sourceFields === "string") {
+        try { sourceFields = JSON.parse(sourceFields); } catch (_) { continue; }
       }
-    } else if (sourceFields && typeof sourceFields === "object") {
-      Object.assign(fields, sourceFields);
+      if (Array.isArray(sourceFields)) {
+        for (const item of sourceFields) {
+          if (!item || typeof item !== "object") continue;
+          const key = clean(item.key || item.name || item.field || item.label);
+          const value = item.value ?? item.text ?? item.answer;
+          if (key && value !== undefined && value !== null && clean(value)) fields[key] = value;
+        }
+      } else if (sourceFields && typeof sourceFields === "object") {
+        for (const [key, value] of Object.entries(sourceFields)) {
+          if (value === null || value === undefined || !clean(value)) continue;
+          fields[key] = value;
+        }
+      }
+    }
+    // Normalize common nested field objects such as {value:"...", confidence:0.9}.
+    for (const [key, value] of Object.entries(fields)) {
+      if (value && typeof value === "object" && !Array.isArray(value)) {
+        fields[key] = value.value ?? value.text ?? value.answer ?? "";
+      }
     }
     const normalizeKey = key => clean(key).toLowerCase().replace(/[^a-z0-9]/g, "");
     const fieldEntries = Object.entries(fields);
