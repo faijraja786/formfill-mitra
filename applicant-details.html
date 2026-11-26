@@ -1736,7 +1736,10 @@ function extractApplicantFromOCR(text){
     });
     const fromAI = key => structured[key] || "";
     return {
+        ...structured,
         fullName: fromAI("fullName") || extractName(text),
+        fatherName: fromAI("fatherName") || fromAI("guardianName"),
+        motherName: fromAI("motherName"),
         dob: toISODate(fromAI("dob")) || extractDOB(text),
         gender: fromAI("gender") || extractGender(text),
         mobile: fromAI("mobile").replace(/\D/g,"").slice(-10) || extractMobile(text),
@@ -1745,7 +1748,11 @@ function extractApplicantFromOCR(text){
         district: fromAI("district") || extractDistrict(text),
         villageCity: fromAI("villageCity") || extractVillageCity(text),
         pin: fromAI("pin").replace(/\D/g,"").slice(0,6) || extractPIN(text),
-        address: fromAI("address") || extractAddress(text)
+        address: fromAI("address") || extractAddress(text),
+        category: fromAI("category"),
+        rollNumber: fromAI("rollNumber"),
+        passingYear: fromAI("passingYear"),
+        education: fromAI("education")
     };
 }
 
@@ -2010,6 +2017,7 @@ function saveApplicant(){
        Save the verified applicant profile.
     */
 
+    // Keep the reusable applicant profile separate from per-application AI suggestions.
     writeJSON(
         "currentApplicant",
         data
