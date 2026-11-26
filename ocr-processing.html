@@ -519,6 +519,11 @@ async function startOCR(){
             const formData = new FormData();
             formData.append("document", file, fileRecord.name);
             formData.append("aiConsent", "true");
+            formData.append("formFields", JSON.stringify(
+                (Array.isArray(selectedForm.fields) ? selectedForm.fields : [])
+                    .slice(0, 150)
+                    .map(field => ({ key: field.key || field.name || "", label: field.label || field.name || "", type: field.type || "text" }))
+            ));
 
             const response = await fetch(API_BASE + "/api/ocr/image", {
                 method: "POST",
