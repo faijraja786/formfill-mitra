@@ -174,7 +174,124 @@ async function seedBiharRtpsForms() {
       category: "Bihar RTPS",
       description: "Guided preparation for the Bihar Caste Certificate service. Confirm the eligible category, issuing level and current supporting-document list on the official portal.",
       officialLink: "https://serviceonline.bihar.gov.in/",
+      documents: [
+        { key: "identity_proof", label: "Identity Proof", required: false },
+        { key: "photograph", label: "Recent Photograph", required: false },
+        { key: "address_proof", label: "Address Proof", required: false },
+        { key: "caste_record", label: "Caste / Community Supporting Record", required: false },
+        { key: "self_declaration", label: "Self-declaration / Other Supporting Record", required: false }
+      ],
       fields: [...sharedFields, { key: "caste_community", label: "Caste / Community Name (as recorded)", type: "text", required: true, options: [] }, { key: "category", label: "Category", type: "select", required: true, options: ["BC", "EBC", "SC", "ST", "Other / As per official list"] }, { key: "caste_proof_type", label: "Available Supporting Record", type: "text", required: false, options: [] }]
+    },
+    {
+      id: "pan-card-application",
+      name: "PAN Card / e-PAN Application Preparation",
+      category: "Central Government",
+      description: "Prepare common applicant details and a document checklist for PAN services. Verify the correct new PAN, correction or e-PAN process and current fee on the official Income Tax portal before continuing.",
+      officialLink: "https://www.incometax.gov.in/iec/foportal/",
+      documents: [
+        { key: "identity_proof", label: "Identity Proof", required: false },
+        { key: "address_proof", label: "Address Proof", required: false },
+        { key: "dob_proof", label: "Date of Birth Proof", required: false },
+        { key: "photograph", label: "Photograph (if required by selected route)", required: false }
+      ],
+      fields: [
+        { key: "full_name", label: "Full Name (as per proof)", type: "text", required: true },
+        { key: "dob", label: "Date of Birth", type: "date", required: true },
+        { key: "father_name", label: "Father / Parent Name (if applicable)", type: "text", required: false },
+        { key: "mobile", label: "Mobile Number", type: "tel", required: true },
+        { key: "email", label: "Email Address", type: "email", required: false },
+        { key: "address", label: "Address", type: "textarea", required: false }
+      ]
+    },
+    {
+      id: "voter-registration",
+      name: "Voter Registration / Electoral Services",
+      category: "Central Government",
+      description: "Prepare details for voter registration or electoral services. Select the correct service on the Election Commission portal and verify age, eligibility and documents there.",
+      officialLink: "https://voters.eci.gov.in/",
+      documents: [
+        { key: "age_proof", label: "Age Proof", required: false },
+        { key: "address_proof", label: "Address Proof", required: false },
+        { key: "photograph", label: "Recent Photograph", required: false },
+        { key: "identity_proof", label: "Identity Proof (if requested)", required: false }
+      ],
+      fields: [
+        { key: "full_name", label: "Full Name", type: "text", required: true },
+        { key: "dob", label: "Date of Birth", type: "date", required: true },
+        { key: "father_name", label: "Father / Guardian Name", type: "text", required: true },
+        { key: "mobile", label: "Mobile Number", type: "tel", required: false },
+        { key: "state", label: "State", type: "text", required: true },
+        { key: "district", label: "District", type: "text", required: true },
+        { key: "full_address", label: "Residential Address", type: "textarea", required: true }
+      ]
+    },
+    {
+      id: "passport-application-preparation",
+      name: "Passport Application Preparation",
+      category: "Central Government",
+      description: "Prepare applicant details for Passport Seva. Requirements differ by application type, age and case; confirm the current checklist and appointment process on the official portal.",
+      officialLink: "https://www.passportindia.gov.in/",
+      documents: [
+        { key: "identity_proof", label: "Identity Proof (as required)", required: false },
+        { key: "address_proof", label: "Address Proof (as required)", required: false },
+        { key: "dob_proof", label: "Date of Birth Proof", required: false },
+        { key: "photograph", label: "Photograph (only if portal requests)", required: false }
+      ],
+      fields: [
+        { key: "full_name", label: "Full Name", type: "text", required: true },
+        { key: "dob", label: "Date of Birth", type: "date", required: true },
+        { key: "gender", label: "Gender", type: "select", required: true, options: ["Male", "Female", "Other"] },
+        { key: "father_name", label: "Parent / Guardian Name", type: "text", required: false },
+        { key: "mobile", label: "Mobile Number", type: "tel", required: true },
+        { key: "email", label: "Email Address", type: "email", required: false },
+        { key: "full_address", label: "Current Address", type: "textarea", required: true }
+      ]
+    },
+    {
+      id: "national-scholarship-application",
+      name: "National Scholarship Application Preparation",
+      category: "Scholarship",
+      description: "Organize common scholarship application information. Scheme eligibility, dates, institution verification and document requirements vary each academic year; check the current scheme on the official portal.",
+      officialLink: "https://scholarships.gov.in/",
+      documents: [
+        { key: "identity_proof", label: "Identity Proof (if required by scheme)", required: false },
+        { key: "education_proof", label: "Previous Class / Education Record", required: false },
+        { key: "income_proof", label: "Income Certificate (if required)", required: false },
+        { key: "bank_details", label: "Bank Account Details / Passbook (if required)", required: false },
+        { key: "photograph", label: "Recent Photograph", required: false }
+      ],
+      fields: [
+        { key: "full_name", label: "Student Full Name", type: "text", required: true },
+        { key: "dob", label: "Date of Birth", type: "date", required: true },
+        { key: "mobile", label: "Student / Parent Mobile Number", type: "tel", required: true },
+        { key: "email", label: "Email Address", type: "email", required: false },
+        { key: "school_name", label: "School / Institution Name", type: "text", required: true },
+        { key: "class_course", label: "Class / Course", type: "text", required: true },
+        { key: "academic_year", label: "Academic Year", type: "text", required: true },
+        { key: "district", label: "District", type: "text", required: true }
+      ]
+    },
+    {
+      id: "learner-driving-licence-preparation",
+      name: "Learner / Driving Licence Preparation",
+      category: "State Government",
+      description: "Prepare information for the Sarathi driving licence service. Select your state and service, and verify eligibility, fees, documents and appointment requirements on the official portal.",
+      officialLink: "https://sarathi.parivahan.gov.in/",
+      documents: [
+        { key: "age_proof", label: "Age Proof", required: false },
+        { key: "address_proof", label: "Address Proof", required: false },
+        { key: "identity_proof", label: "Identity Proof (if required)", required: false },
+        { key: "photograph", label: "Photograph / Signature (if requested)", required: false }
+      ],
+      fields: [
+        { key: "full_name", label: "Full Name", type: "text", required: true },
+        { key: "dob", label: "Date of Birth", type: "date", required: true },
+        { key: "mobile", label: "Mobile Number", type: "tel", required: true },
+        { key: "state", label: "State", type: "text", required: true },
+        { key: "district", label: "District", type: "text", required: true },
+        { key: "full_address", label: "Address", type: "textarea", required: true }
+      ]
     }
   ];
   for (const form of definitions) {
@@ -187,9 +304,9 @@ async function seedBiharRtpsForms() {
         updatedBy: "system", createdAt: now(), updatedAt: now()
       });
     } else if (
-      form.id === "bihar-income-certificate" &&
       existing.data().systemSeed === "bihar-rtps-v1" &&
-      (!Array.isArray(existing.data().documents) || existing.data().documents.length === 0)
+      (!Array.isArray(existing.data().documents) || existing.data().documents.length === 0) &&
+      Array.isArray(form.documents) && form.documents.length
     ) {
       await ref.update({ documents: form.documents, updatedAt: now() });
     }
