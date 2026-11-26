@@ -694,6 +694,29 @@ app.get("/api/applications/:id", requireUser, requireProfile, async (req, res) =
 app.patch("/api/applications/:id", requireUser, requireProfile, async (req, res) => {
   const body = req.body || {};
   const updates = {};
+  const applicantEdit = body.answers !== undefined || body.applicant !== undefined;
+  const hasStaffFields = body.status !== undefined || body.reviewNotes !== undefined;
+  if (body.answers !== undefined) {
+    if (!body.answers || typeof body.answers !== "object" || Array.isArray(body.answers) || Object.keys(body.answers).length > 200) return fail(res, 400, "Invalid draft answers.");
+    const safeAnswers = {};
+    for (const [rawKey, value] of Object.entries(body.answers)) {
+      const key = clean(rawKey).slice(0, 120);
+      if (!key || key !== rawKey || value !== null && !["string","number","boolean"].includes(typeof value)) return fail(res, 400, "Invalid draft answer.");
+      if (typeof value === "string" && value.length > 4000) return fail(res, 400, "A draft answer is too long.");
+      safeAnswers[key] = typeof value === "string" ? clean(value) : value;
+    }
+    if (Buffer.byteLength(JSON.stringify(safeAnswers), "utf8") > 100000) return fail(res, 413, "Draft data is too large.");
+    updates.answers = safeAnswers;
+  }
+  if (body.applicant !== undefined) {
+    if (!body.applicant || typeof body.applicant !== "object" || Array.isArray(body.applicant)) return fail(res, 400, "Invalid applicant draft.");
+    const allowedApplicant = { fullName:160, email:200, phone:40, address:1000, dateOfBirth:40, gender:40, category:80, guardianName:160, education:1000 };
+    const safeApplicant = {};
+    for (const [key, max] of Object.entries(allowedApplicant)) {
+      if (body.applicant[key] !== undefined) safeApplicant[key] = clean(body.applicant[key]).slice(0, max);
+    }
+    updates.applicant = safeApplicant;
+  }
   if (body.status !== undefined) {
     if (!["preparation", "submitted", "portal_submitted", "under_review", "needs_correction", "approved", "rejected", "completed"].includes(body.status)) return fail(res, 400, "Invalid application status.");
     updates.status = body.status;
@@ -705,7 +728,8 @@ app.patch("/api/applications/:id", requireUser, requireProfile, async (req, res)
     if (!snap.exists) return fail(res, 404, "Application not found.");
     const appData = safeDoc(snap);
     if (!applicationAccess(req, appData)) return fail(res, 403, "You do not have access to this application.");
-    if (!["admin", "staff"].includes(req.profile.role)) return fail(res, 403, "Only Admin or assigned Staff can update application status.");
+    if (applicantEdit && (!["personal", "professional"].includes(req.profile.role) || appData.status !== "preparation")) return fail(res, 403, "Only the owner can edit an application draft during preparation.");
+    if (hasStaffFields && !["admin", "staff"].includes(req.profile.role)) return fail(res, 403, "Only Admin or assigned Staff can update application status.");
     if (req.profile.role === "staff" && appData.assignedStaffId !== req.user.uid) return fail(res, 403, "This application is not assigned to you.");
     updates.updatedAt = now();
     await ref.update(updates);
