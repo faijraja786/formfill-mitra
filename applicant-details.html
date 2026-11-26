@@ -382,7 +382,7 @@ button:disabled{
 <header>
     <div class="header-inner">
         <h2>FormFill Mitra</h2>
-        <p>Applicant Details • Smart OCR Verification</p>
+        <p>Applicant Details • AI Document Verification</p>
     </div>
 </header>
 
@@ -413,20 +413,20 @@ button:disabled{
     </div>
 
 
-    <!-- OCR NOTICE -->
+    <!-- AI READING NOTICE -->
     <div class="notice">
 
         <strong>✓ AI Reading Completed</strong>
 
         <div>
-            Information detected by OCR is shown below as a suggestion. Verify every field against the original documents before continuing.
+            Information detected by AI is shown below as a suggestion. Verify every field against the original documents before continuing.
             
         </div>
 
     </div>
 
 
-    <!-- SMART OCR -->
+    <!-- AI FIELD MAPPING -->
     <div class="smart-box">
 
         <div class="smart-title">
@@ -435,12 +435,12 @@ button:disabled{
 
         <div class="smart-description">
 
-            FormFill Mitra uses OCR to identify available details such as name, date of birth, phone number, email address and address. AI suggestions may be incomplete or inaccurate, so review and edit every field manually.
+            FormFill Mitra uses AI to identify available details such as name, date of birth, phone number, email address and address from selected documents. Suggestions may be incomplete or inaccurate, so review and edit every field manually.
 
             <br><br>
 
             <strong>
-                OCR suggestions are not final data.
+                AI suggestions are not final data.
             </strong>
 
             You can edit every field manually.
@@ -645,7 +645,7 @@ button:disabled{
             <h2>📍 Address</h2>
 
             <span>
-                OCR + manual verification
+                AI + manual verification
             </span>
 
         </div>
@@ -803,7 +803,7 @@ button:disabled{
 
         <p class="small">
 
-            This is the original OCR output. If any field contains
+            This is the text read from your document. If any field contains
             incorrect information, use this reference to correct it
             manually correction manually above.
 
@@ -1196,7 +1196,7 @@ function renderOCR(){
 
         box.innerHTML = `
             <div class="empty">
-                No OCR result is available.
+                No AI reading result is available.
             </div>
         `;
 
