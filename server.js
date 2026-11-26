@@ -1192,7 +1192,7 @@ app.post("/api/ocr/image", ocrLimiter, requireUser, requireProfile, upload.singl
     // Merge rather than choose one envelope: some model responses include an
     // empty "fields" object while placing values in "extracted" or "data".
     const normalizeKey = key => clean(key).toLowerCase().replace(/[^a-z0-9]/g, "");
-    const normalizeLabel = label => normalizeKey(clean(label).replace(/\\([^)]*\\)/g, " "));
+    const normalizeLabel = label => normalizeKey(clean(label).replace(/\([^)]*\)/g, " "));
     const requestedKeyMap = new Map();
     requestedFields.forEach(field => {
       requestedKeyMap.set(normalizeKey(field.key), field.key);
