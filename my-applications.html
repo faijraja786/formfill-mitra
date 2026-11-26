@@ -985,13 +985,16 @@ function restoreApplication(app){
         address: source.address || answer("full_address","address","permanent_address","present_address")
     };
     localStorage.setItem("currentApplicant", JSON.stringify(applicant));
+    // Do not carry OCR suggestions from a different application into this draft.
+    localStorage.removeItem("ocrApplicantSuggestions");
+    if(app.clientId) localStorage.setItem("currentClientId", String(app.clientId));
+    else localStorage.removeItem("currentClientId");
     localStorage.setItem("applicantVerified", "true");
     localStorage.setItem("ocrMappingCompleted", "true");
     localStorage.removeItem("finalReviewCompleted");
     localStorage.removeItem("formFillingCompleted");
     localStorage.setItem("formFillingSaved", Object.keys(answers).length ? "true" : "false");
     localStorage.setItem("draftStatus", "saved");
-    if(app.clientId) localStorage.setItem("currentClientId", String(app.clientId));
     return true;
 }
 
