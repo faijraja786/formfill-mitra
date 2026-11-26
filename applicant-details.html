@@ -1514,6 +1514,8 @@ function extractDOB(text){
        If no DOB label exists, only use a date when the document has one
        unambiguous date candidate (avoid choosing issue/expiry dates).
     */
+    // Never choose a document issue/expiry date as DOB unless a birth label is present.
+    if(!/\b(?:dob|date\s+of\s+birth|birth\s+date|birthdate)\b/i.test(text)) return "";
     const dateMatches = text.match(
         /\b(?:\d{4}[/.\-]\d{1,2}[/.\-]\d{1,2}|\d{1,2}[/.\-]\d{1,2}[/.\-]\d{4}|\d{1,2}\s+[A-Za-z]{3,9}\.?[,]?\s+\d{4}|[A-Za-z]{3,9}\.?\s+\d{1,2},?\s+\d{4})\b/g
     ) || [];
