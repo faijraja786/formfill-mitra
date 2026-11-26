@@ -1129,15 +1129,34 @@ app.post("/api/ocr/image", ocrLimiter, requireUser, requireProfile, upload.singl
   const apiKey = String(process.env.GEMINI_API_KEY || "").trim();
   if (!apiKey) return fail(res, 503, "AI document reading is not configured. Please enter details manually or contact the administrator.");
   const model = String(process.env.GEMINI_MODEL || "gemini-3.8-flash").trim();
+  let requestedFields = [];
+  try {
+    const rawFields = String(req.body && req.body.formFields || "");
+    if (rawFields.length > 20000) return fail(res, 400, "The selected form's field list is too large.");
+    const parsedFields = rawFields ? JSON.parse(rawFields) : [];
+    if (!Array.isArray(parsedFields) || parsedFields.length > 150) return fail(res, 400, "Invalid form field list.");
+    const seenKeys = new Set();
+    requestedFields = parsedFields.map(field => {
+      const key = clean(field && field.key);
+      const label = clean(field && field.label);
+      if (!/^[a-zA-Z0-9_-]{1,100}$/.test(key) || !label || label.length > 160 || seenKeys.has(key)) throw new Error("Invalid or duplicate form field.");
+      seenKeys.add(key);
+      return { key, label, type: clean(field.type).slice(0, 20) };
+    });
+  } catch (_) {
+    return fail(res, 400, "Could not read the selected form's field list.");
+  }
+  const requestedFieldGuide = requestedFields.map(field => field.key + " = " + field.label + " (type: " + field.type + ")").join("\n");
   const prompt = [
     "You are reading an applicant's document image for a form-preparation website.",
     "Return ONLY valid JSON with keys rawText and fields.",
-    "rawText: transcribe all readable text faithfully, preserving the original language (English/Hindi) and line breaks where useful.",
-    "fields: object with keys fullName, dob, gender, mobile, email, state, district, villageCity, pin, address.",
-    "Use null for any value not clearly visible. Do not guess, infer, or fabricate personal information.",
-    "For dob, return YYYY-MM-DD only when the date is clearly legible; otherwise null. Do not confuse issue/expiry dates with date of birth.",
+    "rawText: transcribe readable text faithfully in its original language, but redact Aadhaar/PAN and other long government ID numbers as [REDACTED] unless a requested form field specifically asks for that exact value.",
+    "fields: include common keys fullName, fatherName, motherName, dob, gender, mobile, email, state, district, villageCity, pin, address, category, rollNumber, passingYear, education, plus every exact requested form field key listed below.",
+    "Requested form fields (extract only values clearly present in the image):\n" + requestedFieldGuide,
+    "Use null for values not clearly visible. Do not guess, infer, or fabricate personal information.",
+    "For dob and any requested date field, return YYYY-MM-DD only when the date is clearly legible; otherwise null. Do not confuse issue/expiry dates with date of birth.",
     "For mobile return digits only; for pin return a 6-digit string only if clearly legible.",
-    "This is sensitive personal data: extract only the requested fields and do not include unrelated sensitive numbers in fields."
+    "Extract sensitive ID numbers only if an exact requested field asks for them and the user has consented to AI reading. Never include unrelated ID numbers."
   ].join("\n");
   try {
     const response = await fetch("https://generativelanguage.googleapis.com/v1beta/models/" + encodeURIComponent(model) + ":generateContent", {
@@ -1163,9 +1182,12 @@ app.post("/api/ocr/image", ocrLimiter, requireUser, requireProfile, upload.singl
     catch (_) { return fail(res, 502, "AI returned an unreadable result. Please try again or enter details manually."); }
     const fields = parsed.fields && typeof parsed.fields === "object" ? parsed.fields : {};
     const safeFields = {};
-    for (const key of ["fullName","dob","gender","mobile","email","state","district","villageCity","pin","address"]) {
+    const outputKeys = [...new Set(["fullName","fatherName","motherName","dob","gender","mobile","email","state","district","villageCity","pin","address","category","rollNumber","passingYear","education", ...requestedFields.map(field => field.key)])];
+    for (const key of outputKeys) {
       const value = fields[key];
-      safeFields[key] = value === null || value === undefined ? "" : clean(String(value)).slice(0, key === "address" ? 1000 : 200);
+      const requested = requestedFields.find(field => field.key === key);
+      const maxLength = key === "address" || (requested && requested.type === "textarea") ? 1000 : 300;
+      safeFields[key] = value === null || value === undefined ? "" : clean(String(value)).slice(0, maxLength);
     }
     const text = String(parsed.rawText || "").slice(0, 20000);
     await writeAudit(req.profile, "ai_document_extraction.completed", "document_image", null, { mimeType: req.file.mimetype, size: req.file.size, model });
