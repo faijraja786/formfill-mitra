@@ -461,6 +461,7 @@ button{
 ========================================================= */
 
 let applications = [];
+let publishedForms = [];
 let activeFilter = "all";
 
 
@@ -526,6 +527,12 @@ async function loadApplications(){
         await bootstrapProfile(role);
         const data = await apiRequest("/api/applications");
         applications = Array.isArray(data.applications) ? data.applications : [];
+        try {
+            const formData = await apiRequest("/api/forms");
+            publishedForms = Array.isArray(formData.forms) ? formData.forms : [];
+        } catch (_) {
+            publishedForms = [];
+        }
         localStorage.setItem("ffm_applications", JSON.stringify(applications));
     } catch (error) {
         console.error("Secure application list could not load:", error);
@@ -943,70 +950,50 @@ function findApplication(id){
 --------------------------------------------------------- */
 
 function restoreApplication(app){
+    if(!app) return false;
 
-    if(!app){
-        return false;
-    }
+    const formId = String(app.formId || (app.formSnapshot && app.formSnapshot.id) || "");
+    const form = app.form ||
+        publishedForms.find(item => String(item.id) === formId) ||
+        (app.formSnapshot ? { ...app.formSnapshot, id: formId } : null);
 
+    if(form) localStorage.setItem("selectedForm", JSON.stringify(form));
+    localStorage.setItem("formName", app.formName || (form && form.name) || "Application");
+    localStorage.setItem("currentApplicationId", String(app.id));
+    localStorage.setItem("currentApplicationFormId", formId);
 
-    /*
-       Restore form
-    */
+    const answers = app.answers && typeof app.answers === "object" ? app.answers : {};
+    localStorage.setItem("formData", JSON.stringify(answers));
 
-    if(app.form){
-
-        localStorage.setItem(
-            "selectedForm",
-            JSON.stringify(app.form)
-        );
-
-    }else{
-
-        /*
-           Try admin form list
-        */
-
-        const forms =
-            getJSON(
-                "ffm_admin_forms",
-                []
-            );
-
-
-        const form =
-            forms.find(
-                item =>
-                    String(item.id) ===
-                    String(app.formId)
-            );
-
-
-        if(form){
-
-            localStorage.setItem(
-                "selectedForm",
-                JSON.stringify(form)
-            );
-
-        }
-    }
-
-
-    localStorage.setItem(
-        "formName",
-        app.formName || "Application"
-    );
-
-
-    localStorage.setItem(
-        "currentApplicationId",
-        String(app.id)
-    );
-
-
+    const normalize = value => String(value || "").toLowerCase().replace(/[^a-z0-9]+/g,"_").replace(/^_+|_+$/g,"");
+    const answer = (...keys) => {
+        const wanted = keys.map(normalize);
+        const found = Object.entries(answers).find(([key,value]) => wanted.includes(normalize(key)) && value !== null && value !== undefined && String(value).trim() !== "");
+        return found ? found[1] : "";
+    };
+    const source = app.applicant && typeof app.applicant === "object" ? app.applicant : {};
+    const applicant = {
+        fullName: source.fullName || answer("full_name","fullname","name","applicant_name","candidate_name"),
+        dob: source.dateOfBirth || source.dob || answer("dob","date_of_birth","birth_date","birthdate"),
+        gender: source.gender || answer("gender","sex"),
+        mobile: source.phone || source.mobile || answer("mobile","mobile_number","phone","phone_number","contact_number"),
+        email: source.email || answer("email","email_address"),
+        state: source.state || answer("state","state_name"),
+        district: source.district || answer("district","district_name"),
+        villageCity: source.villageCity || source.city || answer("village_city","village","city","town"),
+        pin: source.pin || answer("pin","pin_code","pincode","postal_code"),
+        address: source.address || answer("full_address","address","permanent_address","present_address")
+    };
+    localStorage.setItem("currentApplicant", JSON.stringify(applicant));
+    localStorage.setItem("applicantVerified", "true");
+    localStorage.setItem("ocrMappingCompleted", "true");
+    localStorage.removeItem("finalReviewCompleted");
+    localStorage.removeItem("formFillingCompleted");
+    localStorage.setItem("formFillingSaved", Object.keys(answers).length ? "true" : "false");
+    localStorage.setItem("draftStatus", "saved");
+    if(app.clientId) localStorage.setItem("currentClientId", String(app.clientId));
     return true;
 }
-
 
 /* ---------------------------------------------------------
    Open application
