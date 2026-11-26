@@ -1186,16 +1186,62 @@ app.post("/api/ocr/image", ocrLimiter, requireUser, requireProfile, upload.singl
     let parsed;
     try { parsed = JSON.parse(rawOutput.replace(/^\s*\x60\x60\x60(?:json)?\s*/i, "").replace(/\s*\x60\x60\x60\s*$/, "")); }
     catch (_) { return fail(res, 502, "AI returned an unreadable result. Please try again or enter details manually."); }
-    const fields = parsed.fields && typeof parsed.fields === "object" ? parsed.fields : {};
+    // Gemini may vary the JSON envelope slightly. Normalize common response shapes
+    // before returning a stable API contract to the browser.
+    let sourceFields = parsed.fields ?? parsed.extracted ?? parsed.data?.fields ?? parsed.applicant ?? parsed;
+    if (typeof sourceFields === "string") {
+      try { sourceFields = JSON.parse(sourceFields); } catch (_) { sourceFields = {}; }
+    }
+    const fields = {};
+    if (Array.isArray(sourceFields)) {
+      for (const item of sourceFields) {
+        if (!item || typeof item !== "object") continue;
+        const key = clean(item.key || item.name || item.field || item.label);
+        const value = item.value ?? item.text ?? item.answer;
+        if (key && value !== undefined) fields[key] = value;
+      }
+    } else if (sourceFields && typeof sourceFields === "object") {
+      Object.assign(fields, sourceFields);
+    }
+    const normalizeKey = key => clean(key).toLowerCase().replace(/[^a-z0-9]/g, "");
+    const fieldEntries = Object.entries(fields);
+    const aliases = {
+      fullName: ["fullname","applicantname","candidatename","nameofapplicant","name"],
+      fatherName: ["fathername","fatherfullname","guardianname","nameof father"],
+      motherName: ["mothername"],
+      dob: ["dob","dateofbirth","birthdate","birthdateofapplicant","applicantdob"],
+      gender: ["gender","sex"],
+      mobile: ["mobile","mobilenumber","phonenumber","contactnumber","telephone"],
+      email: ["email","emailaddress"],
+      state: ["state","statename"],
+      district: ["district","districtname"],
+      villageCity: ["villagecity","village","city","town"],
+      pin: ["pin","pincode","postalcode","zipcode"],
+      address: ["address","fulladdress","completeaddress","residentialaddress","permanentaddress"]
+    };
+    const findValue = key => {
+      if (fields[key] !== undefined && fields[key] !== null && clean(fields[key])) return fields[key];
+      const normalizedAliases = new Set([normalizeKey(key), ...(aliases[key] || []).map(normalizeKey)]);
+      const found = fieldEntries.find(([candidate, value]) =>
+        normalizedAliases.has(normalizeKey(candidate)) && value !== null && value !== undefined && clean(value)
+      );
+      return found ? found[1] : "";
+    };
     const safeFields = {};
-    const outputKeys = [...new Set(["fullName","fatherName","motherName","dob","gender","mobile","email","state","district","villageCity","pin","address","category","rollNumber","passingYear","education", ...requestedFields.map(field => field.key)])];
+    const commonKeys = ["fullName","fatherName","motherName","dob","gender","mobile","email","state","district","villageCity","pin","address","category","rollNumber","passingYear","education"];
+    const outputKeys = [...new Set([...commonKeys, ...requestedFields.map(field => field.key)])];
     for (const key of outputKeys) {
-      const value = fields[key];
+      const value = commonKeys.includes(key) ? findValue(key) : (fields[key] ?? fieldEntries.find(([candidate, v]) => normalizeKey(candidate) === normalizeKey(key) && v !== null && v !== undefined)?.[1]);
       const requested = requestedFields.find(field => field.key === key);
       const maxLength = key === "address" || (requested && requested.type === "textarea") ? 1000 : 300;
-      safeFields[key] = value === null || value === undefined ? "" : clean(String(value)).slice(0, maxLength);
+      safeFields[key] = value === null || value === undefined || typeof value === "object" ? "" : clean(String(value)).slice(0, maxLength);
     }
-    const text = String(parsed.rawText || "").slice(0, 20000);
+    const text = String(parsed.rawText || parsed.text || parsed.ocrText || parsed.transcription || "").slice(0, 20000);
+    const extractedCount = Object.values(safeFields).filter(value => clean(value)).length;
+    if (!text.trim() && extractedCount === 0) {
+      console.error("Gemini document extraction returned an empty result", { model, responseKeys: Object.keys(parsed).slice(0, 20) });
+      return fail(res, 502, "AI could not detect readable details in this image. Try a clearer, full-page image or enter details manually.");
+    }
     await writeAudit(req.profile, "ai_document_extraction.completed", "document_image", null, { mimeType: req.file.mimetype, size: req.file.size, model });
     return res.status(200).json({ text, extracted: safeFields, confidence: null, reviewRequired: true, message: "AI reading completed. Review and correct every suggested field before continuing." });
   } catch (error) {
