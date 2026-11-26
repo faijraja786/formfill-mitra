@@ -1198,15 +1198,46 @@ app.post("/api/ocr/image", ocrLimiter, requireUser, requireProfile, upload.singl
       requestedKeyMap.set(normalizeKey(field.key), field.key);
       requestedKeyMap.set(normalizeLabel(field.label), field.key);
     });
+    const commonAliases = {
+      fullName: ["fullname","full_name","applicantname","applicant_name","candidatename","candidate_name","nameofapplicant","name"],
+      fatherName: ["fathername","father_name","fatherfullname","father_full_name","guardianname","guardian_name"],
+      motherName: ["mothername","mother_name"],
+      dob: ["dob","dateofbirth","date_of_birth","birthdate","birth_date","applicantdob","applicant_dob"],
+      gender: ["gender","sex"],
+      mobile: ["mobile","mobilenumber","mobile_number","phonenumber","phone_number","contactnumber","contact_number","telephone"],
+      email: ["email","emailaddress","email_address"],
+      state: ["state","statename","state_name"],
+      district: ["district","districtname","district_name"],
+      villageCity: ["villagecity","village_city","village","city","town"],
+      pin: ["pin","pincode","pin_code","postalcode","postal_code","zipcode","zip"],
+      address: ["address","fulladdress","full_address","completeaddress","complete_address","residentialaddress","residential_address","permanentaddress","permanent_address"]
+    };
+    const aliasToCanonical = new Map();
+    for (const [canonical, aliases] of Object.entries(commonAliases)) {
+      const canonicalKey = normalizeKey(canonical);
+      aliasToCanonical.set(canonicalKey, canonicalKey);
+      aliases.forEach(alias => aliasToCanonical.set(normalizeKey(alias), canonicalKey));
+    }
     const resolveFieldKey = rawKey => {
       const normalized = normalizeKey(rawKey);
-      return requestedKeyMap.get(normalized) ||
-        requestedKeyMap.get(normalizeLabel(rawKey)) ||
-        clean(rawKey);
+      const labelNormalized = normalizeLabel(rawKey);
+      const direct = requestedKeyMap.get(normalized) || requestedKeyMap.get(labelNormalized);
+      if (direct) return direct;
+      const canonical = aliasToCanonical.get(normalized) || aliasToCanonical.get(labelNormalized);
+      if (canonical) {
+        const matching = requestedFields.find(field =>
+          normalizeKey(field.key) === canonical ||
+          aliasToCanonical.get(normalizeKey(field.key)) === canonical
+        );
+        if (matching) return matching.key;
+      }
+      return clean(rawKey);
     };
+    const rootIsFieldObject = !["fields","extracted","data","applicant","rawText","text","ocrText","transcription"]
+      .some(key => Object.prototype.hasOwnProperty.call(parsed, key));
     const sourceCandidates = [
       parsed.fields, parsed.extracted, parsed.data?.fields, parsed.data?.extracted,
-      parsed.applicant, parsed.data, parsed
+      parsed.applicant, parsed.data, rootIsFieldObject ? parsed : null
     ];
     const fields = {};
     for (let sourceFields of sourceCandidates) {
