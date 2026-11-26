@@ -1209,7 +1209,8 @@ async function completeReview(){
 
     const uploaded = getJSON("uploadedDocuments", {});
     const documentKeys = Object.keys(uploaded || {});
-    if(documentKeys.length && !consent.checked){
+    const vaultDocumentIds = getJSON("selectedVaultDocumentIds", []);
+    if((documentKeys.length || vaultDocumentIds.length) && !consent.checked){
         showStatus("Please provide consent before securely uploading your documents.", "error");
         return;
     }
@@ -1277,6 +1278,8 @@ async function completeReview(){
             localStorage.setItem("currentApplicationFormId", formId);
         }
 
+        if (vaultDocumentIds.length) { await apiRequest("/api/applications/" + encodeURIComponent(applicationId) + "/documents/from-vault", { method: "POST", body: JSON.stringify({ documentIds: vaultDocumentIds }) }); }
+        localStorage.removeItem("selectedVaultDocumentIds");
         localStorage.removeItem("currentApplicant");
         localStorage.removeItem("professionalApplicant");
 
@@ -1317,7 +1320,7 @@ async function completeReview(){
         localStorage.setItem("applicationReviewStatus", "preparation");
         localStorage.setItem("finalReviewCompleted", "true");
         showStatus(
-            "Preparation record and " + documentKeys.length + " document(s) saved securely. Reference: " + applicationId + ". Government submission is NOT complete yet. Continue on the official portal and save its acknowledgement number.",
+            "Preparation record and " + (documentKeys.length + vaultDocumentIds.length) + " document(s) saved securely. Reference: " + applicationId + ". Government submission is NOT complete yet. Continue on the official portal and save its acknowledgement number.",
             "success"
         );
         const portal = selectedForm.officialLink || selectedForm.link;
