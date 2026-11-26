@@ -1743,7 +1743,7 @@ function extractApplicantFromOCR(text){
         fullName: fromAnyAI("fullName","full_name","applicant_name","candidate_name") || extractName(text),
         fatherName: fromAnyAI("fatherName","father_name","guardianName","guardian_name"),
         motherName: fromAnyAI("motherName","mother_name"),
-        dob: toISODate(fromAnyAI("dob","dateOfBirth","date_of_birth","birth_date","birthdate")) || extractDOB(text),
+        dob: toISODate(fromAnyAI("dob","dateOfBirth","date_of_birth","birth_date","birthdate","applicant_dob")) || extractDOB(text),
         gender: fromAnyAI("gender","sex") || extractGender(text),
         mobile: fromAnyAI("mobile","mobile_number","phone","phone_number","contact_number").replace(/\D/g,"").slice(-10) || extractMobile(text),
         email: fromAnyAI("email","email_address") || extractEmail(text),
