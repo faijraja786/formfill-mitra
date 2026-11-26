@@ -268,7 +268,7 @@ button{
     }
 }
 </style>
-<link rel="stylesheet" href="professional-ui.css?v=20261124">
+<link rel="stylesheet" href="professional-ui.css?v=20261126-design2">
 <script src="app-shell.js" defer></script>
 </head>
 
@@ -1326,7 +1326,13 @@ document.addEventListener(
     function(){
 
         loadMode();
-
+        const requested = new URLSearchParams(location.search).get("filter");
+        if (["draft","processing","review","completed","error"].includes(requested)) {
+            activeFilter = requested;
+            document.querySelectorAll(".filter").forEach(btn => {
+                btn.classList.toggle("active", btn.dataset.filter === requested);
+            });
+        }
         loadApplications();
 
     }
