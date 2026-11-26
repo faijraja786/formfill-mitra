@@ -1724,39 +1724,28 @@ function extractName(text){
 ===================================================== */
 
 function extractApplicantFromOCR(text){
-
+    const structured = {};
+    Object.values(ocrResults || {}).forEach(item => {
+        if(item && typeof item === "object" && item.extracted){
+            Object.entries(item.extracted).forEach(([key,value]) => {
+                if(value !== null && value !== undefined && clean(value) && !structured[key]){
+                    structured[key] = clean(value);
+                }
+            });
+        }
+    });
+    const fromAI = key => structured[key] || "";
     return {
-
-        fullName:
-            extractName(text),
-
-        dob:
-            extractDOB(text),
-
-        gender:
-            extractGender(text),
-
-        mobile:
-            extractMobile(text),
-
-        email:
-            extractEmail(text),
-
-        state:
-            extractState(text),
-
-        district:
-            extractDistrict(text),
-
-        villageCity:
-            extractVillageCity(text),
-
-        pin:
-            extractPIN(text),
-
-        address:
-            extractAddress(text)
-
+        fullName: fromAI("fullName") || extractName(text),
+        dob: toISODate(fromAI("dob")) || extractDOB(text),
+        gender: fromAI("gender") || extractGender(text),
+        mobile: fromAI("mobile").replace(/\D/g,"").slice(-10) || extractMobile(text),
+        email: fromAI("email") || extractEmail(text),
+        state: fromAI("state") || extractState(text),
+        district: fromAI("district") || extractDistrict(text),
+        villageCity: fromAI("villageCity") || extractVillageCity(text),
+        pin: fromAI("pin").replace(/\D/g,"").slice(0,6) || extractPIN(text),
+        address: fromAI("address") || extractAddress(text)
     };
 }
 
