@@ -227,10 +227,10 @@ const documentNames = {
 };
 
 
-const selectedForm =
-    JSON.parse(
-        localStorage.getItem("selectedForm")
-    );
+let selectedForm = (() => {
+    try { return JSON.parse(localStorage.getItem("selectedForm") || "null"); }
+    catch (_) { return null; }
+})();
 
 
 /* ==============================
