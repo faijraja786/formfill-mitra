@@ -138,3 +138,7 @@ input,select,textarea{font-size:14px!important}
  .welcome{padding:17px!important}
 }
 @media(max-width:360px){.forms-grid{grid-template-columns:1fr!important}}
+
+/* Keep sign-out clear and compact, not a large navigation block */
+.fm-logout-item,.ffm-shell-bottom button{background:#27323b!important;color:#fff!important;border-radius:9px!important;padding:9px 12px!important;min-height:34px!important;font-size:12px!important}
+.fm-logout-item:hover,.ffm-shell-bottom button:hover{background:#111820!important}
