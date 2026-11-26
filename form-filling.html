@@ -803,9 +803,10 @@ function createField(field, index){
 
 
     if(type === "date"){
-
-        finalValue =
-            normalizeDateForInput(value);
+        // Normalize whichever value is actually going to be shown:
+        // saved draft answer first, otherwise applicant DOB/profile value.
+        // Previously this used only "value", silently blanking saved date answers.
+        finalValue = normalizeDateForInput(finalValue);
     }
 
 
