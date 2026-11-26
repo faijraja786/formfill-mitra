@@ -1079,34 +1079,39 @@ function setField(
     if(!element)
         return;
 
-    const normalizedValue =
+    let normalizedValue =
         id === "dob" && value
             ? toISODate(value) || String(value)
-            : (value ?? "");
+            : String(value ?? "");
 
-    element.value =
-        normalizedValue;
-
-    const wrapper =
-        document.getElementById(
-            "wrap-" + id
-        );
-
-    if(wrapper){
-
-        if(fromOCR && value){
-
-            wrapper.classList.add(
-                "ocr-filled"
-            );
-
-        }else{
-
-            wrapper.classList.remove(
-                "ocr-filled"
-            );
-        }
+    if (id === "gender") {
+        const gender = normalizedValue.trim().toLowerCase();
+        if (["m","male","man"].includes(gender)) normalizedValue = "Male";
+        else if (["f","female","woman"].includes(gender)) normalizedValue = "Female";
+        else if (["other","others","transgender","non-binary","nonbinary"].includes(gender)) normalizedValue = "Other";
     }
+
+    if (element.tagName === "SELECT") {
+        const desired = normalizedValue.trim().toLowerCase();
+        const option = Array.from(element.options).find(item =>
+            item.value.trim().toLowerCase() === desired ||
+            item.textContent.trim().toLowerCase() === desired
+        );
+        if (!option) {
+            element.value = "";
+            return false;
+        }
+        element.value = option.value;
+    } else {
+        element.value = normalizedValue;
+    }
+
+    const wrapper = document.getElementById("wrap-" + id);
+    if (wrapper) {
+        if (fromOCR && element.value) wrapper.classList.add("ocr-filled");
+        else wrapper.classList.remove("ocr-filled");
+    }
+    return Boolean(element.value);
 }
 
 
@@ -1769,8 +1774,7 @@ function applySuggestedField(key, value) {
     if (!value) return false;
     // Preserve anything already entered or previously verified by the applicant.
     if (getField(key)) return false;
-    setField(key, value, true);
-    return true;
+    return setField(key, value, true);
 }
 
 
