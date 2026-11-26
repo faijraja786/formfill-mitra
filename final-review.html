@@ -379,6 +379,8 @@ button:disabled{
     </div>
 
 
+    <section class="card" id="panPreferenceCard" style="display:none"><h2>PAN Delivery Preference</h2><div class="form-info"><strong id="panPreferenceText">Not selected</strong><p style="margin:10px 0 0">Confirm this preference on the authorized provider page. The provider will show the applicable fee.</p></div></section>
+
     <!-- Applicant Information -->
 
     <div class="card">
@@ -706,6 +708,11 @@ function loadSelectedForm(){
         Array.isArray(selectedForm.fields)
         ? selectedForm.fields
         : [];
+    const isPAN = /pan/i.test((selectedForm.id || "") + " " + (selectedForm.name || ""));
+    if (isPAN) {
+        document.getElementById("panPreferenceCard").style.display = "block";
+        document.getElementById("panPreferenceText").textContent = localStorage.getItem("panOutputPreferenceLabel") || "Not selected — return to the PAN preference step.";
+    }
 }
 
 
@@ -1082,6 +1089,11 @@ function loadPortal(){
             "portalBox"
         );
 
+    const isPAN = selectedForm && /pan/i.test((selectedForm.id || "") + " " + (selectedForm.name || ""));
+    if (isPAN) {
+        box.innerHTML = '<div class="warning"><strong>PAN application:</strong> Select the new PAN application for an Indian citizen (Form 93 if eligible). Choose the same card delivery option, review every detail, complete required verification yourself, and pay the fee directly on the provider page. FormFill Mitra does not collect the PAN fee or submit the government application.</div><a href="https://www.pan.utiitsl.com/panonline_website/redirect/formLanding" target="_blank" rel="noopener noreferrer">Continue to UTIITSL PAN application ↗</a><a href="https://tinpan.proteantech.in/services/pan/form-form_93-form_94.html" target="_blank" rel="noopener noreferrer">Protean Form 93 instructions / application ↗</a><p class="small">Current fees and delivery choices are displayed by the official provider. Do not apply for another PAN if one has already been allotted.</p>';
+        return;
+    }
 
     const link =
         selectedForm &&
@@ -1199,6 +1211,13 @@ function showStatus(message,type){
 --------------------------------------------------------- */
 
 async function completeReview(){
+
+    const isPAN = selectedForm && /pan/i.test((selectedForm.id || "") + " " + (selectedForm.name || ""));
+    if (isPAN && !["physical", "epan"].includes(localStorage.getItem("panOutputPreference"))) {
+        showStatus("Please choose Physical PAN or e-PAN PDF first.", "error");
+        location.href = "pan-application-choice.html";
+        return;
+    }
 
     const checkbox = document.getElementById("confirmCheckbox");
     const consent = document.getElementById("documentConsent");
