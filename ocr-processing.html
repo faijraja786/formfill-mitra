@@ -471,11 +471,11 @@ async function startOCR(){
         setProgress(0, "Please agree to AI document reading first.");
         return;
     }
-    document.getElementById("runAiButton").disabled = true;
     if(!selectedForm){
         setProgress(100, "No form is selected.");
         return;
     }
+    document.getElementById("runAiButton").disabled = true;
 
     document.getElementById("formName").textContent =
         selectedForm.name || "Selected Form";
