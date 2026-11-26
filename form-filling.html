@@ -290,7 +290,7 @@ button{
     }
 }
 </style>
-<link rel="stylesheet" href="professional-ui.css?v=20261124">
+<link rel="stylesheet" href="professional-ui.css?v=20261126-design2">
 <script src="app-shell.js" defer></script>
 </head>
 
@@ -366,7 +366,7 @@ button{
                 type="button"
                 class="btn-save"
                 onclick="saveChanges()">
-                Save Changes
+                Save as Draft
             </button>
 
         </div>
@@ -453,8 +453,9 @@ button{
                 type="button"
                 class="btn-secondary"
                 onclick="saveChanges()">
-                Save
+                Save as Draft
             </button>
+            <button type="button" class="btn-dark clear-btn" onclick="clearFormFields()">Clear</button>
 
             <button
                 type="button"
@@ -1297,47 +1298,74 @@ function validateForm(){
    Save
 --------------------------------------------------------- */
 
-function saveChanges(){
-
-    const data =
-        collectFormData();
-
-
-    /*
-       Preserve old applicant structure
-       and update new dynamic values.
-    */
-
-    applicant = {
-        ...applicant,
-        ...data
-    };
-
-
-    localStorage.setItem(
-        "currentApplicant",
-        JSON.stringify(applicant)
-    );
-
-
-    localStorage.setItem(
-        "formData",
-        JSON.stringify(data)
-    );
-
-
-    localStorage.setItem(
-        "formFillingSaved",
-        "true"
-    );
-
-
-    showStatus(
-        "Information successfully saved.",
-        "success"
-    );
+async function saveChanges(){
+    const data = collectFormData();
+    applicant = { ...applicant, ...data };
+    try {
+        const [{ auth }, { apiRequest, bootstrapProfile }] = await Promise.all([
+            import("./firebase-init.js"),
+            import("./api-client.js")
+        ]);
+        if (!auth.currentUser) throw new Error("Please sign in again.");
+        const role = localStorage.getItem("loginType") === "professional" ? "professional" : "personal";
+        await bootstrapProfile(role, applicant.fullName || applicant.name || "");
+        const formId = selectedForm && selectedForm.id;
+        if (!formId) throw new Error("Please reopen this form from Browse Forms.");
+        const applicantPayload = {
+            fullName: applicant.fullName || applicant.name || "",
+            email: applicant.email || "",
+            phone: applicant.phone || applicant.mobile || applicant.mobileNumber || "",
+            address: applicant.address || "",
+            dateOfBirth: applicant.dateOfBirth || applicant.dob || "",
+            gender: applicant.gender || "",
+            category: applicant.category || "",
+            guardianName: applicant.guardianName || applicant.fatherName || "",
+            education: applicant.education || applicant.qualification || ""
+        };
+        let applicationId = localStorage.getItem("currentApplicationId");
+        const sameDraft = applicationId && localStorage.getItem("currentApplicationFormId") === String(formId);
+        if (sameDraft) {
+            await apiRequest("/api/applications/" + encodeURIComponent(applicationId), {
+                method:"PATCH",
+                body:JSON.stringify({answers:data, applicant:applicantPayload})
+            });
+        } else {
+            const result = await apiRequest("/api/applications", {
+                method:"POST",
+                body:JSON.stringify({
+                    formId,
+                    clientId:role === "professional" ? localStorage.getItem("currentClientId") || null : null,
+                    applicant:applicantPayload,
+                    answers:data
+                })
+            });
+            applicationId = result.applicationId;
+            localStorage.setItem("currentApplicationId", String(applicationId));
+            localStorage.setItem("currentApplicationFormId", String(formId));
+        }
+        localStorage.setItem("currentApplicant",JSON.stringify(applicant));
+        localStorage.setItem("formData",JSON.stringify(data));
+        localStorage.setItem("formFillingSaved","true");
+        localStorage.setItem("draftStatus","saved");
+        showStatus("Draft saved securely to your account.","success");
+    } catch(error) {
+        console.error("Draft save failed:",error);
+        showStatus(error.message || "Draft could not be saved. Please try again.","error");
+    }
 }
 
+async function clearFormFields(){
+    if(!confirm("Clear all answers in this form? Your applicant profile and uploaded documents will not be deleted.")) return;
+    document.querySelectorAll("#dynamicForm input,#dynamicForm select,#dynamicForm textarea").forEach(el=>{
+        if(el.type==="checkbox"||el.type==="radio") el.checked=false;
+        else el.value="";
+        el.classList.remove("autofilled");
+    });
+    localStorage.setItem("formData","{}");
+    localStorage.removeItem("formFillingSaved");
+    localStorage.removeItem("formFillingCompleted");
+    await saveChanges();
+}
 
 /* ---------------------------------------------------------
    Continue
