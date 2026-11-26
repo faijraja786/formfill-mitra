@@ -382,7 +382,7 @@ button:disabled{
 <header>
     <div class="header-inner">
         <h2>FormFill Mitra</h2>
-        <p>Applicant Details • Smart OCR Verification</p>
+        <p>Applicant Details • AI Document Verification</p>
     </div>
 </header>
 
@@ -413,20 +413,19 @@ button:disabled{
     </div>
 
 
-    <!-- OCR NOTICE -->
+    <!-- AI READING NOTICE -->
     <div class="notice">
 
-        <strong>✓ AI Reading Completed</strong>
+        <strong id="aiReadingNoticeTitle">AI Reading Results</strong>
 
-        <div>
-            Information detected by OCR is shown below as a suggestion. Verify every field against the original documents before continuing.
-            
+        <div id="aiReadingNoticeText">
+            AI suggestions are not final data. Verify every field against the original documents before continuing.
         </div>
 
     </div>
 
 
-    <!-- SMART OCR -->
+    <!-- AI FIELD MAPPING -->
     <div class="smart-box">
 
         <div class="smart-title">
@@ -435,12 +434,12 @@ button:disabled{
 
         <div class="smart-description">
 
-            FormFill Mitra uses OCR to identify available details such as name, date of birth, phone number, email address and address. AI suggestions may be incomplete or inaccurate, so review and edit every field manually.
+            FormFill Mitra uses AI to identify available details such as name, date of birth, phone number, email address and address from selected documents. Suggestions may be incomplete or inaccurate, so review and edit every field manually.
 
             <br><br>
 
             <strong>
-                OCR suggestions are not final data.
+                AI suggestions are not final data.
             </strong>
 
             You can edit every field manually.
@@ -645,7 +644,7 @@ button:disabled{
             <h2>📍 Address</h2>
 
             <span>
-                OCR + manual verification
+                AI + manual verification
             </span>
 
         </div>
@@ -803,9 +802,9 @@ button:disabled{
 
         <p class="small">
 
-            This is the original OCR output. If any field contains
-            incorrect information, use this reference to correct it
-            manually correction manually above.
+            This is the text read from your document. If any field contains
+            incorrect information, use the text above as a reference
+            and correct the applicant fields manually.
 
         </p>
 
@@ -1079,34 +1078,39 @@ function setField(
     if(!element)
         return;
 
-    const normalizedValue =
+    let normalizedValue =
         id === "dob" && value
             ? toISODate(value) || String(value)
-            : (value ?? "");
+            : String(value ?? "");
 
-    element.value =
-        normalizedValue;
-
-    const wrapper =
-        document.getElementById(
-            "wrap-" + id
-        );
-
-    if(wrapper){
-
-        if(fromOCR && value){
-
-            wrapper.classList.add(
-                "ocr-filled"
-            );
-
-        }else{
-
-            wrapper.classList.remove(
-                "ocr-filled"
-            );
-        }
+    if (id === "gender") {
+        const gender = normalizedValue.trim().toLowerCase();
+        if (["m","male","man"].includes(gender)) normalizedValue = "Male";
+        else if (["f","female","woman"].includes(gender)) normalizedValue = "Female";
+        else if (["other","others","transgender","non-binary","nonbinary"].includes(gender)) normalizedValue = "Other";
     }
+
+    if (element.tagName === "SELECT") {
+        const desired = normalizedValue.trim().toLowerCase();
+        const option = Array.from(element.options).find(item =>
+            item.value.trim().toLowerCase() === desired ||
+            item.textContent.trim().toLowerCase() === desired
+        );
+        if (!option) {
+            element.value = "";
+            return false;
+        }
+        element.value = option.value;
+    } else {
+        element.value = normalizedValue;
+    }
+
+    const wrapper = document.getElementById("wrap-" + id);
+    if (wrapper) {
+        if (fromOCR && element.value) wrapper.classList.add("ocr-filled");
+        else wrapper.classList.remove("ocr-filled");
+    }
+    return Boolean(element.value);
 }
 
 
@@ -1179,6 +1183,37 @@ function getAllOCRText(){
 
 function renderOCR(){
 
+    const noticeTitle = document.getElementById("aiReadingNoticeTitle");
+    const noticeText = document.getElementById("aiReadingNoticeText");
+    const notice = noticeTitle && noticeTitle.closest(".notice");
+    const items = Object.values(ocrResults || {});
+    const fieldCount = items.reduce((count, item) => {
+        const extracted = item && typeof item === "object" ? item.extracted || {} : {};
+        return count + Object.values(extracted).filter(value =>
+            value !== null && value !== undefined && String(value).trim() !== ""
+        ).length;
+    }, 0);
+    const textCount = items.reduce((count, item) => {
+        const text = typeof item === "string" ? item : item && item.text || "";
+        return count + (String(text).trim() ? 1 : 0);
+    }, 0);
+
+    if (noticeTitle && noticeText) {
+        if (fieldCount > 0) {
+            noticeTitle.textContent = "AI Reading Results Ready · " + fieldCount + " field suggestion(s)";
+            noticeText.textContent = "AI detected possible field values. Review each suggestion and verify it against the original documents before continuing.";
+            if (notice) notice.style.borderLeftColor = "#198754";
+        } else if (textCount > 0) {
+            noticeTitle.textContent = "Document Text Read · Applicant Fields Need Review";
+            noticeText.textContent = "AI read text, but no applicant fields were matched. Check the text below and enter or correct the applicant information manually.";
+            if (notice) notice.style.borderLeftColor = "#d69e00";
+        } else {
+            noticeTitle.textContent = "No Applicant Data Detected";
+            noticeText.textContent = "No readable applicant fields were returned. Do not assume the form is filled. Retry AI reading with a clear document or enter the details manually.";
+            if (notice) notice.style.borderLeftColor = "#d69e00";
+        }
+    }
+
     const box =
         document.getElementById(
             "ocrResults"
@@ -1191,7 +1226,7 @@ function renderOCR(){
 
         box.innerHTML = `
             <div class="empty">
-                No OCR result is available.
+                No AI reading result is available.
             </div>
         `;
 
@@ -1769,8 +1804,7 @@ function applySuggestedField(key, value) {
     if (!value) return false;
     // Preserve anything already entered or previously verified by the applicant.
     if (getField(key)) return false;
-    setField(key, value, true);
-    return true;
+    return setField(key, value, true);
 }
 
 
@@ -1846,9 +1880,16 @@ function applyOCR(){
     ).style.width = "100%";
 
 
+    const suggestionCount = Object.values(extracted).filter(value =>
+        value !== null && value !== undefined && String(value).trim() !== ""
+    ).length;
     document.getElementById("ocrStatus").textContent = applied > 0
-        ? `✓ ${applied} AI suggestions were added to empty fields. Verify every value against the original document.`
-        : "AI returned no confidently matched applicant fields. Check the extracted text above; if it is also blank or unreadable, upload a clear full-page image and run AI reading again. Nothing was filled.";
+        ? `✓ ${applied} AI suggestions were added to empty applicant fields. Verify every value against the original document.`
+        : suggestionCount > 0
+            ? `AI found ${suggestionCount} value(s), but did not change any applicant fields because they were already filled or the values belong to form-specific fields. Suggestions are saved for the form. Please verify them.`
+            : text
+                ? "AI read some text but could not map it to applicant fields. No fields were filled; please check the document text and enter details manually."
+                : "AI did not detect readable text or applicant fields. Try a clearer, full-page image or enter details manually.";
 }
 
 

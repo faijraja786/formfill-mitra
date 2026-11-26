@@ -1122,8 +1122,9 @@ const upload = multer({
   storage: multer.memoryStorage(),
   limits: { fileSize: 10 * 1024 * 1024, files: 1 },
   fileFilter(_req, file, callback) {
-    if (!file.mimetype || !/^image\/(jpeg|png|webp|tiff|bmp)$/i.test(file.mimetype)) {
-      return callback(new Error("Only JPEG, PNG, WEBP, TIFF, and BMP images are supported."));
+    const allowedMime = /^image\/(jpeg|png|webp)$/i.test(file.mimetype || "") || file.mimetype === "application/pdf";
+    if (!allowedMime) {
+      return callback(new Error("Only PDF, JPEG, PNG, and WEBP files are supported."));
     }
     callback(null, true);
   }
@@ -1155,11 +1156,11 @@ app.post("/api/ocr/image", ocrLimiter, requireUser, requireProfile, upload.singl
   const requestedFieldGuide = requestedFields.map(field => field.key + " = " + field.label + " (type: " + field.type + ")").join("\n");
   const prompt = [
     "You are reading an applicant's document image for a form-preparation website.",
-    "Return ONLY valid JSON with keys rawText and fields.",
+    "Return ONLY valid JSON with keys rawText and fields. fields must be a JSON object, not an array, and use the exact requested field keys.",
     "rawText: transcribe readable text faithfully in its original language, but redact Aadhaar/PAN and other long government ID numbers as [REDACTED] unless a requested form field specifically asks for that exact value.",
     "fields: include common keys fullName, fatherName, motherName, dob, gender, mobile, email, state, district, villageCity, pin, address, category, rollNumber, passingYear, education, plus every exact requested form field key listed below.",
     "Requested form fields (extract only values clearly present in the image):\n" + requestedFieldGuide,
-    "Use null for values not clearly visible. Do not guess, infer, or fabricate personal information.",
+    "Return values even when the document language is Hindi or another language; keep names and values as written, but map them to the requested English field keys. Use null for values not clearly visible. Do not guess, infer, or fabricate personal information.",
     "For dob and any requested date field, return YYYY-MM-DD only when the date is clearly legible; otherwise null. Do not confuse issue/expiry dates with date of birth.",
     "For mobile return digits only; for pin return a 6-digit string only if clearly legible.",
     "Extract sensitive ID numbers only if an exact requested field asks for them and the user has consented to AI reading. Never include unrelated ID numbers."
@@ -1188,22 +1189,83 @@ app.post("/api/ocr/image", ocrLimiter, requireUser, requireProfile, upload.singl
     catch (_) { return fail(res, 502, "AI returned an unreadable result. Please try again or enter details manually."); }
     // Gemini may vary the JSON envelope slightly. Normalize common response shapes
     // before returning a stable API contract to the browser.
-    let sourceFields = parsed.fields ?? parsed.extracted ?? parsed.data?.fields ?? parsed.applicant ?? parsed;
-    if (typeof sourceFields === "string") {
-      try { sourceFields = JSON.parse(sourceFields); } catch (_) { sourceFields = {}; }
-    }
-    const fields = {};
-    if (Array.isArray(sourceFields)) {
-      for (const item of sourceFields) {
-        if (!item || typeof item !== "object") continue;
-        const key = clean(item.key || item.name || item.field || item.label);
-        const value = item.value ?? item.text ?? item.answer;
-        if (key && value !== undefined) fields[key] = value;
-      }
-    } else if (sourceFields && typeof sourceFields === "object") {
-      Object.assign(fields, sourceFields);
-    }
+    // Merge rather than choose one envelope: some model responses include an
+    // empty "fields" object while placing values in "extracted" or "data".
     const normalizeKey = key => clean(key).toLowerCase().replace(/[^a-z0-9]/g, "");
+    const normalizeLabel = label => normalizeKey(clean(label).replace(/\([^)]*\)/g, " "));
+    const requestedKeyMap = new Map();
+    requestedFields.forEach(field => {
+      requestedKeyMap.set(normalizeKey(field.key), field.key);
+      requestedKeyMap.set(normalizeLabel(field.label), field.key);
+    });
+    const commonAliases = {
+      fullName: ["fullname","full_name","applicantname","applicant_name","candidatename","candidate_name","nameofapplicant","name"],
+      fatherName: ["fathername","father_name","fatherfullname","father_full_name","guardianname","guardian_name"],
+      motherName: ["mothername","mother_name"],
+      dob: ["dob","dateofbirth","date_of_birth","birthdate","birth_date","applicantdob","applicant_dob"],
+      gender: ["gender","sex"],
+      mobile: ["mobile","mobilenumber","mobile_number","phonenumber","phone_number","contactnumber","contact_number","telephone"],
+      email: ["email","emailaddress","email_address"],
+      state: ["state","statename","state_name"],
+      district: ["district","districtname","district_name"],
+      villageCity: ["villagecity","village_city","village","city","town"],
+      pin: ["pin","pincode","pin_code","postalcode","postal_code","zipcode","zip"],
+      address: ["address","fulladdress","full_address","completeaddress","complete_address","residentialaddress","residential_address","permanentaddress","permanent_address"]
+    };
+    const aliasToCanonical = new Map();
+    for (const [canonical, aliases] of Object.entries(commonAliases)) {
+      const canonicalKey = normalizeKey(canonical);
+      aliasToCanonical.set(canonicalKey, canonicalKey);
+      aliases.forEach(alias => aliasToCanonical.set(normalizeKey(alias), canonicalKey));
+    }
+    const resolveFieldKey = rawKey => {
+      const normalized = normalizeKey(rawKey);
+      const labelNormalized = normalizeLabel(rawKey);
+      const direct = requestedKeyMap.get(normalized) || requestedKeyMap.get(labelNormalized);
+      if (direct) return direct;
+      const canonical = aliasToCanonical.get(normalized) || aliasToCanonical.get(labelNormalized);
+      if (canonical) {
+        const matching = requestedFields.find(field =>
+          normalizeKey(field.key) === canonical ||
+          aliasToCanonical.get(normalizeKey(field.key)) === canonical
+        );
+        if (matching) return matching.key;
+      }
+      return clean(rawKey);
+    };
+    const rootIsFieldObject = !["fields","extracted","data","applicant","rawText","text","ocrText","transcription"]
+      .some(key => Object.prototype.hasOwnProperty.call(parsed, key));
+    const sourceCandidates = [
+      parsed.fields, parsed.extracted, parsed.data?.fields, parsed.data?.extracted,
+      parsed.applicant, parsed.data, rootIsFieldObject ? parsed : null
+    ];
+    const fields = {};
+    for (let sourceFields of sourceCandidates) {
+      if (typeof sourceFields === "string") {
+        try { sourceFields = JSON.parse(sourceFields); } catch (_) { continue; }
+      }
+      if (Array.isArray(sourceFields)) {
+        for (const item of sourceFields) {
+          if (!item || typeof item !== "object") continue;
+          const rawKey = item.key || item.name || item.field || item.label;
+          const value = item.value ?? item.text ?? item.answer;
+          const key = resolveFieldKey(rawKey);
+          if (key && value !== undefined && value !== null && clean(value)) fields[key] = value;
+        }
+      } else if (sourceFields && typeof sourceFields === "object") {
+        for (const [rawKey, value] of Object.entries(sourceFields)) {
+          if (value === null || value === undefined || !clean(value)) continue;
+          const key = resolveFieldKey(rawKey);
+          fields[key] = value;
+        }
+      }
+    }
+    // Normalize common nested field objects such as {value:"...", confidence:0.9}.
+    for (const [key, value] of Object.entries(fields)) {
+      if (value && typeof value === "object" && !Array.isArray(value)) {
+        fields[key] = value.value ?? value.text ?? value.answer ?? "";
+      }
+    }
     const fieldEntries = Object.entries(fields);
     const aliases = {
       fullName: ["fullname","applicantname","candidatename","nameofapplicant","name"],
@@ -1236,13 +1298,13 @@ app.post("/api/ocr/image", ocrLimiter, requireUser, requireProfile, upload.singl
       const maxLength = key === "address" || (requested && requested.type === "textarea") ? 1000 : 300;
       safeFields[key] = value === null || value === undefined || typeof value === "object" ? "" : clean(String(value)).slice(0, maxLength);
     }
-    const text = String(parsed.rawText || parsed.text || parsed.ocrText || parsed.transcription || "").slice(0, 20000);
+    const text = String(parsed.rawText || parsed.data?.rawText || parsed.text || parsed.data?.text || parsed.ocrText || parsed.transcription || "").slice(0, 20000);
     const extractedCount = Object.values(safeFields).filter(value => clean(value)).length;
     if (!text.trim() && extractedCount === 0) {
       console.error("Gemini document extraction returned an empty result", { model, responseKeys: Object.keys(parsed).slice(0, 20) });
       return fail(res, 502, "AI could not detect readable details in this image. Try a clearer, full-page image or enter details manually.");
     }
-    await writeAudit(req.profile, "ai_document_extraction.completed", "document_image", null, { mimeType: req.file.mimetype, size: req.file.size, model });
+    await writeAudit(req.profile, "ai_document_extraction.completed", "document_image", null, { mimeType: req.file.mimetype, size: req.file.size, model, extractedFieldCount: extractedCount, textLength: text.length, requestedFieldCount: requestedFields.length });
     return res.status(200).json({ text, extracted: safeFields, confidence: null, reviewRequired: true, message: "AI reading completed. Review and correct every suggested field before continuing." });
   } catch (error) {
     console.error("Gemini document extraction request failed:", error.message);
@@ -1253,7 +1315,7 @@ app.post("/api/ocr/image", ocrLimiter, requireUser, requireProfile, upload.singl
 app.use((error, _req, res, _next) => {
   if (error instanceof multer.MulterError) return fail(res, error.code === "LIMIT_FILE_SIZE" ? 413 : 400, error.message);
   if (error.message === "Origin not allowed by CORS") return fail(res, 403, "This website origin is not allowed.");
-  if (error.message && (error.message.startsWith("Only JPEG") || error.message.startsWith("Only PDF"))) return fail(res, 415, error.message);
+  if (error.message && error.message.startsWith("Only PDF")) return fail(res, 415, error.message);
   console.error("Request failed:", error.message);
   return fail(res, 400, "Request could not be processed.");
 });

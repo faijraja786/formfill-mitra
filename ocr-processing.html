@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-<title>FormFill Mitra - OCR Processing</title>
+<title>FormFill Mitra - AI Document Reading</title>
 
 
 <style>
@@ -217,10 +217,10 @@ button:disabled{
 
         <section class="info" style="margin:18px 0">
             <strong>AI Document Reading Consent</strong>
-            <p style="margin:8px 0">Your selected document images may contain personal information. If you agree, Form Fill Mitra will send each image to Google Gemini AI for text and field extraction. The image is processed for this request and is not saved by this OCR endpoint. Review every suggestion; AI may make mistakes.</p>
+            <p style="margin:8px 0">Your selected documents (images or PDFs) may contain personal information. If you agree, Form Fill Mitra will send each file to Google Gemini AI for text and field extraction. This AI reading endpoint does not store the uploaded file. Review every suggestion; AI may make mistakes.</p>
             <label style="display:flex;gap:10px;align-items:flex-start;margin:12px 0;font-weight:600">
                 <input id="aiConsent" type="checkbox" style="width:auto;margin-top:4px">
-                I agree to send these images to Google Gemini AI for reading.
+                I agree to send these documents to Google Gemini AI for reading.
             </label>
             <div class="buttons" style="margin-top:12px">
                 <button id="runAiButton" class="primary" type="button" disabled>Read Documents with AI</button>
@@ -242,7 +242,7 @@ button:disabled{
             <div
                 id="progressText"
                 class="progress-text">
-                Preparing OCR...
+                Preparing AI document reading...
             </div>
 
         </div>
@@ -471,11 +471,11 @@ async function startOCR(){
         setProgress(0, "Please agree to AI document reading first.");
         return;
     }
-    document.getElementById("runAiButton").disabled = true;
     if(!selectedForm){
         setProgress(100, "No form is selected.");
         return;
     }
+    document.getElementById("runAiButton").disabled = true;
 
     document.getElementById("formName").textContent =
         selectedForm.name || "Selected Form";
@@ -484,6 +484,7 @@ async function startOCR(){
     const keys = Object.keys(uploadedDocuments);
     if(keys.length === 0){
         setProgress(100, "No documents available.");
+        document.getElementById("runAiButton").disabled = false;
         enableContinue();
         return;
     }
@@ -492,7 +493,8 @@ async function startOCR(){
     if(!user){
         setProgress(100, "Please sign in again to process documents.");
         document.getElementById("results").textContent =
-            "Your sign-in session is not available. Sign in and reopen this page.";
+            "Your sign-in session is not available. Sign in again, then retry AI reading.";
+        document.getElementById("runAiButton").disabled = false;
         return;
     }
 
@@ -500,24 +502,38 @@ async function startOCR(){
         for(let i = 0; i < keys.length; i++){
             const key = keys[i];
             const fileRecord = await getDocument(key);
-            if(!fileRecord) continue;
+            if(!fileRecord){
+                ocrResults[key] = {
+                    name: uploadedDocuments[key] && uploadedDocuments[key].name || key,
+                    status: "manual",
+                    text: "The saved file could not be found in this browser. Go back, upload the document again, and retry."
+                };
+                continue;
+            }
 
             const percent = Math.round((i / keys.length) * 90);
             setProgress(percent, "Preparing " + fileRecord.name + "...");
 
             const file = fileRecord.file;
-            if(!file || !file.type.startsWith("image/")){
+            const extension = String(fileRecord.name || "").split(".").pop().toLowerCase();
+            const mimeByExtension = {jpg:"image/jpeg",jpeg:"image/jpeg",png:"image/png",webp:"image/webp",pdf:"application/pdf"};
+            const expectedMime = mimeByExtension[extension] || "";
+            const supportedMime = ["image/jpeg","image/png","image/webp","application/pdf"].includes(file && file.type);
+            if(!file || (!supportedMime && !expectedMime)){
                 ocrResults[key] = {
                     name: fileRecord.name,
                     status: "manual",
-                    text: "This file type is not supported by server OCR yet. Please review it and enter details manually."
+                    text: "This file type is not supported for AI reading. Use a PDF, JPG, PNG, or WEBP file, or enter details manually."
                 };
                 continue;
             }
 
             const token = await user.getIdToken();
             const formData = new FormData();
-            formData.append("document", file, fileRecord.name);
+            const uploadFile = file.type === expectedMime || !expectedMime
+                ? file
+                : new File([file], fileRecord.name, { type: expectedMime });
+            formData.append("document", uploadFile, fileRecord.name);
             formData.append("aiConsent", "true");
             formData.append("formFields", JSON.stringify(
                 (Array.isArray(selectedForm.fields) ? selectedForm.fields : [])
@@ -533,7 +549,7 @@ async function startOCR(){
 
             const payload = await response.json().catch(() => ({}));
             if(!response.ok){
-                const message = payload.error || "OCR service could not process this document.";
+                const message = payload.error || "AI service could not process this document.";
                 ocrResults[key] = {
                     name: fileRecord.name,
                     status: "manual",
@@ -558,15 +574,16 @@ async function startOCR(){
 
         localStorage.setItem("ocrResults", JSON.stringify(ocrResults));
         localStorage.setItem("ocrCompleted", "true");
-        setProgress(100, "OCR processing completed. Please verify extracted text.");
+        setProgress(100, "AI document reading finished. Verify every suggestion before continuing.");
         renderResults();
+        document.getElementById("runAiButton").disabled = false;
         enableContinue();
     }catch(error){
         console.error("Render OCR request failed:", error);
         setProgress(100, "AI document reading is unavailable. Manual entry is still available.");
         document.getElementById("runAiButton").disabled = false;
         document.getElementById("results").textContent =
-            "The OCR service could not be reached. You can continue with manual data entry.";
+            "The AI reading service could not be reached. You can continue with manual data entry.";
         localStorage.setItem("ocrCompleted", "true");
         enableContinue();
     }
@@ -598,7 +615,7 @@ function renderResults(){
     container.innerHTML = `
 
         <h2 style="margin-bottom:10px;">
-            OCR Results
+            AI Reading Results
         </h2>
 
     `;
@@ -629,15 +646,16 @@ function renderResults(){
 
         if(item.status === "success"){
 
-            const badge =
-                document.createElement("span");
-
-            badge.className =
-                "status success";
-
-            badge.textContent =
-                "OCR completed";
-
+            const extractedCount = Object.values(item.extracted || {}).filter(value =>
+                value !== null && value !== undefined && String(value).trim() !== ""
+            ).length;
+            const badge = document.createElement("span");
+            badge.className = extractedCount > 0 ? "status success" : "status warning";
+            badge.textContent = extractedCount > 0
+                ? `AI fields detected (${extractedCount}) · verify`
+                : item.text && item.text.trim()
+                    ? "Text read · applicant fields need review"
+                    : "No readable fields · manual review";
             wrapper.appendChild(badge);
 
 
