@@ -468,6 +468,14 @@ body{background:#f3f7ff;color:#172b4d}
 .fm-logout-item{color:#b42318!important;background:#fff2f1!important}
 @media(max-width:640px){.ffm-app-header{grid-template-columns:44px 1fr!important;min-height:66px!important}.ffm-app-header>.brand{grid-column:2;justify-self:end!important}.ffm-app-header>.header-right{display:none!important}.ffm-app-header .brand h2{font-size:16px}.ffm-app-header .brand small{font-size:11px}}
  #formsSection,#subscriptionSection{display:none!important}
+</style><style>
+.ffm-account-identity{max-width:1200px;margin:12px auto 0;padding:13px 16px;display:flex;align-items:center;gap:12px;background:#fff;border:1px solid #dce7f7;border-radius:13px;box-shadow:0 4px 14px rgba(30,75,130,.05)}
+.ffm-account-avatar{width:40px;height:40px;display:grid;place-items:center;border-radius:50%;background:#edf4ff;font-size:20px;flex:0 0 auto}
+.ffm-account-copy{min-width:0;display:flex;flex-direction:column;gap:4px;flex:1}
+.ffm-account-copy strong{font-size:14px;color:#17345f;overflow-wrap:anywhere}
+.ffm-account-copy span{font-size:13px;color:#526783;overflow-wrap:anywhere}
+.ffm-account-label{font-size:11px;font-weight:700;color:#1769e8;background:#edf4ff;padding:6px 9px;border-radius:20px;white-space:nowrap}
+@media(max-width:600px){.ffm-account-identity{margin:10px 12px 0;padding:12px}.ffm-account-copy strong{font-size:13px}.ffm-account-copy span{font-size:12px}}
 </style></head>
 
 <body>
@@ -489,6 +497,8 @@ body{background:#f3f7ff;color:#172b4d}
 <button class="menu-trigger" type="button" aria-label="Open navigation menu" aria-expanded="false" onclick="toggleMenu(true)">☰</button>
 <div class="brand"><div class="logo">FM</div><div><h2>FormFill Mitra</h2><small>Personal Workspace</small></div></div>
 <div class="header-right" style="display:flex;flex-direction:column;align-items:flex-end;gap:3px"><div class="profile-name" id="profileName">Personal User</div><small id="accountEmail" style="font-size:12px;opacity:.85;max-width:230px;overflow-wrap:anywhere">Account email</small></div></header>
+<section class="ffm-account-identity" aria-label="Signed-in account"><div class="ffm-account-avatar" aria-hidden="true">👤</div><div class="ffm-account-copy"><strong id="accountIdentityName">Loading account…</strong><span id="accountIdentityEmail">Checking signed-in Gmail…</span></div><span class="ffm-account-label">Signed in</span></section>
+
 
 
 <main class="container">
@@ -1141,12 +1151,16 @@ onAuthStateChanged(auth, async user => {
   if (!user || !user.emailVerified || (user.email || "").toLowerCase() === "faijraja28@gmail.com") return;
   const emailElement=document.getElementById("accountEmail");
   if(emailElement) emailElement.textContent=user.email||"Email not available";
+  const identityEmail=document.getElementById("accountIdentityEmail");
+  if(identityEmail) identityEmail.textContent=user.email||"Email not available";
   if(user.displayName) localStorage.setItem("personalName", user.displayName);
   try {
     const bootstrapResult = await bootstrapProfile("personal", user.displayName || "");
     const accountName = user.displayName || bootstrapResult.profile?.name || localStorage.getItem("personalName") || (user.email || "").split("@")[0] || "Personal User";
     const nameElement = document.getElementById("profileName");
     if(nameElement) nameElement.textContent = accountName;
+    const identityName=document.getElementById("accountIdentityName");
+    if(identityName) identityName.textContent=accountName;
     localStorage.setItem("userName", accountName);
     const [data, formData] = await Promise.all([apiRequest("/api/applications"), apiRequest("/api/forms")]);
     const publishedForms = (formData.forms || []).filter(form => form.status === "published");
@@ -1157,7 +1171,7 @@ onAuthStateChanged(auth, async user => {
     localStorage.setItem("ffm_applications", JSON.stringify(data.applications || []));
     if (typeof updateStats === "function") updateStats();
     if (typeof renderApplications === "function") renderApplications();
-  } catch (error) { console.error("Cloud application sync failed:", error); }
+  } catch (error) { console.error("Cloud application sync failed:", error); const identityName=document.getElementById("accountIdentityName"); if(identityName) identityName.textContent=user.displayName||user.email?.split("@")[0]||"Account"; }
 });
 </script>
 
