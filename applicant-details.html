@@ -1989,9 +1989,9 @@ function validateApplicant(data){
 function saveApplicantDraft(){
     const data = {
         fullName:getField("fullName"), dob:getField("dob"), gender:getField("gender"),
-        mobile:getField("mobile").replace(/\\D/g,"").slice(-10), email:getField("email"),
+        mobile:getField("mobile").replace(/\D/g,"").slice(-10), email:getField("email"),
         state:getField("state"), district:getField("district"), villageCity:getField("villageCity"),
-        pin:getField("pin").replace(/\\D/g,"").slice(0,6), address:getField("address")
+        pin:getField("pin").replace(/\D/g,"").slice(0,6), address:getField("address")
     };
     if(!writeJSON("currentApplicant",data)){
         alert("Draft could not be saved on this device. Please check available storage.");
