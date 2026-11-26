@@ -1198,7 +1198,6 @@ async function completeReview(){
                     throw new Error("The file for " + key.replace(/_/g, " ") + " is missing. Please upload it again.");
                 }
                 const formData = new FormData();
-                formData.append("documentKey", key);
                 formData.append("document", record.file, record.name || (key + ".bin"));
                 formData.append("documentKey", String(uploaded[key] && uploaded[key].documentKey || key));
                 await apiRequest("/api/applications/" + encodeURIComponent(applicationId) + "/documents", {
