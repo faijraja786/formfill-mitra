@@ -527,6 +527,7 @@ app.post("/api/forms", requireUser, requireProfile, requireRole("admin"), async 
   if (!validDocuments(documents)) return fail(res, 400, "Add a valid document checklist. Each item needs a unique key and label.");
   const status = body.status === "published" ? "published" : "draft";
   if (status === "published" && !/^https:\/\//i.test(clean(body.officialLink))) return fail(res, 400, "Add the official HTTPS service link before publishing this form.");
+  if (clean(body.officialLink)) { try { const officialUrl = new URL(clean(body.officialLink)); if (officialUrl.protocol !== "https:" || officialUrl.username || officialUrl.password) return fail(res, 400, "Use a valid official HTTPS link without embedded credentials."); } catch (_) { return fail(res, 400, "Enter a valid official HTTPS service link."); } }
   const data = {
     name, category, description: clean(body.description).slice(0, 2000),
     officialLink: clean(body.officialLink).slice(0, 1000),
@@ -561,7 +562,7 @@ app.patch("/api/forms/:id", requireUser, requireProfile, requireRole("admin"), a
   if (updates.officialLink !== undefined && clean(updates.officialLink)) {
     try {
       const url = new URL(clean(updates.officialLink));
-      if (!["http:", "https:"].includes(url.protocol)) throw new Error("Unsupported protocol");
+      if (url.protocol !== "https:" || url.username || url.password) throw new Error("Unsupported or unsafe official URL");
     } catch (_) {
       return fail(res, 400, "Official portal link must be a valid HTTPS or HTTP URL.");
     }
