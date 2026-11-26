@@ -47,18 +47,21 @@ body{margin:0;background:#f4f8ff;color:var(--ink)}
 </aside>
 <main>
 <section class="hero">
-<span class="eyebrow">A smarter way to manage applications</span>
-<h1>Every form. Every document.<br><span>One organized workspace.</span></h1>
-<p>Manage applications, keep important documents organized, and simplify your form-filling workflow with FormFill Mitra.</p>
+<span class="eyebrow" id="siteEyebrow">A smarter way to manage applications</span>
+<h1><span id="siteHeroTitle">Every form. Every document.</span><br><span id="siteHeroHighlight">One organized workspace.</span></h1>
+<p id="siteHeroDescription">Manage applications, keep important documents organized, and simplify your form-filling workflow with FormFill Mitra.</p>
 </section>
 <section class="mode-grid" aria-label="Choose your workspace">
-<article class="mode-card"><div class="mode-icon" aria-hidden="true">👤</div><h2>Personal Workspace</h2><p>Keep your applications, personal documents and progress organized in one organized place.</p><a class="mode-btn" href="personal-login.html">Continue as Personal <span aria-hidden="true">&nbsp;→</span></a></article>
-<article class="mode-card"><div class="mode-icon" aria-hidden="true">💼</div><h2>Professional Workspace</h2><p>Manage client applications, organize work, and coordinate your professional workflow.</p><a class="mode-btn" href="professional-login.html">Continue as Professional <span aria-hidden="true">&nbsp;→</span></a></article>
+<article class="mode-card"><div class="mode-icon" aria-hidden="true">👤</div><h2 id="sitePersonalTitle">Personal Workspace</h2><p id="sitePersonalDescription">Keep your applications, personal documents and progress organized in one place.</p><a class="mode-btn" href="personal-login.html">Continue as Personal <span aria-hidden="true">&nbsp;→</span></a></article>
+<article class="mode-card"><div class="mode-icon" aria-hidden="true">💼</div><h2 id="siteProfessionalTitle">Professional Workspace</h2><p id="siteProfessionalDescription">Manage client applications, organize work, and coordinate your professional workflow.</p><a class="mode-btn" href="professional-login.html">Continue as Professional <span aria-hidden="true">&nbsp;→</span></a></article>
 </section>
-<section class="features" id="features"><div class="section-heading"><h2>Everything in its place</h2><p>Tools designed to make application management clearer and easier.</p></div>
-<div class="feature-grid"><article class="feature"><h3>Application Management</h3><p>Track your applications and keep important details accessible.</p></article><article class="feature"><h3>Document Organization</h3><p>Keep essential documents organized for your application workflow.</p></article><article class="feature"><h3>Professional Workspace</h3><p>Coordinate tasks and manage client work through a dedicated workspace.</p></article></div></section>
+<section class="features" id="features"><div class="section-heading"><h2 id="siteFeatureHeading">Everything in its place</h2><p id="siteFeatureSubheading">Tools designed to make application management clearer and easier.</p></div>
+<div class="feature-grid"><article class="feature"><h3 id="siteFeature1Title">Application Management</h3><p id="siteFeature1Description">Track your applications and keep important details accessible.</p></article><article class="feature"><h3 id="siteFeature2Title">Document Organization</h3><p id="siteFeature2Description">Keep essential documents organized for your application workflow.</p></article><article class="feature"><h3 id="siteFeature3Title">Professional Workspace</h3><p id="siteFeature3Description">Coordinate tasks and manage client work through a dedicated workspace.</p></article></div></section>
 </main>
 <footer class="site-footer">© 2026 FormFill Mitra. All rights reserved.</footer>
 <script>
 (()=>{const menu=document.getElementById("siteMenu"),backdrop=document.getElementById("siteMenuBackdrop"),toggle=document.getElementById("siteMenuToggle");const close=()=>{menu.classList.remove("open");backdrop.classList.remove("open");toggle.setAttribute("aria-expanded","false")};toggle.addEventListener("click",()=>{menu.classList.add("open");backdrop.classList.add("open");toggle.setAttribute("aria-expanded","true")});document.getElementById("siteMenuClose").addEventListener("click",close);backdrop.addEventListener("click",close);menu.querySelectorAll("a").forEach(link=>link.addEventListener("click",close));document.addEventListener("keydown",e=>{if(e.key==="Escape")close()})})();
-</script></body></html>
+</script><script>
+(async()=>{try{const r=await fetch("https://form-fill-mitra-api.onrender.com/api/site-content");if(!r.ok)return;const c=(await r.json()).content||{};const m={siteEyebrow:"eyebrow",siteHeroTitle:"heroTitle",siteHeroHighlight:"heroHighlight",siteHeroDescription:"heroDescription",sitePersonalTitle:"personalTitle",sitePersonalDescription:"personalDescription",siteProfessionalTitle:"professionalTitle",siteProfessionalDescription:"professionalDescription",siteFeatureHeading:"featureHeading",siteFeatureSubheading:"featureSubheading",siteFeature1Title:"feature1Title",siteFeature1Description:"feature1Description",siteFeature2Title:"feature2Title",siteFeature2Description:"feature2Description",siteFeature3Title:"feature3Title",siteFeature3Description:"feature3Description"};Object.entries(m).forEach(([id,key])=>{const el=document.getElementById(id);if(el&&typeof c[key]==="string"&&c[key].trim())el.textContent=c[key];});}catch(e){console.info("Using default homepage content.");}})();
+</script>
+</body></html>
