@@ -475,6 +475,8 @@ button:disabled{
             open below.
         </p>
 
+        <div id="officialGuidance" class="security" style="margin:14px 0"><strong>Where do I enter OTP?</strong><p>Open the official portal using the link below. If that website requests an OTP, enter it only on that official website/page where it requested it. Form Fill Mitra will never ask you to enter or share an OTP here. Complete CAPTCHA, e-sign and other verification there as well.</p><p id="formVerificationInstructions"></p><p id="formPaymentInstructions"></p></div>
+
         <div id="portalBox"
              class="portal">
 
@@ -713,6 +715,10 @@ function loadSelectedForm(){
         document.getElementById("panPreferenceCard").style.display = "block";
         document.getElementById("panPreferenceText").textContent = localStorage.getItem("panOutputPreferenceLabel") || "Not selected — return to the PAN preference step.";
     }
+    const verificationInstructions = document.getElementById("formVerificationInstructions");
+    if (verificationInstructions) verificationInstructions.textContent = selectedForm.verificationInstructions || "Follow the verification instructions displayed on the official portal. Do not share OTPs with anyone or enter them on Form Fill Mitra.";
+    const paymentInstructions = document.getElementById("formPaymentInstructions");
+    if (paymentInstructions) paymentInstructions.textContent = selectedForm.paymentInstructions || "If a fee is required, check the amount and pay directly on the official provider/government portal. Form Fill Mitra does not collect this fee.";
 }
 
 
@@ -1071,10 +1077,7 @@ function loadVerification(){
 
     document.getElementById(
         "verificationStatus"
-    ).textContent =
-        status === "completed"
-        ? "Completed"
-        : "Pending";
+    ).textContent = "Not verified by Form Fill Mitra. Complete any OTP / CAPTCHA / e-sign on the official portal after opening it.";
 }
 
 
@@ -1345,7 +1348,8 @@ async function completeReview(){
             "Preparation record and " + (documentKeys.length + vaultDocumentIds.length) + " document(s) saved securely. Reference: " + applicationId + ". Government submission is NOT complete yet. Continue on the official portal and save its acknowledgement number.",
             "success"
         );
-        const portal = selectedForm.officialLink || selectedForm.link;
+        const isPAN = selectedForm && /pan/i.test((selectedForm.id || "") + " " + (selectedForm.name || ""));
+        const portal = isPAN ? "https://www.pan.utiitsl.com/panonline_website/redirect/formLanding" : (selectedForm.officialLink || selectedForm.link);
         if (portal) setTimeout(() => window.open(portal, "_blank", "noopener,noreferrer"), 900);
     } catch (error) {
         console.error("Application submission failed:", error);
