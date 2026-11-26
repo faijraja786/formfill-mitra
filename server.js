@@ -1156,11 +1156,11 @@ app.post("/api/ocr/image", ocrLimiter, requireUser, requireProfile, upload.singl
   const requestedFieldGuide = requestedFields.map(field => field.key + " = " + field.label + " (type: " + field.type + ")").join("\n");
   const prompt = [
     "You are reading an applicant's document image for a form-preparation website.",
-    "Return ONLY valid JSON with keys rawText and fields.",
+    "Return ONLY valid JSON with keys rawText and fields. fields must be a JSON object, not an array, and use the exact requested field keys.",
     "rawText: transcribe readable text faithfully in its original language, but redact Aadhaar/PAN and other long government ID numbers as [REDACTED] unless a requested form field specifically asks for that exact value.",
     "fields: include common keys fullName, fatherName, motherName, dob, gender, mobile, email, state, district, villageCity, pin, address, category, rollNumber, passingYear, education, plus every exact requested form field key listed below.",
     "Requested form fields (extract only values clearly present in the image):\n" + requestedFieldGuide,
-    "Use null for values not clearly visible. Do not guess, infer, or fabricate personal information.",
+    "Return values even when the document language is Hindi or another language; keep names and values as written, but map them to the requested English field keys. Use null for values not clearly visible. Do not guess, infer, or fabricate personal information.",
     "For dob and any requested date field, return YYYY-MM-DD only when the date is clearly legible; otherwise null. Do not confuse issue/expiry dates with date of birth.",
     "For mobile return digits only; for pin return a 6-digit string only if clearly legible.",
     "Extract sensitive ID numbers only if an exact requested field asks for them and the user has consented to AI reading. Never include unrelated ID numbers."
