@@ -458,7 +458,7 @@ body{background:#f3f7ff;color:#172b4d}
 .ffm-app-header .brand{grid-column:3;grid-row:1;justify-self:end;white-space:nowrap}
 @media(max-width:600px){.ffm-app-header{grid-template-columns:42px minmax(0,1fr) auto!important;gap:8px!important}.ffm-app-header .brand h2{font-size:15px}.ffm-app-header .brand small{display:none}}
 </style>
-<link rel="stylesheet" href="professional-ui.css?v=20261124">
+<link rel="stylesheet" href="professional-ui.css?v=20261126-design2">
 <style id="ffm-header-layout">
 .ffm-app-header{display:grid!important;grid-template-columns:48px 1fr auto!important;align-items:center!important;gap:14px!important;padding:12px clamp(16px,4vw,42px)!important;min-height:76px!important}
 .ffm-app-header>.menu-trigger{grid-column:1;grid-row:1;justify-self:start!important}
@@ -494,8 +494,7 @@ body{background:#f3f7ff;color:#172b4d}
 <main class="container">
 
     <section class="welcome">
-        <h1>Welcome to FormFill Mitra 👋</h1>
-        <p>Manage your applications and documents in one organized workspace.</p>
+        <h1>Your workspace</h1><p>Forms, applications and documents — organized in one place.</p>
     </section>
 
 
@@ -1152,5 +1151,25 @@ onAuthStateChanged(auth, async user => {
   } catch (error) { console.error("Cloud application sync failed:", error); }
 });
 </script>
+
+<script>
+document.addEventListener("DOMContentLoaded",()=>{
+ const actions={
+  formsCount:()=>location.href="form-catalog.html",
+  applicationsCount:()=>location.href="my-applications.html",
+  documentsCount:()=>location.href="document-vault.html",
+  completedCount:()=>location.href="my-applications.html?filter=completed"
+ };
+ Object.entries(actions).forEach(([id,go])=>{
+  const value=document.getElementById(id),tile=value&&value.closest(".stat");
+  if(!tile)return;
+  tile.setAttribute("role","link");tile.setAttribute("tabindex","0");
+  tile.setAttribute("aria-label",tile.querySelector(".stat-title")?.textContent.trim()||"Open section");
+  tile.addEventListener("click",go);
+  tile.addEventListener("keydown",e=>{if(e.key==="Enter"||e.key===" "){e.preventDefault();go();}});
+ });
+});
+</script>
+
 </body>
 </html>
