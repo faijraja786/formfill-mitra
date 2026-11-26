@@ -1123,25 +1123,56 @@ const upload = multer({
   }
 });
 const ocrLimiter = rateLimit({ windowMs: 15 * 60 * 1000, limit: 20, standardHeaders: "draft-7", legacyHeaders: false });
-let ocrWorkerPromise = null;
-let ocrQueue = Promise.resolve();
-app.post("/api/ocr/image", ocrLimiter, requireUser, upload.single("document"), async (req, res) => {
+app.post("/api/ocr/image", ocrLimiter, requireUser, requireProfile, upload.single("document"), async (req, res) => {
   if (!req.file) return fail(res, 400, "Upload one image in the document field.");
+  if (req.body && req.body.aiConsent !== "true") return fail(res, 400, "Please confirm consent before sending this image to Google Gemini AI.");
+  const apiKey = String(process.env.GEMINI_API_KEY || "").trim();
+  if (!apiKey) return fail(res, 503, "AI document reading is not configured. Please enter details manually or contact the administrator.");
+  const model = String(process.env.GEMINI_MODEL || "gemini-3.8-flash").trim();
+  const prompt = [
+    "You are reading an applicant's document image for a form-preparation website.",
+    "Return ONLY valid JSON with keys rawText and fields.",
+    "rawText: transcribe all readable text faithfully, preserving the original language (English/Hindi) and line breaks where useful.",
+    "fields: object with keys fullName, dob, gender, mobile, email, state, district, villageCity, pin, address.",
+    "Use null for any value not clearly visible. Do not guess, infer, or fabricate personal information.",
+    "For dob, return YYYY-MM-DD only when the date is clearly legible; otherwise null. Do not confuse issue/expiry dates with date of birth.",
+    "For mobile return digits only; for pin return a 6-digit string only if clearly legible.",
+    "This is sensitive personal data: extract only the requested fields and do not include unrelated sensitive numbers in fields."
+  ].join("\n");
   try {
-    const runOCR = async () => {
-      if (!ocrWorkerPromise) {
-        const { createWorker } = require("tesseract.js");
-        ocrWorkerPromise = createWorker("eng+hin");
-      }
-      const worker = await ocrWorkerPromise;
-      return worker.recognize(req.file.buffer);
-    };
-    const result = await (ocrQueue = ocrQueue.then(runOCR, runOCR));
-    return res.status(200).json({ text: result.data.text || "", confidence: result.data.confidence ?? null, reviewRequired: true, message: "Please verify every extracted field against the original document." });
+    const response = await fetch("https://generativelanguage.googleapis.com/v1beta/models/" + encodeURIComponent(model) + ":generateContent", {
+      method: "POST",
+      headers: { "Content-Type": "application/json", "x-goog-api-key": apiKey },
+      body: JSON.stringify({
+        contents: [{ role: "user", parts: [
+          { text: prompt },
+          { inlineData: { mimeType: req.file.mimetype, data: req.file.buffer.toString("base64") } }
+        ]}],
+        generationConfig: { responseMimeType: "application/json", temperature: 0.1, maxOutputTokens: 3000 }
+      })
+    });
+    const payload = await response.json().catch(() => ({}));
+    if (!response.ok) {
+      console.error("Gemini document extraction failed:", response.status, payload.error && payload.error.message);
+      return fail(res, response.status === 429 ? 429 : 502, response.status === 429 ? "AI usage limit reached. Try again later or enter details manually." : "AI could not read this image. Please try a clearer image or enter details manually");
+    }
+    const rawOutput = (payload.candidates && payload.candidates[0] && payload.candidates[0].content && payload.candidates[0].content.parts || [])
+      .map(part => part.text || "").join("").trim();
+    let parsed;
+    try { parsed = JSON.parse(rawOutput.replace(/^\s*\x60\x60\x60(?:json)?\s*/i, "").replace(/\s*\x60\x60\x60\s*$/, "")); }
+    catch (_) { return fail(res, 502, "AI returned an unreadable result. Please try again or enter details manually."); }
+    const fields = parsed.fields && typeof parsed.fields === "object" ? parsed.fields : {};
+    const safeFields = {};
+    for (const key of ["fullName","dob","gender","mobile","email","state","district","villageCity","pin","address"]) {
+      const value = fields[key];
+      safeFields[key] = value === null || value === undefined ? "" : clean(String(value)).slice(0, key === "address" ? 1000 : 200);
+    }
+    const text = String(parsed.rawText || "").slice(0, 20000);
+    await writeAudit(req.profile, "ai_document_extraction.completed", "document_image", null, { mimeType: req.file.mimetype, size: req.file.size, model });
+    return res.status(200).json({ text, extracted: safeFields, confidence: null, reviewRequired: true, message: "AI reading completed. Review and correct every suggested field before continuing." });
   } catch (error) {
-    ocrWorkerPromise = null;
-    console.error("OCR processing failed:", error.message);
-    return fail(res, 500, "OCR could not process this image. Please enter details manually.");
+    console.error("Gemini document extraction request failed:", error.message);
+    return fail(res, 502, "AI document reading is unavailable. Please try again or enter details manually.");
   }
 });
 
