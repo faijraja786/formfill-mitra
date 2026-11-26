@@ -312,15 +312,21 @@ async function seedBiharRtpsForms() {
     if (!existing.exists) {
       await ref.create({
         ...form, documents: form.documents || [], status: "published", version: 1,
-        systemSeed: "bihar-rtps-v1", createdBy: "system",
+        systemSeed: "bihar-rtps-v2", createdBy: "system",
         updatedBy: "system", createdAt: now(), updatedAt: now()
       });
-    } else if (
-      existing.data().systemSeed === "bihar-rtps-v1" &&
-      (!Array.isArray(existing.data().documents) || existing.data().documents.length === 0) &&
-      Array.isArray(form.documents) && form.documents.length
-    ) {
-      await ref.update({ documents: form.documents, updatedAt: now() });
+      continue;
+    }
+    // Migrate previously seeded forms. Older versions only filled an empty
+    // checklist, so PAN and other forms could remain stuck with one old slot.
+    const old = existing.data() || {};
+    if (old.systemSeed === "bihar-rtps-v1") {
+      await ref.update({
+        documents: form.documents || [],
+        systemSeed: "bihar-rtps-v2",
+        updatedAt: now(),
+        updatedBy: "system"
+      });
     }
   }
 }
@@ -1118,6 +1124,40 @@ app.delete("/api/applications/:id/documents/:documentId", requireUser, requirePr
   }
 });
 
+async function requestGeminiDocumentWithFallback(apiKey, primaryModel, prompt, file) {
+  const fallbackModel = String(process.env.GEMINI_FALLBACK_MODEL || "gemini-3.5-flash-lite").trim();
+  const models = [...new Set([String(primaryModel || "").trim(), fallbackModel].filter(Boolean))];
+  let lastResponse = null;
+  let lastModel = models[0] || primaryModel;
+  for (const modelName of models) {
+    lastModel = modelName;
+    for (let attempt = 0; attempt < 2; attempt++) {
+      const response = await fetch("https://generativelanguage.googleapis.com/v1beta/models/" + encodeURIComponent(modelName) + ":generateContent", {
+        method: "POST",
+        headers: { "Content-Type": "application/json", "x-goog-api-key": apiKey },
+        body: JSON.stringify({
+          contents: [{ role: "user", parts: [
+            { text: prompt },
+            { inlineData: { mimeType: file.mimetype, data: file.buffer.toString("base64") } }
+          ]}],
+          generationConfig: { responseMimeType: "application/json", temperature: 0.1, maxOutputTokens: 3000 }
+        })
+      });
+      lastResponse = response;
+      if (response.ok) return { response, modelUsed: modelName };
+      // 503 is transient; retry once, then try the fallback model.
+      if (response.status === 503 && attempt === 0) {
+        await new Promise(resolve => setTimeout(resolve, 1200));
+        continue;
+      }
+      // Quota/rate errors may be model-specific, so try the configured fallback.
+      if (response.status === 429 || response.status === 503) break;
+      return { response, modelUsed: modelName };
+    }
+  }
+  return { response: lastResponse, modelUsed: lastModel };
+}
+
 const upload = multer({
   storage: multer.memoryStorage(),
   limits: { fileSize: 10 * 1024 * 1024, files: 1 },
@@ -1166,21 +1206,14 @@ app.post("/api/ocr/image", ocrLimiter, requireUser, requireProfile, upload.singl
     "Extract sensitive ID numbers only if an exact requested field asks for them and the user has consented to AI reading. Never include unrelated ID numbers."
   ].join("\n");
   try {
-    const response = await fetch("https://generativelanguage.googleapis.com/v1beta/models/" + encodeURIComponent(model) + ":generateContent", {
-      method: "POST",
-      headers: { "Content-Type": "application/json", "x-goog-api-key": apiKey },
-      body: JSON.stringify({
-        contents: [{ role: "user", parts: [
-          { text: prompt },
-          { inlineData: { mimeType: req.file.mimetype, data: req.file.buffer.toString("base64") } }
-        ]}],
-        generationConfig: { responseMimeType: "application/json", temperature: 0.1, maxOutputTokens: 3000 }
-      })
-    });
+    const geminiResult = await requestGeminiDocumentWithFallback(apiKey, model, prompt, req.file);
+    const response = geminiResult.response;
+    const modelUsed = geminiResult.modelUsed || model;
+    if (!response) return fail(res, 502, "AI document reading is temporarily unavailable. Please retry.");
     const payload = await response.json().catch(() => ({}));
     if (!response.ok) {
-      console.error("Gemini document extraction failed:", response.status, payload.error && payload.error.message);
-      return fail(res, response.status === 429 ? 429 : 502, response.status === 429 ? "AI usage limit reached. Try again later or enter details manually." : "AI could not read this image. Please try a clearer image or enter details manually");
+      console.error("Gemini document extraction failed:", response.status, payload.error && payload.error.message, "models tried; final model:", modelUsed);
+      return fail(res, response.status === 429 ? 429 : 502, response.status === 429 ? "AI usage limit reached on the available models. Please try later or enter details manually." : "AI document reading is temporarily busy. Please retry in a minute or enter details manually.");
     }
     const rawOutput = (payload.candidates && payload.candidates[0] && payload.candidates[0].content && payload.candidates[0].content.parts || [])
       .map(part => part.text || "").join("").trim();
@@ -1236,7 +1269,7 @@ app.post("/api/ocr/image", ocrLimiter, requireUser, requireProfile, upload.singl
     const rootIsFieldObject = !["fields","extracted","data","applicant","rawText","text","ocrText","transcription"]
       .some(key => Object.prototype.hasOwnProperty.call(parsed, key));
     const sourceCandidates = [
-      parsed.fields, parsed.extracted, parsed.data?.fields, parsed.data?.extracted,
+      parsed.fields, parsed.extracted, parsed.applicantFields, parsed.applicant_fields, parsed.extractedFields, parsed.extracted_fields, parsed.values, parsed.data?.fields, parsed.data?.extracted, parsed.data?.applicantFields, parsed.data?.values,
       parsed.applicant, parsed.data, rootIsFieldObject ? parsed : null
     ];
     const fields = {};
@@ -1298,13 +1331,13 @@ app.post("/api/ocr/image", ocrLimiter, requireUser, requireProfile, upload.singl
       const maxLength = key === "address" || (requested && requested.type === "textarea") ? 1000 : 300;
       safeFields[key] = value === null || value === undefined || typeof value === "object" ? "" : clean(String(value)).slice(0, maxLength);
     }
-    const text = String(parsed.rawText || parsed.data?.rawText || parsed.text || parsed.data?.text || parsed.ocrText || parsed.transcription || "").slice(0, 20000);
+    const text = String(parsed.rawText || parsed.raw_text || parsed.data?.rawText || parsed.data?.raw_text || parsed.text || parsed.data?.text || parsed.ocrText || parsed.ocr_text || parsed.transcription || "").slice(0, 20000);
     const extractedCount = Object.values(safeFields).filter(value => clean(value)).length;
     if (!text.trim() && extractedCount === 0) {
       console.error("Gemini document extraction returned an empty result", { model, responseKeys: Object.keys(parsed).slice(0, 20) });
       return fail(res, 502, "AI could not detect readable details in this image. Try a clearer, full-page image or enter details manually.");
     }
-    await writeAudit(req.profile, "ai_document_extraction.completed", "document_image", null, { mimeType: req.file.mimetype, size: req.file.size, model, extractedFieldCount: extractedCount, textLength: text.length, requestedFieldCount: requestedFields.length });
+    await writeAudit(req.profile, "ai_document_extraction.completed", "document_image", null, { mimeType: req.file.mimetype, size: req.file.size, model: modelUsed, extractedFieldCount: extractedCount, textLength: text.length, requestedFieldCount: requestedFields.length });
     return res.status(200).json({ text, extracted: safeFields, confidence: null, reviewRequired: true, message: "AI reading completed. Review and correct every suggested field before continuing." });
   } catch (error) {
     console.error("Gemini document extraction request failed:", error.message);
