@@ -738,15 +738,26 @@ function enableContinue(){
 ============================== */
 
 function continueToApplicant(){
-
-    localStorage.setItem(
-        "ocrCompleted",
-        "true"
-    );
-
-    location.href =
-        "applicant-details.html";
-
+    // Merge extracted field values across all uploaded documents without overwriting a populated value.
+    const merged = {};
+    for (const result of Object.values(ocrResults || {})) {
+      const extracted = result && result.extracted && typeof result.extracted === "object" ? result.extracted : {};
+      for (const [key, raw] of Object.entries(extracted)) {
+        if (raw === null || raw === undefined || !String(raw).trim()) continue;
+        if (!Object.prototype.hasOwnProperty.call(merged, key) || !String(merged[key] || "").trim()) merged[key] = String(raw).trim();
+      }
+    }
+    const normalize = value => String(value || "").toLowerCase().replace(/[^a-z0-9]/g, "");
+    const aliases = {fullName:["fullname","applicantname","name"],fatherName:["fathername","guardianname"],dob:["dob","dateofbirth","birthdate","applicantdob"],email:["email","emailaddress"],mobile:["mobile","mobilenumber","phonenumber","contactnumber"],address:["address","fulladdress","residentialaddress","permanentaddress"]};
+    for (const [canonical, candidates] of Object.entries(aliases)) {
+      if (String(merged[canonical] || "").trim()) continue;
+      const found = Object.entries(merged).find(([key,value]) => candidates.includes(normalize(key)) && String(value || "").trim());
+      if (found) merged[canonical] = found[1];
+    }
+    localStorage.setItem("ocrApplicantSuggestions", JSON.stringify(merged));
+    localStorage.setItem("ocrResults", JSON.stringify(ocrResults || {}));
+    localStorage.setItem("ocrCompleted", "true");
+    location.href = "applicant-details.html";
 }
 
 
