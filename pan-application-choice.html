@@ -1,0 +1,44 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>PAN Card Preference | FormFill Mitra</title><link rel="stylesheet" href="professional-ui.css?v=20261126">
+<style>
+:root{--blue:#1769e8;--ink:#17345f;--muted:#637995;--line:#dce7f7}
+*{box-sizing:border-box}body{margin:0;background:#f4f8ff;color:var(--ink);font-family:Arial,Helvetica,sans-serif}
+header{background:#fff;border-bottom:1px solid var(--line);padding:18px 20px}header .inner{max-width:900px;margin:auto}header h1{font-size:22px;margin:0 0 5px}header p{margin:0;color:var(--muted);font-size:14px}
+main{max-width:900px;margin:24px auto;padding:0 16px}.card{background:#fff;border:1px solid var(--line);border-radius:16px;padding:24px;margin-bottom:16px;box-shadow:0 5px 20px #17345f0a}
+h2{font-size:19px;margin:0 0 12px}.intro{color:var(--muted);line-height:1.6}.choice{display:flex;gap:14px;border:1px solid var(--line);border-radius:12px;padding:16px;margin:12px 0;cursor:pointer}.choice:has(input:checked){border-color:var(--blue);background:#f0f6ff}.choice input{width:20px;height:20px;accent-color:var(--blue);margin-top:3px}.choice strong{display:block;margin-bottom:5px}.choice span{display:block;color:var(--muted);font-size:14px;line-height:1.5}
+.note{background:#eef5ff;border-left:4px solid var(--blue);padding:14px;border-radius:8px;line-height:1.55;margin-top:16px}.warning{background:#fff7e8;border-left:4px solid #d99118;padding:14px;border-radius:8px;line-height:1.55;margin-top:12px}
+.confirm{display:flex;gap:10px;align-items:flex-start;margin-top:16px}.confirm input{width:18px;height:18px;accent-color:var(--blue);margin-top:2px}.actions{display:flex;gap:10px;justify-content:space-between;margin-top:20px;flex-wrap:wrap}button{border:0;border-radius:9px;padding:12px 18px;font-weight:700;cursor:pointer}.primary{background:var(--blue);color:white}.secondary{background:#eaf1fb;color:var(--ink)}.error{display:none;color:#b42318;background:#fff0f0;padding:12px;border-radius:8px;margin-top:12px}
+@media(max-width:600px){.card{padding:18px}.actions button{width:100%}}
+</style><script src="app-shell.js" defer></script></head>
+<body><header><div class="inner"><h1>FormFill Mitra</h1><p>PAN application preparation · Step 1</p></div></header>
+<main>
+<section class="card"><h2 id="formTitle">PAN application</h2><p class="intro">Choose the PAN card delivery preference before preparing the application. This preference will be saved with your preparation record.</p>
+<label class="choice"><input type="radio" name="panChoice" value="physical"><div><strong>Physical PAN card + e-PAN PDF</strong><span>A printed PAN card is dispatched to the communication address. The e-PAN PDF may also be delivered to the email entered on the official application, where applicable.</span></div></label>
+<label class="choice"><input type="radio" name="panChoice" value="epan"><div><strong>e-PAN PDF only</strong><span>Choose this if you only need the electronic PAN document and do not want a physical card dispatched.</span></div></label>
+<div class="note"><strong>Important:</strong> This is your preferred output format. The authorized PAN provider may ask you to select it again on its official application page. FormFill Mitra does not collect the PAN government/provider fee.</div>
+<div class="warning"><strong>Before proceeding:</strong> This page is for a new PAN application only. If the applicant already has a PAN, do not apply for another one. Use the official correction/reprint service instead. Applicants under 18 should complete the application with a parent or legal guardian.</div>
+<label class="confirm"><input type="checkbox" id="newPan"><span>I confirm that the applicant does not already have a PAN and this is a new PAN application.</span></label>
+<div id="error" class="error" role="alert"></div>
+<div class="actions"><button class="secondary" id="back" type="button">← Back to forms</button><button class="primary" id="continue" type="button">Continue to document preparation →</button></div>
+</section>
+<section class="card"><h2>What happens next?</h2><p class="intro">1. Upload available documents and select saved documents (Personal users). 2. Review applicant details and correct any mistakes. 3. Review the complete preparation record. 4. Open the authorized PAN provider, complete any remaining official fields, verify OTP/CAPTCHA if requested, pay the fee directly there, and submit.</p><p class="intro">Our website cannot securely pre-fill or submit the provider's external application. Please verify all details and current fees on the official provider page.</p></section>
+</main>
+<script>
+const form=(()=>{try{return JSON.parse(localStorage.getItem("selectedForm")||"null")}catch{return null}})();
+const err=document.getElementById("error");
+if(!form||!/pan/i.test((form.id||"")+" "+(form.name||""))){document.getElementById("formTitle").textContent="PAN form not selected";err.style.display="block";err.textContent="Please return to Browse Forms and select the PAN application preparation form.";}
+else document.getElementById("formTitle").textContent=form.name||"PAN application";
+const saved=localStorage.getItem("panOutputPreference");if(saved==="physical"||saved==="epan"){const r=document.querySelector('input[name="panChoice"][value="'+saved+'"]');if(r)r.checked=true;}
+document.getElementById("back").onclick=()=>location.href="form-catalog.html";
+document.getElementById("continue").onclick=()=>{
+ const selected=document.querySelector('input[name="panChoice"]:checked');
+ if(!form){err.style.display="block";err.textContent="Select the PAN form again.";return;}
+ if(!selected){err.style.display="block";err.textContent="Please choose Physical PAN or e-PAN PDF.";return;}
+ if(!document.getElementById("newPan").checked){err.style.display="block";err.textContent="Please confirm this is a new PAN application and the applicant does not already have PAN.";return;}
+ localStorage.setItem("panOutputPreference",selected.value);
+ localStorage.setItem("panOutputPreferenceLabel",selected.value==="physical"?"Physical PAN card + e-PAN PDF":"e-PAN PDF only");
+ localStorage.setItem("panNewApplicationConfirmed","true");
+ if(localStorage.getItem("loginType")==="professional")location.href="professional-clients.html";
+ else {localStorage.removeItem("currentClientId");location.href="form-details.html";}
+};
+</script></body></html>
