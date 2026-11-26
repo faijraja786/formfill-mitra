@@ -529,6 +529,8 @@ app.post("/api/forms", requireUser, requireProfile, requireRole("admin"), async 
   const data = {
     name, category, description: clean(body.description).slice(0, 2000),
     officialLink: clean(body.officialLink).slice(0, 1000),
+    verificationInstructions: clean(body.verificationInstructions).slice(0, 3000),
+    paymentInstructions: clean(body.paymentInstructions).slice(0, 2000),
     fields, documents,
     status, version: 1, createdBy: req.user.uid, updatedBy: req.user.uid,
     createdAt: now(), updatedAt: now()
@@ -546,10 +548,12 @@ app.post("/api/forms", requireUser, requireProfile, requireRole("admin"), async 
 app.patch("/api/forms/:id", requireUser, requireProfile, requireRole("admin"), async (req, res) => {
   const body = req.body || {};
   const updates = {};
-  for (const key of ["name", "category", "description", "officialLink", "fields", "documents", "status"]) {
+  for (const key of ["name", "category", "description", "officialLink", "verificationInstructions", "paymentInstructions", "fields", "documents", "status"]) {
     if (body[key] !== undefined) updates[key] = body[key];
   }
   if (updates.name !== undefined && (!clean(updates.name) || clean(updates.name).length > 180)) return fail(res, 400, "Invalid form name.");
+  if (updates.verificationInstructions !== undefined) updates.verificationInstructions = clean(updates.verificationInstructions).slice(0, 3000);
+  if (updates.paymentInstructions !== undefined) updates.paymentInstructions = clean(updates.paymentInstructions).slice(0, 2000);
   if (updates.category !== undefined && (!clean(updates.category) || clean(updates.category).length > 100)) return fail(res, 400, "Invalid form category.");
   if (updates.fields !== undefined && !validFields(updates.fields)) return fail(res, 400, "Invalid form fields.");
   if (updates.documents !== undefined && !validDocuments(updates.documents)) return fail(res, 400, "Invalid document checklist.");
