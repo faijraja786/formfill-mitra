@@ -1735,24 +1735,25 @@ function extractApplicantFromOCR(text){
         }
     });
     const fromAI = key => structured[key] || "";
+    const fromAnyAI = (...keys) => keys.map(fromAI).find(value => value && String(value).trim()) || "";
     return {
         ...structured,
-        fullName: fromAI("fullName") || extractName(text),
-        fatherName: fromAI("fatherName") || fromAI("guardianName"),
-        motherName: fromAI("motherName"),
-        dob: toISODate(fromAI("dob")) || extractDOB(text),
-        gender: fromAI("gender") || extractGender(text),
-        mobile: fromAI("mobile").replace(/\D/g,"").slice(-10) || extractMobile(text),
-        email: fromAI("email") || extractEmail(text),
-        state: fromAI("state") || extractState(text),
-        district: fromAI("district") || extractDistrict(text),
-        villageCity: fromAI("villageCity") || extractVillageCity(text),
-        pin: fromAI("pin").replace(/\D/g,"").slice(0,6) || extractPIN(text),
-        address: fromAI("address") || extractAddress(text),
-        category: fromAI("category"),
-        rollNumber: fromAI("rollNumber"),
-        passingYear: fromAI("passingYear"),
-        education: fromAI("education")
+        fullName: fromAnyAI("fullName","full_name","applicant_name","candidate_name") || extractName(text),
+        fatherName: fromAnyAI("fatherName","father_name","guardianName","guardian_name"),
+        motherName: fromAnyAI("motherName","mother_name"),
+        dob: toISODate(fromAnyAI("dob","dateOfBirth","date_of_birth","birth_date","birthdate")) || extractDOB(text),
+        gender: fromAnyAI("gender","sex") || extractGender(text),
+        mobile: fromAnyAI("mobile","mobile_number","phone","phone_number","contact_number").replace(/\D/g,"").slice(-10) || extractMobile(text),
+        email: fromAnyAI("email","email_address") || extractEmail(text),
+        state: fromAnyAI("state","state_name") || extractState(text),
+        district: fromAnyAI("district","district_name") || extractDistrict(text),
+        villageCity: fromAnyAI("villageCity","village_city","village","city","town") || extractVillageCity(text),
+        pin: fromAnyAI("pin","pin_code","pincode","postal_code").replace(/\D/g,"").slice(0,6) || extractPIN(text),
+        address: fromAnyAI("address","full_address","complete_address","permanent_address","present_address") || extractAddress(text),
+        category: fromAnyAI("category","caste_category","reservation_category"),
+        rollNumber: fromAnyAI("rollNumber","roll_number","roll_no","rollno","registration_number"),
+        passingYear: fromAnyAI("passingYear","passing_year","year_of_passing","pass_year"),
+        education: fromAnyAI("education","education_details","qualification","class","exam_name")
     };
 }
 
