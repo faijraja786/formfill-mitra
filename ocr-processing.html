@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-<title>FormFill Mitra - OCR Processing</title>
+<title>FormFill Mitra - AI Document Reading</title>
 
 
 <style>
@@ -217,10 +217,10 @@ button:disabled{
 
         <section class="info" style="margin:18px 0">
             <strong>AI Document Reading Consent</strong>
-            <p style="margin:8px 0">Your selected document images may contain personal information. If you agree, Form Fill Mitra will send each image to Google Gemini AI for text and field extraction. The image is processed for this request and is not saved by this OCR endpoint. Review every suggestion; AI may make mistakes.</p>
+            <p style="margin:8px 0">Your selected documents (images or PDFs) may contain personal information. If you agree, Form Fill Mitra will send each file to Google Gemini AI for text and field extraction. This AI reading endpoint does not store the uploaded file. Review every suggestion; AI may make mistakes.</p>
             <label style="display:flex;gap:10px;align-items:flex-start;margin:12px 0;font-weight:600">
                 <input id="aiConsent" type="checkbox" style="width:auto;margin-top:4px">
-                I agree to send these images to Google Gemini AI for reading.
+                I agree to send these documents to Google Gemini AI for reading.
             </label>
             <div class="buttons" style="margin-top:12px">
                 <button id="runAiButton" class="primary" type="button" disabled>Read Documents with AI</button>
@@ -242,7 +242,7 @@ button:disabled{
             <div
                 id="progressText"
                 class="progress-text">
-                Preparing OCR...
+                Preparing AI document reading...
             </div>
 
         </div>
@@ -549,7 +549,7 @@ async function startOCR(){
 
             const payload = await response.json().catch(() => ({}));
             if(!response.ok){
-                const message = payload.error || "OCR service could not process this document.";
+                const message = payload.error || "AI service could not process this document.";
                 ocrResults[key] = {
                     name: fileRecord.name,
                     status: "manual",
@@ -583,7 +583,7 @@ async function startOCR(){
         setProgress(100, "AI document reading is unavailable. Manual entry is still available.");
         document.getElementById("runAiButton").disabled = false;
         document.getElementById("results").textContent =
-            "The OCR service could not be reached. You can continue with manual data entry.";
+            "The AI reading service could not be reached. You can continue with manual data entry.";
         localStorage.setItem("ocrCompleted", "true");
         enableContinue();
     }
