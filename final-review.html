@@ -898,169 +898,38 @@ function renderApplicant(){
 --------------------------------------------------------- */
 
 function loadDocuments(){
-
-    documents =
-        getJSON(
-            "uploadedDocuments",
-            []
-        );
-
-
-    const container =
-        document.getElementById(
-            "documents"
-        );
-
-
-    /*
-       Documents can be an array or object.
-    */
-
-    if(
-        !documents ||
-        (
-            Array.isArray(documents) &&
-            documents.length === 0
-        )
-    ){
-
-        /*
-           Check selectedForm documents
-        */
-
-        if(
-            selectedForm &&
-            Array.isArray(
-                selectedForm.documents
-            )
-        ){
-
-            documents =
-                selectedForm.documents;
-        }
+    const uploaded = getJSON("uploadedDocuments", {});
+    const entries = uploaded && typeof uploaded === "object" && !Array.isArray(uploaded) ? Object.entries(uploaded) : [];
+    const selectedVaultIds = getJSON("selectedVaultDocumentIds", []);
+    const container = document.getElementById("documents");
+    const checklist = Array.isArray(selectedForm && selectedForm.documents) ? selectedForm.documents : [];
+    const uploadedKeys = new Set(entries.map(([key,meta])=>String(meta && meta.documentKey || key)));
+    let html = "";
+    if(checklist.length){
+        html += '<div class="doc"><div><div class="doc-name">Form document checklist</div><div class="small">Template checklist only; confirm final requirements on the official portal.</div></div><span class="doc-status">Review</span></div>';
+        html += checklist.map((doc,index)=>{
+            const key=String(typeof doc==="string"?doc:(doc.key||doc.label||("document_"+index)));
+            const label=typeof doc==="string"?doc:(doc.label||doc.key||("Document "+(index+1)));
+            const matched=uploadedKeys.has(key);
+            return '<div class="doc"><div><div class="doc-name">'+escapeHTML(label)+'</div><div class="small">'+(typeof doc==="object"&&doc.required?"Required by template":"Optional / verify official requirement")+'</div></div><span class="doc-status">'+(matched?"File matched":"Not matched")+'</span></div>';
+        }).join("");
     }
-
-
-    if(
-        !documents ||
-        (
-            Array.isArray(documents) &&
-            documents.length === 0
-        )
-    ){
-
-        container.innerHTML = `
-
-            <div class="empty">
-
-                No uploaded documents found.
-
-            </div>
-
-        `;
-
-        return;
+    if(entries.length){
+        html += '<div class="doc"><div class="doc-name">Files uploaded for this application</div><span class="doc-status">'+entries.length+' file(s)</span></div>';
+        html += entries.map(([key,meta])=>{
+            const name=meta&&meta.name?meta.name:key;
+            const label=meta&&meta.documentLabel?meta.documentLabel:(meta&&meta.documentKey?meta.documentKey:"Document type not selected");
+            return '<div class="doc"><div><div class="doc-name">'+escapeHTML(name)+'</div><div class="small">'+escapeHTML(label)+'</div></div><span class="doc-status">Uploaded</span></div>';
+        }).join("");
+    } else {
+        html += '<div class="doc"><div class="doc-name">No new files uploaded in this application.</div><span class="doc-status">Optional</span></div>';
     }
-
-
-    if(Array.isArray(documents)){
-
-        container.innerHTML =
-            documents
-            .map((doc,index) => {
-
-                const name =
-                    typeof doc === "string"
-                    ? doc
-                    : (
-                        doc.name ||
-                        doc.label ||
-                        doc.type ||
-                        `Document ${index + 1}`
-                    );
-
-
-                const uploaded =
-                    typeof doc === "object"
-                    ? (
-                        doc.uploaded !== false
-                    )
-                    : true;
-
-
-                return `
-
-                    <div class="doc">
-
-                        <div class="doc-name">
-
-                            📄
-                            ${escapeHTML(name)}
-
-                        </div>
-
-                        <div class="doc-status">
-
-                            ${uploaded
-                                ? "✓ Ready"
-                                : "Pending"}
-
-                        </div>
-
-                    </div>
-
-                `;
-
-            })
-            .join("");
-
-        return;
+    if(selectedVaultIds.length){
+        html += '<div class="doc"><div class="doc-name">Personal saved documents selected</div><span class="doc-status">'+selectedVaultIds.length+' selected</span></div>';
     }
-
-
-    /*
-       Object format
-    */
-
-    container.innerHTML =
-        Object.entries(documents)
-        .map(([key,value]) => {
-
-            const uploaded =
-                value !== null &&
-                value !== undefined &&
-                value !== "";
-
-
-            return `
-
-                <div class="doc">
-
-                    <div class="doc-name">
-
-                        📄
-                        ${escapeHTML(
-                            key.replace(/_/g," ")
-                        )}
-
-                    </div>
-
-                    <div class="doc-status">
-
-                        ${uploaded
-                            ? "✓ Ready"
-                            : "Pending"}
-
-                    </div>
-
-                </div>
-
-            `;
-
-        })
-        .join("");
+    if(!html)html='<div class="empty">No documents listed. Check the official portal for required documents.</div>';
+    container.innerHTML=html;
 }
-
 
 /* ---------------------------------------------------------
    Verification status
