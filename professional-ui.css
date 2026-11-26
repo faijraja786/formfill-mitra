@@ -87,3 +87,54 @@ img{max-width:100%}
 .fm-overlay,.drawer-backdrop{backdrop-filter:blur(2px)}
 .section-head{align-items:center}
 @media(max-width:640px){.section-head{align-items:stretch!important;flex-direction:column!important}.quick-card{min-width:0}}
+
+
+/* FormFill Mitra refresh: compact white + sky-blue with green/yellow/ink actions */
+:root{
+ --ffm-primary:#38a7f4;--ffm-primary-dark:#1678c8;--ffm-sky:#eaf7ff;
+ --ffm-green:#168a58;--ffm-green-soft:#e8f7ef;--ffm-yellow:#ffd84d;
+ --ffm-ink:#17212b;--ffm-muted:#687786;--ffm-line:#dbeaf3;
+ --ffm-bg:#fff;--ffm-surface:#fff;--ffm-soft:#f2faff;
+ --ffm-shadow:0 4px 16px rgba(31,91,130,.055);--ffm-radius:14px
+}
+body{background:#fff!important;color:var(--ffm-ink)!important}
+.container{max-width:1180px!important;padding-top:18px!important;padding-bottom:32px!important}
+.welcome{background:linear-gradient(115deg,#dff3ff,#8bd0ff)!important;color:#123b5c!important;border-radius:18px!important;padding:20px 22px!important;margin-bottom:16px!important;box-shadow:0 8px 20px rgba(56,167,244,.12)!important}
+.welcome h1,.welcome h2,.welcome p{color:#123b5c!important}
+.welcome h1{font-size:clamp(20px,3vw,26px)!important;margin-bottom:5px!important}
+.welcome p{font-size:13px!important;opacity:1!important}
+.stats{display:grid!important;grid-template-columns:repeat(4,minmax(0,1fr))!important;gap:10px!important;margin-bottom:16px!important}
+.stat{padding:12px 14px!important;min-height:78px!important;border-radius:12px!important;box-shadow:none!important;display:flex!important;flex-direction:column;justify-content:center;gap:4px}
+.stat-title,.stat-label{font-size:11px!important;color:#647887!important;margin:0!important}
+.stat-value,.stat-number{font-size:22px!important;line-height:1.15!important;color:#1678c8!important}
+.stat[role="link"]{cursor:pointer!important;transition:transform .16s,border-color .16s,background .16s}
+.stat[role="link"]:hover{transform:translateY(-2px);border-color:#82caff!important;background:#f7fcff!important}
+.quick-grid{display:grid!important;grid-template-columns:repeat(4,minmax(0,1fr))!important;gap:10px!important;margin-bottom:18px!important}
+.quick-card{padding:13px!important;border-radius:12px!important;min-height:112px}
+.quick-icon{width:36px!important;height:36px!important;font-size:19px!important;margin-bottom:8px!important;border-radius:10px!important;background:#e8f6ff!important}
+.quick-card h3{font-size:13px!important;margin-bottom:3px!important}
+.quick-card p{font-size:11px!important;line-height:1.4!important;color:#71808d!important}
+.section,.card,.top-card{padding:16px!important;border-radius:14px!important;box-shadow:none!important}
+.section-head{margin-bottom:12px!important}
+.section-head h2{font-size:17px!important}
+.forms-grid{grid-template-columns:repeat(3,minmax(0,1fr))!important;gap:11px!important}
+.form-card{padding:14px!important;border-radius:12px!important}
+.form-card h3{font-size:14px!important}
+.form-card p{font-size:11px!important;min-height:0!important}
+button,.btn,.btn-primary,.primary-btn,.submit-btn,.open-btn,.payment-btn{background:#38a7f4!important;color:#fff!important;border-radius:9px!important;padding:9px 13px!important;min-height:36px!important;font-size:12px!important}
+.btn-secondary,.secondary{background:#eaf6ff!important;color:#1769a7!important;border:1px solid #d1eaff!important}
+.btn-save,.btn-green,.success,.btn-success{background:#168a58!important;color:#fff!important}
+.btn-warning,.btn-yellow,.warning{background:#ffd84d!important;color:#29240b!important}
+.btn-danger,.clear-btn,.btn-dark{background:#27323b!important;color:#fff!important}
+.btn-primary:hover,.open-btn:hover{background:#1678c8!important}
+.fm-menu-item,.ffm-shell-nav a{font-size:13px!important;padding:10px 12px!important}
+input,select,textarea{font-size:14px!important}
+@media(max-width:760px){
+ .container{width:calc(100% - 24px)!important}
+ .stats{grid-template-columns:repeat(2,minmax(0,1fr))!important}
+ .quick-grid{grid-template-columns:repeat(2,minmax(0,1fr))!important}
+ .forms-grid{grid-template-columns:repeat(2,minmax(0,1fr))!important}
+ .stat{min-height:72px!important;padding:11px!important}
+ .welcome{padding:17px!important}
+}
+@media(max-width:360px){.forms-grid{grid-template-columns:1fr!important}}
