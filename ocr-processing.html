@@ -201,7 +201,7 @@ button:disabled{
     <section class="card">
 
         <h1>
-            🔎 OCR Processing
+            AI Document Reading
         </h1>
 
         <div
@@ -214,6 +214,19 @@ button:disabled{
             id="fileList"
             class="file-list">
         </div>
+
+        <section class="info" style="margin:18px 0">
+            <strong>AI Document Reading Consent</strong>
+            <p style="margin:8px 0">Your selected document images may contain personal information. If you agree, Form Fill Mitra will send each image to Google Gemini AI for text and field extraction. The image is processed for this request and is not saved by this OCR endpoint. Review every suggestion; AI may make mistakes.</p>
+            <label style="display:flex;gap:10px;align-items:flex-start;margin:12px 0;font-weight:600">
+                <input id="aiConsent" type="checkbox" style="width:auto;margin-top:4px">
+                I agree to send these images to Google Gemini AI for reading.
+            </label>
+            <div class="buttons" style="margin-top:12px">
+                <button id="runAiButton" class="primary" type="button" disabled>Read Documents with AI</button>
+                <button id="manualButton" class="secondary" type="button">Skip AI · Fill Manually</button>
+            </div>
+        </section>
 
         <div class="progress-box">
 
@@ -242,7 +255,7 @@ button:disabled{
         <div
             id="infoBox"
             class="info">
-            Verify OCR-extracted text before using it in applicant details.
+            AI suggestions are not final. Verify names, dates and all other fields against the original document before continuing.
             
         </div>
 
@@ -454,6 +467,11 @@ function waitForSignedInUser(){
    START OCR THROUGH RENDER API
 ============================== */
 async function startOCR(){
+    if(!document.getElementById("aiConsent").checked){
+        setProgress(0, "Please agree to AI document reading first.");
+        return;
+    }
+    document.getElementById("runAiButton").disabled = true;
     if(!selectedForm){
         setProgress(100, "No form is selected.");
         return;
@@ -500,6 +518,7 @@ async function startOCR(){
             const token = await user.getIdToken();
             const formData = new FormData();
             formData.append("document", file, fileRecord.name);
+            formData.append("aiConsent", "true");
 
             const response = await fetch(API_BASE + "/api/ocr/image", {
                 method: "POST",
@@ -520,6 +539,7 @@ async function startOCR(){
                     name: fileRecord.name,
                     status: "success",
                     text: payload.text || "",
+                    extracted: payload.extracted && typeof payload.extracted === "object" ? payload.extracted : {},
                     confidence: payload.confidence ?? null,
                     reviewRequired: true
                 };
@@ -538,7 +558,8 @@ async function startOCR(){
         enableContinue();
     }catch(error){
         console.error("Render OCR request failed:", error);
-        setProgress(100, "OCR service unavailable. Manual entry is still available.");
+        setProgress(100, "AI document reading is unavailable. Manual entry is still available.");
+        document.getElementById("runAiButton").disabled = false;
         document.getElementById("results").textContent =
             "The OCR service could not be reached. You can continue with manual data entry.";
         localStorage.setItem("ocrCompleted", "true");
@@ -765,8 +786,22 @@ function escapeHTML(value){
 window.continueToApplicant = continueToApplicant;
 window.goBack = goBack;
 
-/* START */
-startOCR();
+document.getElementById("aiConsent").addEventListener("change", function(){
+    document.getElementById("runAiButton").disabled = !this.checked;
+});
+document.getElementById("runAiButton").addEventListener("click", startOCR);
+document.getElementById("manualButton").addEventListener("click", function(){
+    localStorage.setItem("ocrResults", JSON.stringify({}));
+    localStorage.setItem("ocrCompleted", "true");
+    location.href = "applicant-details.html";
+});
+
+/* Initialize without sending any image until consent is checked. */
+if(selectedForm){
+    document.getElementById("formName").textContent = selectedForm.name || "Selected Form";
+}
+loadFileList();
+setProgress(0, "Review the consent above, then start AI document reading.");
 
 </script>
 
