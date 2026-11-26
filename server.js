@@ -320,7 +320,7 @@ async function seedBiharRtpsForms() {
     // Migrate previously seeded forms. Older versions only filled an empty
     // checklist, so PAN and other forms could remain stuck with one old slot.
     const old = existing.data() || {};
-    if (old.systemSeed === "bihar-rtps-v1") {
+    if (old.systemSeed !== "bihar-rtps-v2" && (old.systemSeed === "bihar-rtps-v1" || old.createdBy === "system" || old.updatedBy === "system")) {
       await ref.update({
         documents: form.documents || [],
         systemSeed: "bihar-rtps-v2",
