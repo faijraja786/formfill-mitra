@@ -502,7 +502,14 @@ async function startOCR(){
         for(let i = 0; i < keys.length; i++){
             const key = keys[i];
             const fileRecord = await getDocument(key);
-            if(!fileRecord) continue;
+            if(!fileRecord){
+                ocrResults[key] = {
+                    name: uploadedDocuments[key] && uploadedDocuments[key].name || key,
+                    status: "manual",
+                    text: "The saved file could not be found in this browser. Go back, upload the document again, and retry."
+                };
+                continue;
+            }
 
             const percent = Math.round((i / keys.length) * 90);
             setProgress(percent, "Preparing " + fileRecord.name + "...");
@@ -569,6 +576,7 @@ async function startOCR(){
         localStorage.setItem("ocrCompleted", "true");
         setProgress(100, "AI document reading finished. Verify every suggestion before continuing.");
         renderResults();
+        document.getElementById("runAiButton").disabled = false;
         enableContinue();
     }catch(error){
         console.error("Render OCR request failed:", error);
