@@ -96,13 +96,18 @@ async function writeAudit(actor, action, entityType, entityId, metadata = {}) {
 }
 function validFields(fields) {
   const allowedTypes = new Set(["text", "email", "tel", "number", "date", "textarea", "select"]);
-  return Array.isArray(fields) && fields.length > 0 && fields.length <= 150 && fields.every(field =>
-    field && typeof field === "object" &&
-    clean(field.label).length > 0 && clean(field.label).length <= 160 &&
-    allowedTypes.has(clean(field.type)) &&
-    /^[a-zA-Z0-9_-]{1,100}$/.test(clean(field.key)) &&
-    (field.type !== "select" || (Array.isArray(field.options) && field.options.length > 0 && field.options.length <= 100))
-  );
+  if (!Array.isArray(fields) || fields.length < 1 || fields.length > 150) return false;
+  const seen = new Set();
+  return fields.every(field => {
+    if (!field || typeof field !== "object" ||
+      !clean(field.label) || clean(field.label).length > 160 ||
+      !allowedTypes.has(clean(field.type)) ||
+      !/^[a-zA-Z0-9_-]{1,100}$/.test(clean(field.key)) ||
+      seen.has(clean(field.key)) ||
+      (field.type === "select" && (!Array.isArray(field.options) || field.options.length < 1 || field.options.length > 100))) return false;
+    seen.add(clean(field.key));
+    return true;
+  });
 }
 function validDocuments(documents) {
   if (!Array.isArray(documents) || documents.length > 50) return false;
@@ -564,7 +569,7 @@ app.patch("/api/forms/:id", requireUser, requireProfile, requireRole("admin"), a
       const url = new URL(clean(updates.officialLink));
       if (url.protocol !== "https:" || url.username || url.password) throw new Error("Unsupported or unsafe official URL");
     } catch (_) {
-      return fail(res, 400, "Official portal link must be a valid HTTPS or HTTP URL.");
+      return fail(res, 400, "Official portal link must be a valid HTTPS URL.");
     }
   }
   if (updates.status !== undefined && !["draft", "published", "archived"].includes(updates.status)) return fail(res, 400, "Invalid form status.");
