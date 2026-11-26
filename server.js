@@ -166,6 +166,13 @@ async function seedBiharRtpsForms() {
       category: "Bihar RTPS",
       description: "Guided preparation for the Bihar Residential Certificate service. Choose the appropriate Circle, Sub-Division or District level and confirm document requirements on the official portal.",
       officialLink: "https://serviceonline.bihar.gov.in/",
+      documents: [
+        { key: "identity_proof", label: "Identity Proof", required: false },
+        { key: "photograph", label: "Recent Photograph", required: false },
+        { key: "address_proof", label: "Address / Residence Proof", required: false },
+        { key: "residence_record", label: "Residence Supporting Record", required: false },
+        { key: "self_declaration", label: "Self-declaration / Other Supporting Record", required: false }
+      ],
       fields: [...sharedFields, { key: "residence_since", label: "Since when have you lived at this address?", type: "text", required: true, options: [] }, { key: "residence_proof_type", label: "Available Residence Proof", type: "text", required: false, options: [] }]
     },
     {
