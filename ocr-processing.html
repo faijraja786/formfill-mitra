@@ -506,11 +506,13 @@ async function startOCR(){
             setProgress(percent, "Preparing " + fileRecord.name + "...");
 
             const file = fileRecord.file;
-            if(!file || !file.type.startsWith("image/")){
+            const supportedMime = ["image/jpeg","image/png","image/webp","application/pdf"].includes(file && file.type);
+            const supportedExtension = /\.(jpe?g|png|webp|pdf)$/i.test(fileRecord.name || "");
+            if(!file || (!supportedMime && !supportedExtension)){
                 ocrResults[key] = {
                     name: fileRecord.name,
                     status: "manual",
-                    text: "This file type is not supported by server OCR yet. Please review it and enter details manually."
+                    text: "This file type is not supported for AI reading. Use a PDF, JPG, PNG, or WEBP file, or enter details manually."
                 };
                 continue;
             }
@@ -558,7 +560,7 @@ async function startOCR(){
 
         localStorage.setItem("ocrResults", JSON.stringify(ocrResults));
         localStorage.setItem("ocrCompleted", "true");
-        setProgress(100, "OCR processing completed. Please verify extracted text.");
+        setProgress(100, "AI document reading finished. Verify every suggestion before continuing.");
         renderResults();
         enableContinue();
     }catch(error){
@@ -598,7 +600,7 @@ function renderResults(){
     container.innerHTML = `
 
         <h2 style="margin-bottom:10px;">
-            OCR Results
+            AI Reading Results
         </h2>
 
     `;
