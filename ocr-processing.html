@@ -629,15 +629,16 @@ function renderResults(){
 
         if(item.status === "success"){
 
-            const badge =
-                document.createElement("span");
-
-            badge.className =
-                "status success";
-
-            badge.textContent =
-                "OCR completed";
-
+            const extractedCount = Object.values(item.extracted || {}).filter(value =>
+                value !== null && value !== undefined && String(value).trim() !== ""
+            ).length;
+            const badge = document.createElement("span");
+            badge.className = extractedCount > 0 ? "status success" : "status warning";
+            badge.textContent = extractedCount > 0
+                ? `AI fields detected (${extractedCount}) · verify`
+                : item.text && item.text.trim()
+                    ? "Text read · applicant fields need review"
+                    : "No readable fields · manual review";
             wrapper.appendChild(badge);
 
 
