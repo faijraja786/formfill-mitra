@@ -903,12 +903,13 @@ function loadDocuments(){
     const selectedVaultIds = getJSON("selectedVaultDocumentIds", []);
     const container = document.getElementById("documents");
     const checklist = Array.isArray(selectedForm && selectedForm.documents) ? selectedForm.documents : [];
-    const uploadedKeys = new Set(entries.map(([key,meta])=>String(meta && meta.documentKey || key)));
+    const normalizeDocKey = value=>String(value||"document").toLowerCase().replace(/[^a-z0-9_-]+/g,"_").replace(/^_+|_+$/g,"").slice(0,80)||"document";
+    const uploadedKeys = new Set(entries.map(([key,meta])=>normalizeDocKey(meta && meta.documentKey || key)));
     let html = "";
     if(checklist.length){
         html += '<div class="doc"><div><div class="doc-name">Form document checklist</div><div class="small">Template checklist only; confirm final requirements on the official portal.</div></div><span class="doc-status">Review</span></div>';
         html += checklist.map((doc,index)=>{
-            const key=String(typeof doc==="string"?doc:(doc.key||doc.label||("document_"+index)));
+            const key=normalizeDocKey(typeof doc==="string"?doc:(doc.key||doc.label||("document_"+index)));
             const label=typeof doc==="string"?doc:(doc.label||doc.key||("Document "+(index+1)));
             const matched=uploadedKeys.has(key);
             return '<div class="doc"><div><div class="doc-name">'+escapeHTML(label)+'</div><div class="small">'+(typeof doc==="object"&&doc.required?"Required by template":"Optional / verify official requirement")+'</div></div><span class="doc-status">'+(matched?"File matched":"Not matched")+'</span></div>';
