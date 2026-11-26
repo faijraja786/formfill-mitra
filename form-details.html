@@ -227,10 +227,10 @@ const documentNames = {
 };
 
 
-const selectedForm =
-    JSON.parse(
-        localStorage.getItem("selectedForm")
-    );
+let selectedForm = (() => {
+    try { return JSON.parse(localStorage.getItem("selectedForm") || "null"); }
+    catch (_) { return null; }
+})();
 
 
 /* ==============================
@@ -698,6 +698,27 @@ loadForm();
 
 </script>
 
+<script type="module">
+import { auth } from "./firebase-init.js";
+import { onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-auth.js";
+import { apiRequest } from "./api-client.js";
+// Refresh cached form metadata before the applicant proceeds, so an old
+// localStorage checklist cannot leave PAN or another form with stale slots.
+onAuthStateChanged(auth, async user => {
+    if (!user || !user.emailVerified || !selectedForm || !selectedForm.id) return;
+    try {
+        const data = await apiRequest("/api/forms");
+        const latest = (data.forms || []).find(form => String(form.id) === String(selectedForm.id));
+        if (latest) {
+            selectedForm = latest;
+            localStorage.setItem("selectedForm", JSON.stringify(latest));
+            loadForm();
+        }
+    } catch (error) {
+        console.error("Latest form checklist refresh failed:", error);
+    }
+});
+</script>
 
 <script type="module">
 import {auth} from "./firebase-init.js";
