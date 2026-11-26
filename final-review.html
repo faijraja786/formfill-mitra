@@ -1279,7 +1279,6 @@ async function completeReview(){
         }
 
         if (vaultDocumentIds.length) { await apiRequest("/api/applications/" + encodeURIComponent(applicationId) + "/documents/from-vault", { method: "POST", body: JSON.stringify({ documentIds: vaultDocumentIds }) }); }
-        localStorage.removeItem("selectedVaultDocumentIds");
         localStorage.removeItem("currentApplicant");
         localStorage.removeItem("professionalApplicant");
 
@@ -1317,6 +1316,10 @@ async function completeReview(){
             }
         }
 
+        localStorage.removeItem("selectedVaultDocumentIds");
+        localStorage.removeItem("currentClientId");
+        localStorage.removeItem("uploadedDocuments");
+        localStorage.removeItem("ocrResults");
         localStorage.setItem("applicationReviewStatus", "preparation");
         localStorage.setItem("finalReviewCompleted", "true");
         showStatus(
