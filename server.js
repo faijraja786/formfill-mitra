@@ -1194,8 +1194,11 @@ app.post("/api/ocr/image", ocrLimiter, requireUser, requireProfile, upload.singl
     return fail(res, 400, "Could not read the selected form's field list.");
   }
   const requestedFieldGuide = requestedFields.map(field => field.key + " = " + field.label + " (type: " + field.type + ")").join("\n");
+  const documentLabel = clean(req.body && req.body.documentLabel).slice(0, 120) || "Uploaded document";
   const prompt = [
     "You are reading an applicant's document image for a form-preparation website.",
+    "Document category supplied by the applicant: " + documentLabel + ".",
+    "If this is an identity proof, identity card, age proof, or date-of-birth proof, carefully inspect it for a clearly labeled DOB / Date of Birth / जन्म तिथि and map that value to the requested dob field. Do not mistake issue date, print date, or expiry date for DOB.",
     "Return ONLY valid JSON with keys rawText and fields. fields must be a JSON object, not an array, and use the exact requested field keys.",
     "rawText: transcribe readable text faithfully in its original language, but redact Aadhaar/PAN and other long government ID numbers as [REDACTED] unless a requested form field specifically asks for that exact value.",
     "fields: include common keys fullName, fatherName, motherName, dob, gender, mobile, email, state, district, villageCity, pin, address, category, rollNumber, passingYear, education, plus every exact requested form field key listed below.",
