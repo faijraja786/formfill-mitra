@@ -16,7 +16,6 @@
     "express-rate-limit": "^7.5.0",
     "firebase-admin": "^13.0.2",
     "multer": "^2.0.2",
-    "tesseract.js": "^5.1.1",
     "helmet": "^8.1.0",
     "@supabase/supabase-js": "2.119.2"
   }
