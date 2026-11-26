@@ -526,6 +526,7 @@ app.post("/api/forms", requireUser, requireProfile, requireRole("admin"), async 
   const documents = body.documents === undefined ? [] : body.documents;
   if (!validDocuments(documents)) return fail(res, 400, "Add a valid document checklist. Each item needs a unique key and label.");
   const status = body.status === "published" ? "published" : "draft";
+  if (status === "published" && !/^https:\/\//i.test(clean(body.officialLink))) return fail(res, 400, "Add the official HTTPS service link before publishing this form.");
   const data = {
     name, category, description: clean(body.description).slice(0, 2000),
     officialLink: clean(body.officialLink).slice(0, 1000),
@@ -566,6 +567,7 @@ app.patch("/api/forms/:id", requireUser, requireProfile, requireRole("admin"), a
     }
   }
   if (updates.status !== undefined && !["draft", "published", "archived"].includes(updates.status)) return fail(res, 400, "Invalid form status.");
+  if (updates.status === "published" && !/^https:\/\//i.test(clean(updates.officialLink !== undefined ? updates.officialLink : (await db.collection("forms").doc(req.params.id).get()).data()?.officialLink))) return fail(res, 400, "Add the official HTTPS service link before publishing this form.");
   updates.updatedAt = now(); updates.updatedBy = req.user.uid;
   try {
     const ref = db.collection("forms").doc(req.params.id);
