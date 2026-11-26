@@ -1846,10 +1846,9 @@ function applyOCR(){
     ).style.width = "100%";
 
 
-    document.getElementById(
-        "ocrStatus"
-    ).textContent =
-        `✓ ${applied} OCR suggestions were applied to the field(s). Please verify all details.`;
+    document.getElementById("ocrStatus").textContent = applied > 0
+        ? `✓ ${applied} AI suggestions were added to empty fields. Verify every value against the original document.`
+        : "AI returned no confidently matched applicant fields. Check the extracted text above; if it is also blank or unreadable, upload a clear full-page image and run AI reading again. Nothing was filled.";
 }
 
 
