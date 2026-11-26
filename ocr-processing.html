@@ -535,6 +535,7 @@ async function startOCR(){
                 : new File([file], fileRecord.name, { type: expectedMime });
             formData.append("document", uploadFile, fileRecord.name);
             formData.append("aiConsent", "true");
+            formData.append("documentLabel", String(uploadedDocuments[key]?.documentLabel || uploadedDocuments[key]?.documentKey || "Uploaded document").slice(0,120));
             formData.append("formFields", JSON.stringify(
                 (Array.isArray(selectedForm.fields) ? selectedForm.fields : [])
                     .slice(0, 150)
