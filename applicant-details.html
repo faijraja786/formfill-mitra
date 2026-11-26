@@ -373,7 +373,7 @@ button:disabled{
     }
 }
 </style>
-<link rel="stylesheet" href="professional-ui.css?v=20261124">
+<link rel="stylesheet" href="professional-ui.css?v=20261126-design2">
 <script src="app-shell.js" defer></script>
 </head>
 
@@ -824,21 +824,10 @@ button:disabled{
     <!-- BUTTONS -->
     <div class="buttons">
 
-        <button
-            class="secondary"
-            onclick="goBack()">
-
-            ← Back
-
-        </button>
-
-        <button
-            class="success"
-            onclick="saveApplicant()">
-
-            ✓ Verify & Continue
-
-        </button>
+        <button type="button" class="secondary" onclick="goBack()">Back</button>
+        <button type="button" class="btn-dark clear-btn" onclick="clearApplicantFields()">Clear</button>
+        <button type="button" class="secondary" onclick="saveApplicantDraft()">Save as Draft</button>
+        <button type="button" class="success" onclick="saveApplicant()">Verify & Continue</button>
 
     </div>
 
@@ -1996,6 +1985,34 @@ function validateApplicant(data){
 /* =====================================================
    SAVE APPLICANT
 ===================================================== */
+
+function saveApplicantDraft(){
+    const data = {
+        fullName:getField("fullName"), dob:getField("dob"), gender:getField("gender"),
+        mobile:getField("mobile").replace(/\\D/g,"").slice(-10), email:getField("email"),
+        state:getField("state"), district:getField("district"), villageCity:getField("villageCity"),
+        pin:getField("pin").replace(/\\D/g,"").slice(0,6), address:getField("address")
+    };
+    if(!writeJSON("currentApplicant",data)){
+        alert("Draft could not be saved on this device. Please check available storage.");
+        return;
+    }
+    localStorage.removeItem("applicantVerified");
+    localStorage.setItem("applicantDraftSavedAt",new Date().toISOString());
+    const box=document.getElementById("validationBox");
+    box.style.display="block";
+    box.textContent="Draft saved on this device. You can return and continue later.";
+}
+function clearApplicantFields(){
+    if(!confirm("Clear the applicant details entered on this page? Uploaded documents will remain.")) return;
+    FIELD_KEYS.forEach(key=>setField(key,"",false));
+    localStorage.removeItem("currentApplicant");
+    localStorage.removeItem("applicantVerified");
+    localStorage.removeItem("applicantDraftSavedAt");
+    const box=document.getElementById("validationBox");
+    box.style.display="block";
+    box.textContent="Applicant fields cleared.";
+}
 
 function saveApplicant(){
 
