@@ -813,7 +813,7 @@ app.post("/api/applications/:id/assign", requireUser, requireProfile, requireRol
 app.get("/api/clients", requireUser, requireProfile, requireRole("professional"), async (req, res) => {
   try {
     const snap = await db.collection("clients").where("professionalId", "==", req.user.uid).limit(500).get();
-    return res.json({ clients: snap.docs.map(safeDoc).filter(client => client.status !== "archived") });
+    return res.json({ clients: snap.docs.map(safeDoc) });
   } catch (error) {
     console.error("Clients read failed:", error.message);
     return fail(res, 500, "Could not load clients.");
