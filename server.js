@@ -1151,29 +1151,8 @@ app.get("/api/my-documents", requireUser, requireProfile, requireRole("personal"
   }
 });
 
-app.post("/api/my-documents", requireUser, requireProfile, requireRole("personal"), documentUpload.single("document"), async (req, res) => {
-  if (!req.file) return fail(res, 400, "Choose one document to save.");
-  if (!supabaseStorage) return fail(res, 503, "Private document storage is not configured.");
-  const mimeType = detectDocumentMime(req.file.buffer);
-  if (!mimeType || mimeType !== req.file.mimetype) return fail(res, 415, "The file content does not match its declared type.");
-  const documentKey = clean(req.body && req.body.documentKey);
-  if (!/^[a-zA-Z0-9_-]{1,80}$/.test(documentKey)) return fail(res, 400, "Choose a valid document category.");
-  try {
-    const id = crypto.randomUUID();
-    const name = safeFileName(req.file.originalname);
-    const extension = mimeType === "application/pdf" ? "pdf" : mimeType.split("/")[1];
-    const storagePath = "personal-vault/" + req.user.uid + "/" + id + "." + extension;
-    const { error } = await supabaseStorage.storage.from("applicant-documents").upload(storagePath, req.file.buffer, { contentType: mimeType, cacheControl: "0", upsert: false });
-    if (error) throw error;
-    const metadata = { documentKey, name, mimeType, size: req.file.size, storagePath, uploadedBy: req.user.uid, createdAt: now() };
-    const ref = await db.collection("profiles").doc(req.user.uid).collection("personalDocuments").doc(id);
-    await ref.set(metadata);
-    await writeAudit(req.profile, "personal_document.saved", "personal_document", id, { documentKey });
-    return res.status(201).json({ document: publicDocument({ id, ...metadata }) });
-  } catch (error) {
-    console.error("Personal vault upload failed:", error.message);
-    return fail(res, 500, "Document could not be saved securely.");
-  }
+app.post("/api/my-documents", requireUser, requireProfile, requireRole("personal"), (_req, res) => {
+  return fail(res, 410, "The saved-document vault now stores files in your browser only. Open My Documents and save locally.");
 });
 
 app.get("/api/my-documents/:documentId/download", requireUser, requireProfile, requireRole("personal"), async (req, res) => {
