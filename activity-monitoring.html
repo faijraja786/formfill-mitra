@@ -253,7 +253,7 @@ button{
         <h2 class="title">Activity Overview</h2>
 
         <p class="subtitle">
-            Monitor staff and application activity.
+            Review recorded actions from your workspace. Administrators can see workspace-wide events; other users see their own actions.
         </p>
 
         <div class="stats">
@@ -265,17 +265,17 @@ button{
 
             <div class="stat">
                 <div class="stat-number" id="completedActivities">0</div>
-                <div class="stat-label">Completed</div>
+                <div class="stat-label">Application Events</div>
             </div>
 
             <div class="stat">
                 <div class="stat-number" id="pendingActivities">0</div>
-                <div class="stat-label">Pending</div>
+                <div class="stat-label">Document Events</div>
             </div>
 
             <div class="stat">
                 <div class="stat-number" id="errorActivities">0</div>
-                <div class="stat-label">Errors</div>
+                <div class="stat-label">Unique Accounts</div>
             </div>
 
         </div>
@@ -294,30 +294,14 @@ button{
             <input
                 type="text"
                 id="search"
-                placeholder="Search staff, action, application...">
+                placeholder="Search account, action, record...">
 
             <select id="statusFilter">
-
-                <option value="all">
-                    All Status
-                </option>
-
-                <option value="Completed">
-                    Completed
-                </option>
-
-                <option value="Pending">
-                    Pending
-                </option>
-
-                <option value="Error">
-                    Error
-                </option>
-
-                <option value="Info">
-                    Info
-                </option>
-
+                <option value="all">All Events</option>
+                <option value="application">Application</option>
+                <option value="document">Document</option>
+                <option value="account">Account</option>
+                <option value="other">Other</option>
             </select>
 
 
@@ -341,7 +325,7 @@ button{
         <h2 class="title">Activity Log</h2>
 
         <p class="subtitle">
-            Recent staff and application activity.
+            Recent events recorded by the secure application backend.
         </p>
 
         <div
@@ -356,28 +340,16 @@ button{
 
     <div class="card">
 
-        <h2 class="title">Error Monitoring</h2>
+        <h2 class="title">Event Information</h2>
 
         <p class="subtitle">
-            Errors and warnings recorded by the system.
+            This feed records successful actions. Runtime errors are available in the private server logs.
         </p>
 
         <div id="errorList"></div>
 
         <div class="actions">
-
-            <button
-                class="clear"
-                onclick="clearErrors()">
-                Clear Errors
-            </button>
-
-            <button
-                class="demo"
-                onclick="addDemoActivity()">
-                Add Test Activity
-            </button>
-
+            <button class="clear" type="button" id="refreshActivity">Refresh Activity</button>
         </div>
 
     </div>
@@ -386,443 +358,130 @@ button{
 
 
 <script>
+let activities = [];
+let staff = [];
 
-    // Workspace access: Admin (verified at sign-in) or Professional session.
-const workspaceRole = localStorage.getItem("loginType");
-const workspaceLoggedIn = localStorage.getItem("isLoggedIn") === "true";
-const workspaceAdmin = workspaceRole === "admin" &&
-  (localStorage.getItem("ffm_admin_user") || "").toLowerCase() === "faijraja28@gmail.com";
-const workspaceProfessional = workspaceRole === "professional";
-if (!workspaceLoggedIn || (!workspaceAdmin && !workspaceProfessional)) {
-  window.location.replace(workspaceRole === "professional" ? "professional-login.html" : "personal-login.html");
-}
-function goDashboard() {
-  window.location.href = workspaceProfessional ? "professional-dashboard.html" : "admin-panel.html";
-}
-/* =====================================
-   STORAGE
-===================================== */
-
-let activities =
-    JSON.parse(
-        localStorage.getItem("ffm_activity")
-    ) || [];
-
-
-/* =====================================
-   LOAD STAFF
-===================================== */
-
-const staff =
-    JSON.parse(
-        localStorage.getItem("ffm_staff")
-    ) || [];
-
-
-/* =====================================
-   CREATE STAFF FILTER
-===================================== */
-
-function loadStaffFilter(){
-
-    const select =
-        document.getElementById("staffFilter");
-
-    staff.forEach(member => {
-
-        const option =
-            document.createElement("option");
-
-        option.value =
-            member.username;
-
-        option.textContent =
-            member.name;
-
-        select.appendChild(option);
-
-    });
+function goDashboard(){
+    const role = localStorage.getItem("loginType");
+    location.href = role === "professional" ? "professional-dashboard.html" : "admin-panel.html";
 }
 
+function categoryFor(action){
+    const value = String(action || "").toLowerCase();
+    if(value.includes("application") || value.includes("form")) return "application";
+    if(value.includes("document") || value.includes("vault")) return "document";
+    if(value.includes("profile") || value.includes("account") || value.includes("staff")) return "account";
+    return "other";
+}
 
-/* =====================================
-   RENDER ACTIVITIES
-===================================== */
+function formatEventTime(value){
+    if(!value) return "Time unavailable";
+    const date = new Date(value);
+    return Number.isNaN(date.getTime()) ? String(value) : date.toLocaleString();
+}
+
+function escapeHTML(value){
+    return String(value ?? "").replace(/[&<>"']/g, c => ({
+        "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;"
+    }[c]));
+}
 
 function renderActivities(){
-
-    const search =
-        document.getElementById("search")
-        .value
-        .toLowerCase()
-        .trim();
-
-    const status =
-        document.getElementById("statusFilter")
-        .value;
-
-    const selectedStaff =
-        document.getElementById("staffFilter")
-        .value;
-
-
-    const filtered =
-        activities.filter(item => {
-
-            const text =
-                (
-                    item.staff +
-                    " " +
-                    item.action +
-                    " " +
-                    item.application +
-                    " " +
-                    item.details
-                )
-                .toLowerCase();
-
-
-            const searchMatch =
-                !search ||
-                text.includes(search);
-
-
-            const statusMatch =
-                status === "all" ||
-                item.status === status;
-
-
-            const staffMatch =
-                selectedStaff === "all" ||
-                item.staff === selectedStaff;
-
-
-            return (
-                searchMatch &&
-                statusMatch &&
-                staffMatch
-            );
-
-        });
-
-
-    const list =
-        document.getElementById("activityList");
-
-    list.innerHTML = "";
-
-
-    if(filtered.length === 0){
-
-        list.innerHTML =
-            '<div class="empty">No activity was found.</div>';
-
-        updateStats();
-
-        return;
-    }
-
-
-    filtered
-        .slice()
-        .reverse()
-        .forEach(item => {
-
-            const div =
-                document.createElement("div");
-
-            div.className = "activity";
-
-
-            const badgeClass =
-                item.status === "Completed"
-                ? "success"
-                : item.status === "Pending"
-                ? "pending"
-                : item.status === "Error"
-                ? "error"
-                : "info";
-
-
-            div.innerHTML = `
-
+    const search = document.getElementById("search").value.toLowerCase().trim();
+    const category = document.getElementById("statusFilter").value;
+    const selectedStaff = document.getElementById("staffFilter").value;
+    const filtered = activities.filter(item => {
+        const searchable = [item.staff,item.action,item.application,item.details].join(" ").toLowerCase();
+        return (!search || searchable.includes(search))
+            && (category === "all" || item.category === category)
+            && (selectedStaff === "all" || item.staff === selectedStaff);
+    });
+    const list = document.getElementById("activityList");
+    if(!filtered.length){
+        list.innerHTML = '<div class="empty">No recorded activity matches these filters.</div>';
+    }else{
+        list.innerHTML = filtered.map(item => `
+            <article class="activity">
                 <div class="activity-top">
-
                     <div>
-
-                        <div class="activity-title">
-                            ${escapeHTML(item.action)}
-                        </div>
-
+                        <div class="activity-title">${escapeHTML(item.action)}</div>
                         <div class="activity-meta">
-
-                            Staff:
-                            ${escapeHTML(item.staff || "System")}
-
-                            <br>
-
-                            Application:
-                            ${escapeHTML(item.application || "—")}
-
-                            <br>
-
-                            ${escapeHTML(item.details || "")}
-
-                            <br>
-
-                            ${escapeHTML(item.time || "")}
-
+                            Account: ${escapeHTML(item.staff || "System")}<br>
+                            Record: ${escapeHTML(item.application || "—")}<br>
+                            Details: ${escapeHTML(item.details || "No additional details")}<br>
+                            ${escapeHTML(item.time)}
                         </div>
-
                     </div>
-
-                    <div>
-
-                        <span class="badge ${badgeClass}">
-                            ${escapeHTML(item.status)}
-                        </span>
-
-                    </div>
-
+                    <span class="badge info">${escapeHTML(item.categoryLabel)}</span>
                 </div>
-
-            `;
-
-
-            list.appendChild(div);
-
-        });
-
-
+            </article>`).join("");
+    }
     updateStats();
 }
 
-
-/* =====================================
-   STATISTICS
-===================================== */
-
 function updateStats(){
-
-    document.getElementById("totalActivities")
-        .textContent = activities.length;
-
-
-    document.getElementById("completedActivities")
-        .textContent =
-        activities.filter(
-            x => x.status === "Completed"
-        ).length;
-
-
-    document.getElementById("pendingActivities")
-        .textContent =
-        activities.filter(
-            x => x.status === "Pending"
-        ).length;
-
-
-    document.getElementById("errorActivities")
-        .textContent =
-        activities.filter(
-            x => x.status === "Error"
-        ).length;
-
-
-    renderErrors();
+    document.getElementById("totalActivities").textContent = activities.length;
+    document.getElementById("completedActivities").textContent = activities.filter(x => x.category === "application").length;
+    document.getElementById("pendingActivities").textContent = activities.filter(x => x.category === "document").length;
+    document.getElementById("errorActivities").textContent = new Set(activities.map(x => x.staff).filter(Boolean)).size;
+    const box = document.getElementById("errorList");
+    box.innerHTML = '<div class="empty">This page shows audit events, not live error traces. Backend health and runtime errors must be checked in the service monitoring logs.</div>';
 }
 
-
-/* =====================================
-   ERROR LIST
-===================================== */
-
-function renderErrors(){
-
-    const box =
-        document.getElementById("errorList");
-
-    const errors =
-        activities.filter(
-            x => x.status === "Error"
-        );
-
-
-    if(errors.length === 0){
-
-        box.innerHTML =
-            '<div class="empty">No errors have been recorded.</div>';
-
-        return;
-    }
-
-
-    box.innerHTML = "";
-
-
-    errors
-        .slice()
-        .reverse()
-        .forEach(item => {
-
-            const div =
-                document.createElement("div");
-
-            div.className = "error-box";
-
-
-            div.innerHTML = `
-
-                <div class="error-title">
-                    ${escapeHTML(item.action)}
-                </div>
-
-                <div class="error-meta">
-
-                    Staff:
-                    ${escapeHTML(item.staff || "System")}
-
-                    <br>
-
-                    Application:
-                    ${escapeHTML(item.application || "—")}
-
-                    <br>
-
-                    ${escapeHTML(item.details || "")}
-
-                    <br>
-
-                    ${escapeHTML(item.time || "")}
-
-                </div>
-
-            `;
-
-
-            box.appendChild(div);
-
-        });
+async function loadActivity(){
+    const [{auth},{onAuthStateChanged},{apiRequest}] = await Promise.all([
+        import("./firebase-init.js"),
+        import("https://www.gstatic.com/firebasejs/10.12.5/firebase-auth.js"),
+        import("./api-client.js")
+    ]);
+    await new Promise(resolve => {
+        let unsubscribe = () => {};
+        unsubscribe = onAuthStateChanged(auth, async user => {
+            unsubscribe();
+            if(!user){ location.replace("personal-login.html"); resolve(); return; }
+            try{
+                const me = await apiRequest("/api/me");
+                const role = me.profile && me.profile.role;
+                if(!["admin","professional"].includes(role)){
+                    location.replace(role === "personal" ? "personal-dashboard.html" : "index.html");
+                    resolve();
+                    return;
+                }
+                const result = await apiRequest("/api/activity");
+                activities = (result.activities || []).map(item => {
+                    const action = String(item.action || "Recorded event");
+                    const category = categoryFor(action);
+                    const metadata = item.metadata && typeof item.metadata === "object" ? item.metadata : {};
+                    const details = Object.entries(metadata).map(([key,value]) => key + ": " + String(value)).join(" · ");
+                    return {
+                        staff: item.actorEmail || item.actorRole || "System",
+                        action: action.replace(/[._]/g," ").replace(/\b\w/g,letter=>letter.toUpperCase()),
+                        application: [item.entityType,item.entityId].filter(Boolean).join(" · "),
+                        details,
+                        time: formatEventTime(item.createdAt),
+                        category,
+                        categoryLabel: category.charAt(0).toUpperCase()+category.slice(1)
+                    };
+                });
+                staff = [...new Set(activities.map(item => item.staff).filter(Boolean))].sort();
+                const select = document.getElementById("staffFilter");
+                select.innerHTML = '<option value="all">All Accounts</option>' + staff.map(name=>'<option value="'+escapeHTML(name)+'">'+escapeHTML(name)+'</option>').join("");
+                renderActivities();
+                resolve();
+            }catch(error){
+                document.getElementById("activityList").innerHTML = '<div class="empty">'+escapeHTML(error.message || "Activity could not be loaded.")+'</div>';
+                resolve();
+            }
+        }, () => { document.getElementById("activityList").innerHTML = '<div class="empty">Sign-in could not be verified.</div>'; resolve(); });
+    });
 }
 
+document.getElementById("search").addEventListener("input",renderActivities);
+document.getElementById("statusFilter").addEventListener("change",renderActivities);
+document.getElementById("staffFilter").addEventListener("change",renderActivities);
+document.getElementById("refreshActivity").addEventListener("click",()=>loadActivity());
 
-/* =====================================
-   TEST ACTIVITY
-===================================== */
-
-function addDemoActivity(){
-
-    const demo = {
-
-        id:
-            Date.now().toString(),
-
-        staff:
-            staff.length
-            ? staff[0].username
-            : "system",
-
-        action:
-            "Application Processing",
-
-        application:
-            "Test Application",
-
-        details:
-            "Application processing activity recorded.",
-
-        status:
-            "Completed",
-
-        time:
-            new Date().toLocaleString()
-
-    };
-
-
-    activities.push(demo);
-
-
-    localStorage.setItem(
-        "ffm_activity",
-        JSON.stringify(activities)
-    );
-
-
-    renderActivities();
-}
-
-
-/* =====================================
-   CLEAR ERRORS
-===================================== */
-
-function clearErrors(){
-
-    activities =
-        activities.filter(
-            item => item.status !== "Error"
-        );
-
-
-    localStorage.setItem(
-        "ffm_activity",
-        JSON.stringify(activities)
-    );
-
-
-    renderActivities();
-}
-
-
-/* =====================================
-   EVENTS
-===================================== */
-
-document
-    .getElementById("search")
-    .addEventListener(
-        "input",
-        renderActivities
-    );
-
-document
-    .getElementById("statusFilter")
-    .addEventListener(
-        "change",
-        renderActivities
-    );
-
-document
-    .getElementById("staffFilter")
-    .addEventListener(
-        "change",
-        renderActivities
-    );
-
-
-/* =====================================
-   SECURITY HELPER
-===================================== */
-
-function escapeHTML(value){
-
-    return String(value)
-        .replace(/&/g,"&amp;")
-        .replace(/</g,"&lt;")
-        .replace(/>/g,"&gt;")
-        .replace(/"/g,"&quot;")
-        .replace(/'/g,"&#039;");
-}
-
-
-/* =====================================
-   START
-===================================== */
-
-loadStaffFilter();
-renderActivities();
-
+loadActivity();
 </script>
 
 </body>

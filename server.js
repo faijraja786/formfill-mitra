@@ -353,8 +353,10 @@ app.get("/health", async (_req, res) => {
       storage = "unavailable";
     }
   }
-  return res.status(200).json({
-    status: "ok", service: "form-fill-mitra-api",
+  const healthy = firebaseReady && database === "connected" && storage === "connected";
+  return res.status(healthy ? 200 : 503).json({
+    status: healthy ? "ok" : "degraded",
+    service: "form-fill-mitra-api",
     firebaseAdminConfigured: firebaseReady,
     database, storage
   });
@@ -874,6 +876,21 @@ app.get("/api/audit-logs", requireUser, requireProfile, requireRole("admin"), as
   }
 });
 
+// Activity feed: administrators can review the workspace; other roles see only their own actions.
+app.get("/api/activity", requireUser, requireProfile, async (req, res) => {
+  try {
+    let query = db.collection("auditLogs");
+    if (req.profile.role !== "admin") query = query.where("actorUid", "==", req.user.uid);
+    const snap = await query.limit(req.profile.role === "admin" ? 300 : 150).get();
+    const activities = snap.docs.map(safeDoc)
+      .sort((a, b) => String(b.createdAt || "").localeCompare(String(a.createdAt || "")));
+    return res.json({ activities });
+  } catch (error) {
+    console.error("Activity feed read failed:", error.message);
+    return fail(res, 500, "Could not load recorded activity.");
+  }
+});
+
 // Private application document storage. Files are never made public; every read is authorized here.
 const documentUpload = multer({
   storage: multer.memoryStorage(),
@@ -1164,6 +1181,8 @@ const upload = multer({
 const ocrLimiter = rateLimit({ windowMs: 15 * 60 * 1000, limit: 20, standardHeaders: "draft-7", legacyHeaders: false });
 app.post("/api/ocr/image", ocrLimiter, requireUser, requireProfile, upload.single("document"), async (req, res) => {
   if (!req.file) return fail(res, 400, "Upload one image in the document field.");
+  const detectedMime = detectDocumentMime(req.file.buffer);
+  if (!detectedMime || detectedMime !== req.file.mimetype) return fail(res, 415, "The file content does not match its declared type. Upload a valid PDF, JPEG, PNG, or WEBP file.");
   if (req.body && req.body.aiConsent !== "true") return fail(res, 400, "Please confirm consent before sending this image to Google Gemini AI.");
   const apiKey = String(process.env.GEMINI_API_KEY || "").trim();
   if (!apiKey) return fail(res, 503, "AI document reading is not configured. Please enter details manually or contact the administrator.");
