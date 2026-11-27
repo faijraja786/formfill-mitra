@@ -57,6 +57,20 @@ const clean = value => String(value == null ? "" : value).trim();
 const fail = (res, status, message) => res.status(status).json({ error: message });
 const safeDoc = snap => ({ id: snap.id, ...snap.data() });
 
+async function getAllApplicationDocumentSnapshots(applicationRef) {
+  const snapshots = [];
+  let query = applicationRef.collection("documents")
+    .orderBy(admin.firestore.FieldPath.documentId())
+    .limit(100);
+  while (true) {
+    const page = await query.get();
+    snapshots.push(...page.docs);
+    if (page.size < 100) break;
+    query = query.startAfter(page.docs[page.docs.length - 1]);
+  }
+  return snapshots;
+}
+
 async function requireUser(req, res, next) {
   if (!firebaseReady || !db) return fail(res, 503, "Backend authentication is not configured. Ask the administrator to configure Firebase service credentials.");
   const match = (req.headers.authorization || "").match(/^Bearer\s+(.+)$/i);
@@ -712,8 +726,8 @@ app.post("/api/applications/:id/complete-submission", requireUser, requireProfil
     if (!isOwner) return fail(res, 403, "Only the applicant or the professional who owns this application can confirm completion.");
     if (data.personalDataPurged === true) return res.json({ ok: true, status: "completed", personalDataDeleted: true });
 
-    const docsSnap = await application.ref.collection("documents").limit(500).get();
-    const paths = docsSnap.docs.map(doc => clean(doc.data().storagePath)).filter(Boolean);
+    const documentSnapshots = await getAllApplicationDocumentSnapshots(application.ref);
+    const paths = documentSnapshots.map(doc => clean(doc.data().storagePath)).filter(Boolean);
     if (paths.length && !supabaseStorage) return fail(res, 503, "Temporary document storage is unavailable; data was not marked as deleted.");
     if (paths.length) {
       for (let i = 0; i < paths.length; i += 100) {
@@ -721,9 +735,11 @@ app.post("/api/applications/:id/complete-submission", requireUser, requireProfil
         if (error) throw error;
       }
     }
-    const batch = db.batch();
-    docsSnap.docs.forEach(doc => batch.delete(doc.ref));
-    await batch.commit();
+    for (let i = 0; i < documentSnapshots.length; i += 400) {
+      const batch = db.batch();
+      documentSnapshots.slice(i, i + 400).forEach(doc => batch.delete(doc.ref));
+      await batch.commit();
+    }
     await application.ref.update({
       applicant: admin.firestore.FieldValue.delete(),
       answers: admin.firestore.FieldValue.delete(),
@@ -734,7 +750,7 @@ app.post("/api/applications/:id/complete-submission", requireUser, requireProfil
       updatedAt: now()
     });
     await writeAudit(req.profile, "application.personal_data_purged", "application", req.params.id, { documentCount: docsSnap.size });
-    return res.json({ ok: true, status: "completed", personalDataDeleted: true, deletedDocuments: docsSnap.size });
+    return res.json({ ok: true, status: "completed", personalDataDeleted: true, deletedDocuments: documentSnapshots.length });
   } catch (error) {
     console.error("Application personal-data cleanup failed:", error.message);
     return fail(res, 500, "Application data could not be fully deleted. Please retry or contact support.");
@@ -1576,8 +1592,8 @@ async function purgeExpiredApplicationData() {
       const expiresAt = Date.parse(data.personalDataExpiresAt || "") ||
         (Date.parse(data.createdAt || "") ? Date.parse(data.createdAt) + 7 * 24 * 60 * 60 * 1000 : 0);
       if (!expiresAt || expiresAt > cutoff) continue;
-      const docsSnap = await appSnap.ref.collection("documents").limit(500).get();
-      const paths = docsSnap.docs.map(doc => clean(doc.data().storagePath)).filter(Boolean);
+      const documentSnapshots = await getAllApplicationDocumentSnapshots(appSnap.ref);
+      const paths = documentSnapshots.map(doc => clean(doc.data().storagePath)).filter(Boolean);
       if (paths.length && !supabaseStorage) {
         console.warn("Expired application cleanup deferred: storage is not configured", appSnap.id);
         continue;
@@ -1591,9 +1607,12 @@ async function purgeExpiredApplicationData() {
         console.error("Expired application file cleanup deferred:", appSnap.id, storageError.message);
         continue;
       }
-      const batch = db.batch();
-      docsSnap.docs.forEach(doc => batch.delete(doc.ref));
-      batch.update(appSnap.ref, {
+      for (let i = 0; i < documentSnapshots.length; i += 400) {
+        const batch = db.batch();
+        documentSnapshots.slice(i, i + 400).forEach(doc => batch.delete(doc.ref));
+        await batch.commit();
+      }
+      await appSnap.ref.update({
         applicant: admin.firestore.FieldValue.delete(),
         answers: admin.firestore.FieldValue.delete(),
         reviewNotes: admin.firestore.FieldValue.delete(),
@@ -1602,8 +1621,7 @@ async function purgeExpiredApplicationData() {
         personalDataPurgedAt: now(),
         updatedAt: now()
       });
-      await batch.commit();
-      console.log("Expired application personal data purged:", appSnap.id, "files:", docsSnap.size);
+      console.log("Expired application personal data purged:", appSnap.id, "files:", documentSnapshots.length);
     }
   } catch (error) {
     console.error("Scheduled personal-data cleanup failed:", error.message);
