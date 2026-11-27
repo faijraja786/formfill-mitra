@@ -913,7 +913,7 @@ function renderApplications(){
 
 
                         ${
-                            app.personalDataPurged === true || status === "completed"
+                            app.personalDataPurged === true
                             ? ""
                             : `<button class="btn-secondary" onclick="completeSubmission('${escapeHTML(app.id)}')">I submitted on official portal — delete server data</button>`
                         }
