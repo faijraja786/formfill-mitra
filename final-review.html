@@ -1147,7 +1147,6 @@ async function completeReview(){
                 method: "POST",
                 body: JSON.stringify({
                     formId,
-                    clientId: localStorage.getItem("currentClientId") || null,
                     applicant: {
                         fullName: applicant.fullName || applicant.name || "",
                         email: applicant.email || "",
