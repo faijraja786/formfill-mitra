@@ -1048,7 +1048,7 @@ textarea{
 let backendForms = [];
 function getForms(){ return backendForms; }
 window.ffmSetAdminForms = function(forms){
-    backendForms = Array.isArray(forms) ? forms : [];
+    backendForms = Array.isArray(forms) ? forms.filter(form => form.status !== "archived") : [];
     renderForms();
     updateStats();
 };
@@ -1753,7 +1753,7 @@ function editForm(index){
     document.getElementById(
         "formLink"
     ).value =
-        form.link || "";
+        form.officialLink || form.link || "";
 
 
     document.getElementById(
@@ -2301,7 +2301,6 @@ loadSubscription();
 import { auth } from "./firebase-init.js";
 import { onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-auth.js";
 import { bootstrapProfile, apiRequest } from "./api-client.js";
-window.ffmApiRequest = apiRequest;
 window.ffmApiRequest = apiRequest;
 const ADMIN_EMAIL="faijraja28@gmail.com";
 window.__ffmAdminSignOut=async()=>{await signOut(auth);["isLoggedIn","loginType","ffm_admin_user"].forEach(key=>localStorage.removeItem(key));window.location.replace("personal-login.html");};
