@@ -12,13 +12,13 @@
 <body>
 <header style="padding:16px 22px"><strong>FormFill <span style="color:#1769e8">Mitra</span></strong></header>
 <main class="page">
-<div class="head"><div><h1>My Account · My Documents</h1><p class="muted">Save your documents securely once and reuse only the documents required for each Personal application.</p></div><button class="btn" type="button" onclick="goBack()">← Dashboard</button></div>
+<div class="head"><div><h1>My Account · My Documents</h1><p class="muted">Save documents in this browser and reuse only the files required for each Personal application. They do not sync to other devices</p></div><button class="btn" type="button" onclick="goBack()">← Dashboard</button></div>
 <section class="panel">
 <h2>Save a document</h2><p class="muted" style="margin:8px 0 16px">Upload only documents you have and may need. Each file is private to your account. PDF, JPG, PNG and WEBP · up to 10 MB.</p>
 <form id="uploadForm"><div class="upload-grid">
 <div class="field"><label for="documentKey">Document type</label><select id="documentKey" required><option value="identity_proof">Identity Proof</option><option value="address_proof">Address Proof</option><option value="photograph">Photograph</option><option value="signature">Signature</option><option value="education">Education Document</option><option value="caste_certificate">Caste Certificate</option><option value="income_proof">Income Supporting Document</option><option value="other">Other Supporting Document</option></select></div>
 <div class="field"><label for="documentFile">Choose file</label><input id="documentFile" type="file" accept=".pdf,.jpg,.jpeg,.png,.webp,application/pdf,image/jpeg,image/png,image/webp" required></div></div>
-<div class="notice">Before saving, confirm that this is your document and you want it stored in your private account vault. Do not save another person's documents here.</div>
+<div class="notice">Files stay in this browser's IndexedDB and are not uploaded to Form Fill Mitra unless you select them for an application and consent at final review. Clearing browser/site data or changing devices can remove them. They are not encrypted by your account password; avoid shared devices and save only documents you are allowed to use</div>
 <div style="margin-top:15px"><button class="primary" id="saveBtn" type="submit">Save Document Securely</button></div><div id="status" class="status" role="status"></div></form>
 </section>
 <section class="panel"><div class="head" style="margin-bottom:14px"><div><h2>Saved documents</h2><p class="muted">Use the latest valid document and review it before each application.</p></div><div style="display:flex;gap:8px;flex-wrap:wrap"><button class="btn" id="migrateBtn" type="button">Import old server documents & delete server copies</button><button class="btn" id="refreshBtn" type="button">Refresh</button></div></div><div id="docList" class="doc-list"><div class="empty">Loading saved documents…</div></div></section>
