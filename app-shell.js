@@ -13,9 +13,10 @@
   const redirect = (url) => location.replace(url);
 
   try {
-    const [{ auth }, { onAuthStateChanged, signOut }] = await Promise.all([
+    const [{ auth }, { onAuthStateChanged, signOut }, { bootstrapProfile }] = await Promise.all([
       import("./firebase-init.js"),
-      import("https://www.gstatic.com/firebasejs/10.12.5/firebase-auth.js")
+      import("https://www.gstatic.com/firebasejs/10.12.5/firebase-auth.js"),
+      import("./api-client.js")
     ]);
     const user = await new Promise(resolve => {
       const unsubscribe = onAuthStateChanged(auth, value => {
@@ -31,9 +32,25 @@
       return;
     }
 
-    const isAdmin = (user.email || "").trim().toLowerCase() === "faijraja28@gmail.com";
-    const role = isAdmin ? "admin" : savedRole === "professional" ? "professional" : "personal";
-    const adminOnly = new Set(["ai-assistant.html"]);
+    let profile;
+    try {
+      const bootstrap = await bootstrapProfile(savedRole, user.displayName || "");
+      profile = bootstrap.profile;
+    } catch (error) {
+      console.error("Workspace profile verification failed:", error);
+      clearLocalSession();
+      redirect(loginPage);
+      return;
+    }
+    const role = String(profile && profile.role || "").toLowerCase();
+    if (!["admin", "professional", "personal", "staff"].includes(role) || profile.status === "disabled") {
+      await signOut(auth).catch(() => {});
+      clearLocalSession();
+      redirect(loginPage);
+      return;
+    }
+    const isAdmin = role === "admin";
+    const adminOnly = new Set(["ai-assistant.html", "staff-management.html", "task-management.html"]);
     const personalOnly = new Set(["document-vault.html", "profile.html"]);
     if (page === "form-catalog.html" && role === "admin") { redirect("form-management.html"); return; }
     if (page === "subscription.html" && role === "admin") { redirect("subscription-management.html"); return; }
@@ -56,7 +73,7 @@
     const links = role === "admin"
       ? [["Dashboard","admin-panel.html"],["Form Management","form-management.html"],["Subscription & Payment","subscription-management.html"],["Staff Management","staff-management.html"],["Task Management","task-management.html"],["Activity Monitoring","activity-monitoring.html"],["AI Assistant","ai-assistant.html"]]
       : role === "professional"
-        ? [["Dashboard","professional-dashboard.html"],["Applications","my-applications.html"],["Task Management","task-management.html"],["Staff Management","staff-management.html"],["Activity Monitoring","activity-monitoring.html"],["Browse Forms","form-catalog.html"],["Subscription","subscription.html"]]
+        ? [["Dashboard","professional-dashboard.html"],["Applications","my-applications.html"],["Activity Monitoring","activity-monitoring.html"],["Browse Forms","form-catalog.html"],["Subscription","subscription.html"]]
         : [["Dashboard","personal-dashboard.html"],["My Applications","my-applications.html"],["Document Vault","document-vault.html"],["My Profile","profile.html"],["Browse Forms","form-catalog.html"],["Subscription","subscription.html"]];
 
     const header = document.querySelector("header") || (() => {
