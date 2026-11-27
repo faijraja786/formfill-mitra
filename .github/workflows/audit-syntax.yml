@@ -50,6 +50,10 @@ jobs:
               "task-management.html": ["apiRequest(\"/api/applications\")", "apiRequest(\"/api/tasks\")", "applicationId", "staffUid"],
               "profile.html": ["apiRequest(\"/api/me\")", "method:\"PATCH\""],
               "activity-monitoring.html": ["apiRequest(\"/api/activity\")", "refreshActivity"],
+              "admin-panel.html": ["window.ffmApiRequest = apiRequest", "/api/forms", "/api/admin/subscription-settings"],
+              "subscription.html": ["apiRequest(\"/api/subscription-settings\")"],
+              "subscription-management.html": ["apiRequest(\"/api/subscription-settings\")", "/api/admin/subscription-settings"],
+              "api-client.js": ["onAuthStateChanged(auth", "getIdToken()"],
               "server.js": ['app.get("/api/tasks"', 'app.post("/api/tasks"', 'app.patch("/api/tasks/:id"', 'app.delete("/api/tasks/:id"']
           }
           failed = False
@@ -64,6 +68,17 @@ jobs:
                   print(f"FAIL {filename}: legacy browser-only data storage remains")
               if not failed:
                   print(f"PASS {filename}")
+          admin = Path("admin-panel.html").read_text(encoding="utf-8")
+          if 'localStorage.getItem("ffm_admin_forms")' in admin or 'localStorage.setItem(\n        "ffm_admin_forms"' in admin:
+              failed = True
+              print("FAIL admin-panel.html: legacy local-only form catalogue remains")
+          if 'localStorage.getItem("ffm_subscription_settings")' in admin:
+              failed = True
+              print("FAIL admin-panel.html: legacy local-only subscription settings remain")
+          sub_admin = Path("subscription-management.html").read_text(encoding="utf-8")
+          if "localStorage" in sub_admin:
+              failed = True
+              print("FAIL subscription-management.html: browser-only settings remain")
           if failed:
               sys.exit(1)
           PY
