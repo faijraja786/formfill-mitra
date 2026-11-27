@@ -1217,7 +1217,7 @@ async function completeReview(){
         );
         const isPAN = selectedForm && /pan/i.test((selectedForm.id || "") + " " + (selectedForm.name || ""));
         const portal = isPAN ? "https://www.pan.utiitsl.com/panonline_website/redirect/formLanding" : (selectedForm.officialLink || selectedForm.link);
-        if (portal) setTimeout(() => window.open(portal, "_blank", "noopener,noreferrer"), 900);
+        if (portal) { if (isPAN) { window.location.assign(portal); } else { window.open(portal, "_blank", "noopener,noreferrer"); } }
     } catch (error) {
         console.error("Application submission failed:", error);
         showStatus(error.message || "Application could not be submitted. Please try again.", "error");
