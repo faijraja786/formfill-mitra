@@ -1190,7 +1190,7 @@ app.post("/api/ocr/image", ocrLimiter, requireUser, requireProfile, upload.singl
   const prompt = [
     "Extract only the requested applicant fields from this document for a form-preparation draft.",
     "Document category: " + documentLabel + ".",
-    "Return ONLY compact valid JSON: {\\"fields\\":{...}}. Use the exact requested field keys; omit values not clearly visible or set them to null.",
+    "Return ONLY compact valid JSON: {\"fields\":{...}}. Use the exact requested field keys; omit values not clearly visible or set them to null.",
     "Read Hindi and English. Copy names and values faithfully. Never guess or invent.",
     "For DOB, use only a clearly labeled date of birth (जन्म तिथि); never use issue, print, or expiry dates. Return dates as YYYY-MM-DD only when unambiguous.",
     "Return phone numbers as digits. Include sensitive ID numbers only when a requested field explicitly asks for that exact number.",
