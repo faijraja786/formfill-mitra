@@ -495,79 +495,94 @@ async function startOCR(){
     }
 
     try{
-        for(let i = 0; i < keys.length; i++){
-            const key = keys[i];
-            const fileRecord = await getDocument(key);
-            if(!fileRecord){
-                ocrResults[key] = {
-                    name: uploadedDocuments[key] && uploadedDocuments[key].name || key,
-                    status: "manual",
-                    text: "The saved file could not be found in this browser. Go back, upload the document again, and retry."
-                };
-                continue;
+        // Process two documents at a time instead of waiting for each AI request serially.
+        // Keep each document independent so one unreadable file does not stop the rest.
+        let nextIndex = 0;
+        let completed = 0;
+        async function processNextDocument(){
+            while(true){
+                const i = nextIndex++;
+                if(i >= keys.length) return;
+                const key = keys[i];
+                let fileName = uploadedDocuments[key] && uploadedDocuments[key].name || key;
+                try{
+                    const fileRecord = await getDocument(key);
+                    if(!fileRecord){
+                        ocrResults[key] = {
+                            name: fileName,
+                            status: "manual",
+                            text: "The saved file could not be found in this browser. Go back, upload the document again, and retry."
+                        };
+                    }else{
+                        fileName = fileRecord.name || fileName;
+                        const file = fileRecord.file;
+                        const extension = String(fileRecord.name || "").split(".").pop().toLowerCase();
+                        const mimeByExtension = {jpg:"image/jpeg",jpeg:"image/jpeg",png:"image/png",webp:"image/webp",pdf:"application/pdf"};
+                        const expectedMime = mimeByExtension[extension] || "";
+                        const supportedMime = ["image/jpeg","image/png","image/webp","application/pdf"].includes(file && file.type);
+                        if(!file || (!supportedMime && !expectedMime)){
+                            ocrResults[key] = {
+                                name: fileName,
+                                status: "manual",
+                                text: "This file type is not supported for AI reading. Use a PDF, JPG, PNG, or WEBP file, or enter details manually."
+                            };
+                        }else{
+                            setProgress(Math.round((completed / keys.length) * 90), "Reading " + fileName + "...");
+                            const token = await user.getIdToken();
+                            const formData = new FormData();
+                            const uploadFile = file.type === expectedMime || !expectedMime
+                                ? file
+                                : new File([file], fileRecord.name, { type: expectedMime });
+                            formData.append("document", uploadFile, fileRecord.name);
+                            formData.append("aiConsent", "true");
+                            formData.append("documentLabel", String(uploadedDocuments[key]?.documentLabel || uploadedDocuments[key]?.documentKey || "Uploaded document").slice(0,120));
+                            formData.append("formFields", JSON.stringify(
+                                (Array.isArray(selectedForm.fields) ? selectedForm.fields : [])
+                                    .slice(0, 150)
+                                    .map(field => ({ key: field.key || field.name || "", label: field.label || field.name || "", type: field.type || "text" }))
+                            ));
+                            const response = await fetch(API_BASE + "/api/ocr/image", {
+                                method: "POST",
+                                headers: { Authorization: "Bearer " + token },
+                                body: formData
+                            });
+                            const payload = await response.json().catch(() => ({}));
+                            if(!response.ok){
+                                const message = payload.error || "AI service could not process this document.";
+                                ocrResults[key] = {
+                                    name: fileName,
+                                    status: "manual",
+                                    text: message + " Please enter the details manually or contact the site administrator."
+                                };
+                            }else{
+                                ocrResults[key] = {
+                                    name: fileName,
+                                    status: "success",
+                                    text: payload.text || "",
+                                    extracted: payload.extracted && typeof payload.extracted === "object" ? payload.extracted : {},
+                                    confidence: payload.confidence ?? null,
+                                    reviewRequired: true
+                                };
+                            }
+                        }
+                    }
+                }catch(documentError){
+                    console.error("AI reading failed for one document:", fileName, documentError);
+                    ocrResults[key] = {
+                        name: fileName,
+                        status: "manual",
+                        text: "AI could not read this file right now. Please enter its details manually or retry AI reading."
+                    };
+                }finally{
+                    completed++;
+                    setProgress(
+                        Math.round((completed / keys.length) * 90),
+                        "Processed " + completed + " of " + keys.length + " document(s)"
+                    );
+                }
             }
-
-            const percent = Math.round((i / keys.length) * 90);
-            setProgress(percent, "Preparing " + fileRecord.name + "...");
-
-            const file = fileRecord.file;
-            const extension = String(fileRecord.name || "").split(".").pop().toLowerCase();
-            const mimeByExtension = {jpg:"image/jpeg",jpeg:"image/jpeg",png:"image/png",webp:"image/webp",pdf:"application/pdf"};
-            const expectedMime = mimeByExtension[extension] || "";
-            const supportedMime = ["image/jpeg","image/png","image/webp","application/pdf"].includes(file && file.type);
-            if(!file || (!supportedMime && !expectedMime)){
-                ocrResults[key] = {
-                    name: fileRecord.name,
-                    status: "manual",
-                    text: "This file type is not supported for AI reading. Use a PDF, JPG, PNG, or WEBP file, or enter details manually."
-                };
-                continue;
-            }
-
-            const token = await user.getIdToken();
-            const formData = new FormData();
-            const uploadFile = file.type === expectedMime || !expectedMime
-                ? file
-                : new File([file], fileRecord.name, { type: expectedMime });
-            formData.append("document", uploadFile, fileRecord.name);
-            formData.append("aiConsent", "true");
-            formData.append("documentLabel", String(uploadedDocuments[key]?.documentLabel || uploadedDocuments[key]?.documentKey || "Uploaded document").slice(0,120));
-            formData.append("formFields", JSON.stringify(
-                (Array.isArray(selectedForm.fields) ? selectedForm.fields : [])
-                    .slice(0, 150)
-                    .map(field => ({ key: field.key || field.name || "", label: field.label || field.name || "", type: field.type || "text" }))
-            ));
-
-            const response = await fetch(API_BASE + "/api/ocr/image", {
-                method: "POST",
-                headers: { Authorization: "Bearer " + token },
-                body: formData
-            });
-
-            const payload = await response.json().catch(() => ({}));
-            if(!response.ok){
-                const message = payload.error || "AI service could not process this document.";
-                ocrResults[key] = {
-                    name: fileRecord.name,
-                    status: "manual",
-                    text: message + " Please enter the details manually or contact the site administrator."
-                };
-            }else{
-                ocrResults[key] = {
-                    name: fileRecord.name,
-                    status: "success",
-                    text: payload.text || "",
-                    extracted: payload.extracted && typeof payload.extracted === "object" ? payload.extracted : {},
-                    confidence: payload.confidence ?? null,
-                    reviewRequired: true
-                };
-            }
-
-            setProgress(
-                Math.round(((i + 1) / keys.length) * 90),
-                "Processed " + fileRecord.name
-            );
         }
+        await Promise.all(Array.from({length: Math.min(2, keys.length)}, () => processNextDocument()));
 
         localStorage.setItem("ocrResults", JSON.stringify(ocrResults));
         localStorage.setItem("ocrCompleted", "true");
