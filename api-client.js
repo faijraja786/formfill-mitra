@@ -1,9 +1,16 @@
 import { auth } from "./firebase-init.js";
+import { onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-auth.js";
 
 export const API_BASE = "https://form-fill-mitra-api.onrender.com";
 
 export async function apiRequest(path, options = {}) {
-  const user = auth.currentUser;
+  const user = auth.currentUser || await new Promise(resolve => {
+    let unsubscribe = () => {};
+    unsubscribe = onAuthStateChanged(auth, currentUser => {
+      unsubscribe();
+      resolve(currentUser);
+    }, () => resolve(null));
+  });
   if (!user) throw new Error("Please sign in again.");
   const token = await user.getIdToken();
   const headers = new Headers(options.headers || {});
