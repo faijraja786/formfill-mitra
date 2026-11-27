@@ -905,33 +905,60 @@ app.post("/api/tasks", requireUser, requireProfile, requireRole("admin"), async 
   if (!applicationId || !staffUid) return fail(res, 400, "Choose an application and an active staff account.");
   try {
     const appRef = db.collection("applications").doc(applicationId);
-    const [appSnap, staffSnap] = await Promise.all([
-      appRef.get(),
-      db.collection("profiles").doc(staffUid).get()
-    ]);
-    if (!appSnap.exists) return fail(res, 404, "Application not found. Refresh the application list.");
-    if (!staffSnap.exists || staffSnap.data().role !== "staff" || staffSnap.data().status !== "active") return fail(res, 400, "Active staff account not found.");
-    const application = safeDoc(appSnap);
-    const active = await db.collection("applicationTasks")
-      .where("applicationId", "==", applicationId)
-      .where("status", "in", ["Pending", "Processing"]).limit(1).get();
-    if (!active.empty) return fail(res, 409, "This application already has an active task.");
-    const staffActive = await db.collection("applicationTasks")
-      .where("staffUid", "==", staffUid)
-      .where("status", "in", ["Pending", "Processing"]).limit(1).get();
-    if (!staffActive.empty) return fail(res, 409, "This staff member already has an active task.");
-    const data = {
-      applicationId, applicantName: clean(application.applicant && application.applicant.fullName) || "Applicant",
-      formName: clean(application.formName) || "Application",
-      staffUid, staffName: clean(staffSnap.data().name) || clean(staffSnap.data().email),
-      staffEmail: clean(staffSnap.data().email), note,
-      status: "Pending", createdBy: req.user.uid, createdAt: now(), updatedAt: now()
-    };
-    const ref = await db.collection("applicationTasks").add(data);
-    await appRef.update({ assignedStaffId: staffUid, assignedStaffEmail: data.staffEmail, updatedAt: now() });
-    await writeAudit(req.profile, "task.created", "application_task", ref.id, { applicationId, staffUid });
-    return res.status(201).json({ task: { id: ref.id, ...data } });
+    const staffRef = db.collection("profiles").doc(staffUid);
+    const taskRef = db.collection("applicationTasks").doc();
+    const data = await db.runTransaction(async transaction => {
+      const [appSnap, staffSnap, appTasksSnap, staffTasksSnap] = await Promise.all([
+        transaction.get(appRef),
+        transaction.get(staffRef),
+        transaction.get(db.collection("applicationTasks").where("applicationId", "==", applicationId)),
+        transaction.get(db.collection("applicationTasks").where("staffUid", "==", staffUid))
+      ]);
+      if (!appSnap.exists) {
+        const error = new Error("Application not found. Refresh the application list.");
+        error.code = "APPLICATION_NOT_FOUND";
+        throw error;
+      }
+      if (!staffSnap.exists || staffSnap.data().role !== "staff" || staffSnap.data().status !== "active") {
+        const error = new Error("Active staff account not found.");
+        error.code = "STAFF_NOT_ACTIVE";
+        throw error;
+      }
+      const active = snap => snap.docs.some(doc => ["Pending", "Processing"].includes(doc.data().status));
+      if (active(appTasksSnap)) {
+        const error = new Error("This application already has an active task.");
+        error.code = "APPLICATION_TASK_ACTIVE";
+        throw error;
+      }
+      if (active(staffTasksSnap)) {
+        const error = new Error("This staff member already has an active task.");
+        error.code = "STAFF_TASK_ACTIVE";
+        throw error;
+      }
+      const application = safeDoc(appSnap);
+      const staff = staffSnap.data();
+      const task = {
+        applicationId,
+        applicantName: clean(application.applicant && application.applicant.fullName) || "Applicant",
+        formName: clean(application.formName) || "Application",
+        staffUid,
+        staffName: clean(staff.name) || clean(staff.email),
+        staffEmail: clean(staff.email),
+        note,
+        status: "Pending",
+        createdBy: req.user.uid,
+        createdAt: now(),
+        updatedAt: now()
+      };
+      transaction.create(taskRef, task);
+      transaction.update(appRef, { assignedStaffId: staffUid, assignedStaffEmail: task.staffEmail, updatedAt: now() });
+      return task;
+    });
+    await writeAudit(req.profile, "task.created", "application_task", taskRef.id, { applicationId, staffUid });
+    return res.status(201).json({ task: { id: taskRef.id, ...data } });
   } catch (error) {
+    if (["APPLICATION_NOT_FOUND", "STAFF_NOT_ACTIVE"].includes(error.code)) return fail(res, 400, error.message);
+    if (["APPLICATION_TASK_ACTIVE", "STAFF_TASK_ACTIVE"].includes(error.code)) return fail(res, 409, error.message);
     console.error("Task create failed:", error.message);
     return fail(res, 500, "Could not create the task.");
   }
