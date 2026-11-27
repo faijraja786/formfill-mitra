@@ -665,6 +665,7 @@ app.post("/api/applications", requireUser, requireProfile, async (req, res) => {
       },
       answers,
       status: "preparation", assignedStaffId: null,
+      personalDataExpiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(),
       createdAt: now(), updatedAt: now()
     };
     if (req.profile.role === "staff") return fail(res, 403, "Staff cannot create unassigned applications.");
@@ -1571,5 +1572,55 @@ app.use((error, _req, res, _next) => {
   console.error("Request failed:", error.message);
   return fail(res, 400, "Request could not be processed.");
 });
+
+// Temporary applicant data expires after 7 days if the user abandons an application.
+// Run at startup and periodically; the next startup catches missed runs after restarts.
+async function purgeExpiredApplicationData() {
+  if (!db) return;
+  const cutoff = Date.now();
+  try {
+    const snap = await db.collection("applications").limit(1000).get();
+    for (const appSnap of snap.docs) {
+      const data = appSnap.data() || {};
+      if (data.personalDataPurged === true) continue;
+      const expiresAt = Date.parse(data.personalDataExpiresAt || "") ||
+        (Date.parse(data.createdAt || "") ? Date.parse(data.createdAt) + 7 * 24 * 60 * 60 * 1000 : 0);
+      if (!expiresAt || expiresAt > cutoff) continue;
+      const docsSnap = await appSnap.ref.collection("documents").limit(500).get();
+      const paths = docsSnap.docs.map(doc => clean(doc.data().storagePath)).filter(Boolean);
+      if (paths.length && !supabaseStorage) {
+        console.warn("Expired application cleanup deferred: storage is not configured", appSnap.id);
+        continue;
+      }
+      try {
+        for (let i = 0; i < paths.length; i += 100) {
+          const { error } = await supabaseStorage.storage.from("applicant-documents").remove(paths.slice(i, i + 100));
+          if (error) throw error;
+        }
+      } catch (storageError) {
+        console.error("Expired application file cleanup deferred:", appSnap.id, storageError.message);
+        continue;
+      }
+      const batch = db.batch();
+      docsSnap.docs.forEach(doc => batch.delete(doc.ref));
+      batch.update(appSnap.ref, {
+        applicant: admin.firestore.FieldValue.delete(),
+        answers: admin.firestore.FieldValue.delete(),
+        reviewNotes: admin.firestore.FieldValue.delete(),
+        personalDataPurged: true,
+        personalDataExpired: true,
+        personalDataPurgedAt: now(),
+        updatedAt: now()
+      });
+      await batch.commit();
+      console.log("Expired application personal data purged:", appSnap.id, "files:", docsSnap.size);
+    }
+  } catch (error) {
+    console.error("Scheduled personal-data cleanup failed:", error.message);
+  }
+}
+
+setTimeout(() => purgeExpiredApplicationData().catch(error => console.error("Startup cleanup failed:", error.message)), 15000);
+setInterval(() => purgeExpiredApplicationData().catch(error => console.error("Periodic cleanup failed:", error.message)), 6 * 60 * 60 * 1000);
 
 app.listen(PORT, "0.0.0.0", () => console.log(`Form Fill Mitra API listening on port ${PORT}`));
