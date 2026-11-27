@@ -1000,6 +1000,39 @@ app.delete("/api/tasks/:id", requireUser, requireProfile, requireRole("admin"), 
   }
 });
 
+// Workspace subscription visibility settings. This does not process payments.
+const DEFAULT_SUBSCRIPTION_SETTINGS = { enabled: false, trialDays: 180 };
+app.get("/api/subscription-settings", requireUser, requireProfile, async (_req, res) => {
+  try {
+    const snap = await db.collection("subscriptionSettings").doc("workspace").get();
+    const saved = snap.exists ? snap.data() : {};
+    return res.json({ settings: {
+      enabled: saved.enabled === true,
+      trialDays: Number.isInteger(saved.trialDays) && saved.trialDays >= 1 && saved.trialDays <= 3650 ? saved.trialDays : DEFAULT_SUBSCRIPTION_SETTINGS.trialDays,
+      paymentsEnabled: false
+    }});
+  } catch (error) {
+    console.error("Subscription settings read failed:", error.message);
+    return fail(res, 500, "Could not load subscription settings.");
+  }
+});
+app.patch("/api/admin/subscription-settings", requireUser, requireProfile, requireRole("admin"), async (req, res) => {
+  const enabled = req.body && req.body.enabled;
+  const trialDays = Number(req.body && req.body.trialDays);
+  if (typeof enabled !== "boolean" || !Number.isInteger(trialDays) || trialDays < 1 || trialDays > 3650) {
+    return fail(res, 400, "Provide a valid enabled setting and a trial period from 1 to 3650 days.");
+  }
+  try {
+    const settings = { enabled, trialDays, paymentsEnabled: false, updatedAt: now(), updatedBy: req.user.uid };
+    await db.collection("subscriptionSettings").doc("workspace").set(settings, { merge: true });
+    await writeAudit(req.profile, "subscription.settings_updated", "subscription_settings", "workspace", { enabled, trialDays, paymentsEnabled: false });
+    return res.json({ settings: { enabled, trialDays, paymentsEnabled: false } });
+  } catch (error) {
+    console.error("Subscription settings update failed:", error.message);
+    return fail(res, 500, "Could not save subscription settings.");
+  }
+});
+
 app.get("/api/audit-logs", requireUser, requireProfile, requireRole("admin"), async (req, res) => {
   try {
     const snap = await db.collection("auditLogs").orderBy("createdAt", "desc").limit(300).get();
