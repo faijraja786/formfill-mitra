@@ -631,14 +631,7 @@ app.post("/api/applications", requireUser, requireProfile, async (req, res) => {
     const form = safeDoc(formSnap);
     const professionalId = req.profile.role === "professional" ? req.user.uid : null;
     const clientId = req.profile.role === "professional" ? clean(body.clientId) : "";
-    if (req.profile.role === "professional" && !clientId) return fail(res, 400, "Select a client before starting a Professional application.");
     if (req.profile.role === "personal" && clean(body.clientId)) return fail(res, 400, "Personal applications cannot be linked to Professional client records.");
-    if (clientId) {
-      const clientSnap = await db.collection("clients").doc(clientId).get();
-      if (!clientSnap.exists || clientSnap.data().professionalId !== req.user.uid) {
-        return fail(res, 403, "The selected client does not belong to your professional account.");
-      }
-    }
     const data = {
       formId, formName: form.name, formVersion: form.version || 1,
       formSnapshot: {
@@ -875,6 +868,24 @@ app.patch("/api/clients/:id", requireUser, requireProfile, requireRole("professi
     console.error("Client update failed:", error.message);
     return fail(res, 500, "Could not update client.");
   }
+});
+
+app.delete("/api/clients/:id", requireUser, requireProfile, requireRole("professional"), async (req, res) => {
+  try {
+    const ref = db.collection("clients").doc(req.params.id);
+    const snap = await ref.get();
+    if (!snap.exists || snap.data().professionalId !== req.user.uid) return fail(res, 404, "Client not found in your workspace.");
+    await ref.delete();
+    await writeAudit(req.profile, "client.deleted", "client", req.params.id, { localMigration: true });
+    return res.json({ ok: true });
+  } catch (error) {
+    console.error("Client deletion failed:", error.message);
+    return fail(res, 500, "Could not delete this client record.");
+  }
+});
+
+app.post("/api/clients", requireUser, requireProfile, requireRole("professional"), (_req, res) => {
+  return fail(res, 410, "Professional client records are now saved in your browser only. Use Clients & Applications to add clients locally.");
 });
 
 app.get("/api/staff", requireUser, requireProfile, requireRole("admin"), async (_req, res) => {
