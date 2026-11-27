@@ -55,7 +55,7 @@ jobs:
               "subscription-management.html": ["apiRequest(\"/api/subscription-settings\")", "/api/admin/subscription-settings"],
               "api-client.js": ["onAuthStateChanged(auth", "getIdToken()"],
               "document-vault.html": ["local-vault.js?v=privacy-local-1", "migrateBtn"],
-              "local-vault.js": ["indexedDB.open(DB_NAME, 1)", "personal-vault", "migrateServerVault"],
+              "local-vault.js": ["indexedDB.open(DB_NAME, 1)", "/api/my-documents", "migrateServerVault"],
               "form-details.html": ["localDocs(user.uid)", "selectedVaultDocumentIds"],
               "final-review.html": ["localRecord.file instanceof Blob", "selectedLocalDocs"],
               "server.js": ["personalDataExpiresAt", "purgeExpiredApplicationData", "req.body.confirmed !== true", "return fail(res, 410"] ,
