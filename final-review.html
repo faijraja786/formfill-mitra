@@ -961,7 +961,7 @@ function loadPortal(){
 
     const isPAN = selectedForm && /pan/i.test((selectedForm.id || "") + " " + (selectedForm.name || ""));
     if (isPAN) {
-        box.innerHTML = '<div class="warning"><strong>PAN application:</strong> Select the new PAN application for an Indian citizen (Form 93 if eligible). Choose the same card delivery option, review every detail, complete required verification yourself, and pay the fee directly on the provider page. FormFill Mitra does not collect the PAN fee or submit the government application.</div><a href="https://www.pan.utiitsl.com/panonline_website/redirect/formLanding" target="_blank" rel="noopener noreferrer">Continue to UTIITSL PAN application ↗</a><a href="https://tinpan.proteantech.in/services/pan/form-form_93-form_94.html" target="_blank" rel="noopener noreferrer">Protean Form 93 instructions / application ↗</a><p class="small">Current fees and delivery choices are displayed by the official provider. Do not apply for another PAN if one has already been allotted.</p>';
+        box.innerHTML = '<div class="warning"><strong>Individual PAN application:</strong> For an Indian individual, choose “New Application” and “Individual” on the official Protean page (Form 93 under the current rules). Do not choose a company/entity category. Review the details, complete verification, and pay only on the official provider website. FormFill Mitra cannot transfer your draft into that website or submit the government application.</div><a href="https://onlineservices.proteantech.in/paam/endUserRegisterContact.html" target="_blank" rel="noopener noreferrer">Open official Protean PAN application ↗</a><p class="small">The provider may ask you to enter the details again. Current fee is shown by the provider. Do not apply if a PAN has already been allotted.</p>';
         return;
     }
 
@@ -1216,7 +1216,7 @@ async function completeReview(){
             "success"
         );
         const isPAN = selectedForm && /pan/i.test((selectedForm.id || "") + " " + (selectedForm.name || ""));
-        const portal = isPAN ? "https://www.pan.utiitsl.com/panonline_website/redirect/formLanding" : (selectedForm.officialLink || selectedForm.link);
+        const portal = isPAN ? "https://onlineservices.proteantech.in/paam/endUserRegisterContact.html" : (selectedForm.officialLink || selectedForm.link);
         if (portal) { if (isPAN) { window.location.assign(portal); } else { window.open(portal, "_blank", "noopener,noreferrer"); } }
     } catch (error) {
         console.error("Application submission failed:", error);
