@@ -287,119 +287,14 @@ button{
         </p>
 
         <div class="grid">
-
             <div class="field">
-                <label>Staff Name</label>
-                <input
-                    type="text"
-                    id="staffName"
-                    placeholder="Optional display name">
+                <label>Staff Name (optional)</label>
+                <input type="text" id="staffName" maxlength="120" placeholder="Display name">
             </div>
-
-            <div class="field">
-                <label>Username (optional reference)</label>
-                <input
-                    type="text"
-                    id="username"
-                    placeholder="Enter username">
-            </div>
-
             <div class="field">
                 <label>Registered Account Email *</label>
-                <input
-                    type="email"
-                    id="email"
-                    placeholder="Verified account email">
+                <input type="email" id="email" required autocomplete="email" placeholder="Existing verified account email">
             </div>
-
-            <div class="field">
-                <label>Role</label>
-
-                <select id="role">
-                    <option value="Form Operator">
-                        Form Operator
-                    </option>
-
-                    <option value="Senior Operator">
-                        Senior Operator
-                    </option>
-
-                    <option value="Reviewer">
-                        Reviewer
-                    </option>
-                </select>
-            </div>
-
-            <div class="field full">
-
-                <label>Permissions</label>
-
-                <div class="permissions">
-
-                    <div class="permission">
-                        <label>
-                            <input
-                                type="checkbox"
-                                value="View Applications"
-                                class="permissionBox">
-                            View Applications
-                        </label>
-                    </div>
-
-                    <div class="permission">
-                        <label>
-                            <input
-                                type="checkbox"
-                                value="Create Applications"
-                                class="permissionBox">
-                            Create Applications
-                        </label>
-                    </div>
-
-                    <div class="permission">
-                        <label>
-                            <input
-                                type="checkbox"
-                                value="Upload Documents"
-                                class="permissionBox">
-                            Upload Documents
-                        </label>
-                    </div>
-
-                    <div class="permission">
-                        <label>
-                            <input
-                                type="checkbox"
-                                value="Process Forms"
-                                class="permissionBox">
-                            Process Forms
-                        </label>
-                    </div>
-
-                    <div class="permission">
-                        <label>
-                            <input
-                                type="checkbox"
-                                value="Review Applications"
-                                class="permissionBox">
-                            Review Applications
-                        </label>
-                    </div>
-
-                    <div class="permission">
-                        <label>
-                            <input
-                                type="checkbox"
-                                value="View Activity"
-                                class="permissionBox">
-                            View Activity
-                        </label>
-                    </div>
-
-                </div>
-
-            </div>
-
         </div>
 
         <button
@@ -445,7 +340,7 @@ let busy=false;
 const $=id=>document.getElementById(id);
 const esc=value=>String(value??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
 function goDashboard(){location.href="admin-panel.html";}
-function clearForm(){ $("staffName").value=""; $("username").value=""; $("email").value=""; $("role").value="Form Operator"; document.querySelectorAll(".permissionBox").forEach(x=>x.checked=false); }
+function clearForm(){ $("staffName").value=""; $("email").value=""; }
 async function loadStaff(){
   $("staffList").innerHTML='<div class="empty">Loading staff accounts…</div>';
   try{
