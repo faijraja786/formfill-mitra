@@ -1167,7 +1167,34 @@ async function completeReview(){
             localStorage.setItem("currentApplicationFormId", formId);
         }
 
-        if (vaultDocumentIds.length) { await apiRequest("/api/applications/" + encodeURIComponent(applicationId) + "/documents/from-vault", { method: "POST", body: JSON.stringify({ documentIds: vaultDocumentIds }) }); }
+        if (vaultDocumentIds.length) {
+            const selectedLocalDocs = getJSON("selectedVaultDocuments", []);
+            const existingVaultDocs = await apiRequest("/api/applications/" + encodeURIComponent(applicationId) + "/documents");
+            const existingKeys = new Set((existingVaultDocs.documents || []).map(doc => doc.documentKey));
+            const dbOpen = indexedDB.open("FormFillMitraDB", 1);
+            const localDB = await new Promise((resolve, reject) => {
+                dbOpen.onsuccess = () => resolve(dbOpen.result);
+                dbOpen.onerror = () => reject(dbOpen.error);
+            });
+            try {
+                for (const docId of vaultDocumentIds) {
+                    const meta = selectedLocalDocs.find(doc => String(doc.id) === String(docId));
+                    if (!meta || existingKeys.has(meta.documentKey)) continue;
+                    const localRecord = await new Promise((resolve, reject) => {
+                        const tx = localDB.transaction("documents", "readonly");
+                        const request = tx.objectStore("documents").get(docId);
+                        request.onsuccess = () => resolve(request.result);
+                        request.onerror = () => reject(request.error);
+                    });
+                    if (!localRecord || !(localRecord.file instanceof Blob)) throw new Error("Saved local document is missing. Open My Documents and verify the file.");
+                    const formData = new FormData();
+                    formData.append("document", localRecord.file, localRecord.name || meta.name || "document");
+                    formData.append("documentKey", String(meta.documentKey || localRecord.documentKey || "other"));
+                    await apiRequest("/api/applications/" + encodeURIComponent(applicationId) + "/documents", { method: "POST", body: formData });
+                    existingKeys.add(meta.documentKey);
+                }
+            } finally { localDB.close(); }
+        }
         localStorage.removeItem("currentApplicant");
         localStorage.removeItem("professionalApplicant");
 
