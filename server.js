@@ -1194,7 +1194,7 @@ app.post("/api/ocr/image", ocrLimiter, requireUser, requireProfile, upload.singl
     "Read Hindi and English. Copy names and values faithfully. Never guess or invent.",
     "For DOB, use only a clearly labeled date of birth (जन्म तिथि); never use issue, print, or expiry dates. Return dates as YYYY-MM-DD only when unambiguous.",
     "Return phone numbers as digits. Include sensitive ID numbers only when a requested field explicitly asks for that exact number.",
-    "Requested fields:\\n" + requestedFieldGuide
+    "Requested fields:\n" + requestedFieldGuide
   ].join("\n");
   try {
     const geminiResult = await requestGeminiDocumentWithFallback(apiKey, model, prompt, req.file);
