@@ -460,7 +460,7 @@ app.post("/api/admin/site-content/ai-draft", siteAiLimiter, requireUser, require
   const request = clean(req.body && req.body.request).slice(0, 1500);
   if (!request) return fail(res, 400, "Describe the website content change you want.");
   const current = sanitizeSiteContent(req.body && req.body.current);
-  const model = String(process.env.GEMINI_MODEL || "gemini-3.8-flash").trim();
+  const model = String(process.env.GEMINI_OCR_MODEL || "gemini-3.5-flash-lite").trim();
   const prompt = [
     "You are an editor for Form Fill Mitra's homepage text only.",
     "Return a single JSON object containing exactly these keys and string values: " + SITE_CONTENT_KEYS.join(", "),
@@ -1125,35 +1125,27 @@ app.delete("/api/applications/:id/documents/:documentId", requireUser, requirePr
 });
 
 async function requestGeminiDocumentWithFallback(apiKey, primaryModel, prompt, file) {
-  const fallbackModel = String(process.env.GEMINI_FALLBACK_MODEL || "gemini-3.5-flash-lite").trim();
+  const fallbackModel = String(process.env.GEMINI_OCR_FALLBACK_MODEL || process.env.GEMINI_FALLBACK_MODEL || "gemini-3.8-flash").trim();
   const models = [...new Set([String(primaryModel || "").trim(), fallbackModel].filter(Boolean))];
   let lastResponse = null;
   let lastModel = models[0] || primaryModel;
+  // One request per model: avoid fixed retry sleeps that make an already slow OCR flow slower.
   for (const modelName of models) {
     lastModel = modelName;
-    for (let attempt = 0; attempt < 2; attempt++) {
-      const response = await fetch("https://generativelanguage.googleapis.com/v1beta/models/" + encodeURIComponent(modelName) + ":generateContent", {
-        method: "POST",
-        headers: { "Content-Type": "application/json", "x-goog-api-key": apiKey },
-        body: JSON.stringify({
-          contents: [{ role: "user", parts: [
-            { text: prompt },
-            { inlineData: { mimeType: file.mimetype, data: file.buffer.toString("base64") } }
-          ]}],
-          generationConfig: { responseMimeType: "application/json", temperature: 0.1, maxOutputTokens: 3000 }
-        })
-      });
-      lastResponse = response;
-      if (response.ok) return { response, modelUsed: modelName };
-      // 503 is transient; retry once, then try the fallback model.
-      if (response.status === 503 && attempt === 0) {
-        await new Promise(resolve => setTimeout(resolve, 1200));
-        continue;
-      }
-      // Quota/rate errors may be model-specific, so try the configured fallback.
-      if (response.status === 429 || response.status === 503) break;
-      return { response, modelUsed: modelName };
-    }
+    const response = await fetch("https://generativelanguage.googleapis.com/v1beta/models/" + encodeURIComponent(modelName) + ":generateContent", {
+      method: "POST",
+      headers: { "Content-Type": "application/json", "x-goog-api-key": apiKey },
+      body: JSON.stringify({
+        contents: [{ role: "user", parts: [
+          { text: prompt },
+          { inlineData: { mimeType: file.mimetype, data: file.buffer.toString("base64") } }
+        ]}],
+        generationConfig: { responseMimeType: "application/json", temperature: 0, maxOutputTokens: 1200, thinkingConfig: { thinkingLevel: "LOW" } }
+      })
+    });
+    lastResponse = response;
+    if (response.ok) return { response, modelUsed: modelName };
+    if (response.status !== 429 && response.status !== 503) return { response, modelUsed: modelName };
   }
   return { response: lastResponse, modelUsed: lastModel };
 }
@@ -1196,18 +1188,14 @@ app.post("/api/ocr/image", ocrLimiter, requireUser, requireProfile, upload.singl
   const requestedFieldGuide = requestedFields.map(field => field.key + " = " + field.label + " (type: " + field.type + ")").join("\n");
   const documentLabel = clean(req.body && req.body.documentLabel).slice(0, 120) || "Uploaded document";
   const prompt = [
-    "You are reading an applicant's document image for a form-preparation website.",
-    "Document category supplied by the applicant: " + documentLabel + ".",
-    "If this is an identity proof, identity card, age proof, or date-of-birth proof, carefully inspect it for a clearly labeled DOB / Date of Birth / जन्म तिथि and map that value to the requested dob field. Do not mistake issue date, print date, or expiry date for DOB.",
-    "Return ONLY valid JSON with keys rawText and fields. fields must be a JSON object, not an array, and use the exact requested field keys.",
-    "rawText: transcribe readable text faithfully in its original language, but redact Aadhaar/PAN and other long government ID numbers as [REDACTED] unless a requested form field specifically asks for that exact value.",
-    "fields: include common keys fullName, fatherName, motherName, dob, gender, mobile, email, state, district, villageCity, pin, address, category, rollNumber, passingYear, education, plus every exact requested form field key listed below.",
-    "Requested form fields (extract only values clearly present in the image):\n" + requestedFieldGuide,
-    "Return values even when the document language is Hindi or another language; keep names and values as written, but map them to the requested English field keys. Use null for values not clearly visible. Do not guess, infer, or fabricate personal information.",
-    "For dob and any requested date field, return YYYY-MM-DD only when the date is clearly legible; otherwise null. Do not confuse issue/expiry dates with date of birth.",
-    "For mobile return digits only; for pin return a 6-digit string only if clearly legible.",
-    "Extract sensitive ID numbers only if an exact requested field asks for them and the user has consented to AI reading. Never include unrelated ID numbers."
-  ].join("\n");
+    "Extract only the requested applicant fields from this document for a form-preparation draft.",
+    "Document category: " + documentLabel + ".",
+    "Return ONLY compact valid JSON: {\\"fields\\":{...}}. Use the exact requested field keys; omit values not clearly visible or set them to null.",
+    "Read Hindi and English. Copy names and values faithfully. Never guess or invent.",
+    "For DOB, use only a clearly labeled date of birth (जन्म तिथि); never use issue, print, or expiry dates. Return dates as YYYY-MM-DD only when unambiguous.",
+    "Return phone numbers as digits. Include sensitive ID numbers only when a requested field explicitly asks for that exact number.",
+    "Requested fields:\\n" + requestedFieldGuide
+  ].join("\\n");
   try {
     const geminiResult = await requestGeminiDocumentWithFallback(apiKey, model, prompt, req.file);
     const response = geminiResult.response;
@@ -1340,7 +1328,7 @@ app.post("/api/ocr/image", ocrLimiter, requireUser, requireProfile, upload.singl
       console.error("Gemini document extraction returned an empty result", { model, responseKeys: Object.keys(parsed).slice(0, 20) });
       return fail(res, 502, "AI could not detect readable details in this image. Try a clearer, full-page image or enter details manually.");
     }
-    await writeAudit(req.profile, "ai_document_extraction.completed", "document_image", null, { mimeType: req.file.mimetype, size: req.file.size, model: modelUsed, extractedFieldCount: extractedCount, textLength: text.length, requestedFieldCount: requestedFields.length });
+    writeAudit(req.profile, "ai_document_extraction.completed", "document_image", null, { mimeType: req.file.mimetype, size: req.file.size, model: modelUsed, extractedFieldCount: extractedCount, textLength: text.length, requestedFieldCount: requestedFields.length }).catch(error => console.error("AI extraction audit write failed:", error.message));
     return res.status(200).json({ text, extracted: safeFields, confidence: null, reviewRequired: true, message: "AI reading completed. Review and correct every suggested field before continuing." });
   } catch (error) {
     console.error("Gemini document extraction request failed:", error.message);
