@@ -460,7 +460,7 @@ app.post("/api/admin/site-content/ai-draft", siteAiLimiter, requireUser, require
   const request = clean(req.body && req.body.request).slice(0, 1500);
   if (!request) return fail(res, 400, "Describe the website content change you want.");
   const current = sanitizeSiteContent(req.body && req.body.current);
-  const model = String(process.env.GEMINI_OCR_MODEL || "gemini-3.5-flash-lite").trim();
+  const model = String(process.env.GEMINI_MODEL || "gemini-3.8-flash").trim();
   const prompt = [
     "You are an editor for Form Fill Mitra's homepage text only.",
     "Return a single JSON object containing exactly these keys and string values: " + SITE_CONTENT_KEYS.join(", "),
@@ -1167,7 +1167,7 @@ app.post("/api/ocr/image", ocrLimiter, requireUser, requireProfile, upload.singl
   if (req.body && req.body.aiConsent !== "true") return fail(res, 400, "Please confirm consent before sending this image to Google Gemini AI.");
   const apiKey = String(process.env.GEMINI_API_KEY || "").trim();
   if (!apiKey) return fail(res, 503, "AI document reading is not configured. Please enter details manually or contact the administrator.");
-  const model = String(process.env.GEMINI_MODEL || "gemini-3.8-flash").trim();
+  const model = String(process.env.GEMINI_OCR_MODEL || "gemini-3.5-flash-lite").trim();
   let requestedFields = [];
   try {
     const rawFields = String(req.body && req.body.formFields || "");
@@ -1195,7 +1195,7 @@ app.post("/api/ocr/image", ocrLimiter, requireUser, requireProfile, upload.singl
     "For DOB, use only a clearly labeled date of birth (जन्म तिथि); never use issue, print, or expiry dates. Return dates as YYYY-MM-DD only when unambiguous.",
     "Return phone numbers as digits. Include sensitive ID numbers only when a requested field explicitly asks for that exact number.",
     "Requested fields:\\n" + requestedFieldGuide
-  ].join("\\n");
+  ].join("\n");
   try {
     const geminiResult = await requestGeminiDocumentWithFallback(apiKey, model, prompt, req.file);
     const response = geminiResult.response;
