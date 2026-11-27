@@ -463,7 +463,7 @@ function waitForSignedInUser(){
    START OCR THROUGH RENDER API
 ============================== */
 async function compressImageForAI(file){
-    if(!file || !/^image\\/(jpeg|png|webp)$/i.test(file.type) || file.size < 900 * 1024) return file;
+    if(!file || !/^image\/(jpeg|png|webp)$/i.test(file.type) || file.size < 900 * 1024) return file;
     if(typeof createImageBitmap !== "function") return file;
     let bitmap;
     try{
