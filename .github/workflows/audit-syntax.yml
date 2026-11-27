@@ -60,7 +60,7 @@ jobs:
               "professional-clients.html": ["professional-clients.js?v=privacy-local-1", "migrateClients"],
               "professional-clients.js": ["indexedDB.open(DB,1)", "/api/clients", "migrateClients"],
               "final-review.html": ["localRecord.file instanceof Blob", "selectedLocalDocs"],
-              "server.js": ["personalDataExpiresAt", "purgeExpiredApplicationData", "req.body.confirmed !== true", "return fail(res, 410", 'app.get("/api/tasks"', 'app.post("/api/tasks"', 'app.patch("/api/tasks/:id"', 'app.delete("/api/tasks/:id"', 'app.delete("/api/clients/:id"']
+              "server.js": ["personalDataExpiresAt", "purgeExpiredApplicationData", "getAllApplicationDocumentSnapshots", "req.body.confirmed !== true", "return fail(res, 410", 'app.get("/api/tasks"', 'app.post("/api/tasks"', 'app.patch("/api/tasks/:id"', 'app.delete("/api/tasks/:id"', 'app.delete("/api/clients/:id"']
           }
           failed = False
           for filename, needles in checks.items():
