@@ -271,7 +271,7 @@ button{
 
     <div class="notice">
         <strong>Admin Control</strong><br>
-        Manage staff accounts and their permissions here.
+        Staff members must sign up and verify their email before you can assign the Staff role. You cannot create or access their password.
         Production use requires server-side authentication, role-based permissions and secure data storage.
     </div>
 
@@ -283,123 +283,18 @@ button{
         <h2 class="title">Add Staff Member</h2>
 
         <p class="subtitle">
-            Create a staff account and configure its permissions.
+            Add an existing registered and email-verified account to your staff team.
         </p>
 
         <div class="grid">
-
             <div class="field">
-                <label>Staff Name *</label>
-                <input
-                    type="text"
-                    id="staffName"
-                    placeholder="Enter staff name">
+                <label>Staff Name (optional)</label>
+                <input type="text" id="staffName" maxlength="120" placeholder="Display name">
             </div>
-
             <div class="field">
-                <label>Username *</label>
-                <input
-                    type="text"
-                    id="username"
-                    placeholder="Enter username">
+                <label>Registered Account Email *</label>
+                <input type="email" id="email" required autocomplete="email" placeholder="Existing verified account email">
             </div>
-
-            <div class="field">
-                <label>Email</label>
-                <input
-                    type="email"
-                    id="email"
-                    placeholder="Enter email">
-            </div>
-
-            <div class="field">
-                <label>Role</label>
-
-                <select id="role">
-                    <option value="Form Operator">
-                        Form Operator
-                    </option>
-
-                    <option value="Senior Operator">
-                        Senior Operator
-                    </option>
-
-                    <option value="Reviewer">
-                        Reviewer
-                    </option>
-                </select>
-            </div>
-
-            <div class="field full">
-
-                <label>Permissions</label>
-
-                <div class="permissions">
-
-                    <div class="permission">
-                        <label>
-                            <input
-                                type="checkbox"
-                                value="View Applications"
-                                class="permissionBox">
-                            View Applications
-                        </label>
-                    </div>
-
-                    <div class="permission">
-                        <label>
-                            <input
-                                type="checkbox"
-                                value="Create Applications"
-                                class="permissionBox">
-                            Create Applications
-                        </label>
-                    </div>
-
-                    <div class="permission">
-                        <label>
-                            <input
-                                type="checkbox"
-                                value="Upload Documents"
-                                class="permissionBox">
-                            Upload Documents
-                        </label>
-                    </div>
-
-                    <div class="permission">
-                        <label>
-                            <input
-                                type="checkbox"
-                                value="Process Forms"
-                                class="permissionBox">
-                            Process Forms
-                        </label>
-                    </div>
-
-                    <div class="permission">
-                        <label>
-                            <input
-                                type="checkbox"
-                                value="Review Applications"
-                                class="permissionBox">
-                            Review Applications
-                        </label>
-                    </div>
-
-                    <div class="permission">
-                        <label>
-                            <input
-                                type="checkbox"
-                                value="View Activity"
-                                class="permissionBox">
-                            View Activity
-                        </label>
-                    </div>
-
-                </div>
-
-            </div>
-
         </div>
 
         <button
@@ -438,427 +333,54 @@ button{
 </div>
 
     
-<script>
-    
-    // Workspace access: Admin (verified at sign-in) or Professional session.
-const workspaceRole = localStorage.getItem("loginType");
-const workspaceLoggedIn = localStorage.getItem("isLoggedIn") === "true";
-const workspaceAdmin = workspaceRole === "admin" &&
-  (localStorage.getItem("ffm_admin_user") || "").toLowerCase() === "faijraja28@gmail.com";
-const workspaceProfessional = workspaceRole === "professional";
-if (!workspaceLoggedIn || (!workspaceAdmin && !workspaceProfessional)) {
-  window.location.replace(workspaceRole === "professional" ? "professional-login.html" : "personal-login.html");
-}
-function goDashboard() {
-  window.location.href = workspaceProfessional ? "professional-dashboard.html" : "admin-panel.html";
-}
-let staff =
-    JSON.parse(
-        localStorage.getItem("ffm_staff")
-    ) || [];
-
-let editingId = null;
-
-
-/* =========================
-   SAVE STAFF
-========================= */
-
-function saveStaff(){
-
-    const name =
-        document.getElementById("staffName")
-        .value.trim();
-
-    const username =
-        document.getElementById("username")
-        .value.trim();
-
-    const email =
-        document.getElementById("email")
-        .value.trim();
-
-    const role =
-        document.getElementById("role")
-        .value;
-
-
-    if(!name || !username){
-
-        alert(
-            "Staff name and username are required."
-        );
-
-        return;
-    }
-
-
-    const permissions =
-        Array.from(
-            document.querySelectorAll(
-                ".permissionBox:checked"
-            )
-        ).map(box => box.value);
-
-
-    const staffData = {
-
-        id:
-            editingId ||
-            Date.now().toString(),
-
-        name:name,
-
-        username:username,
-
-        email:email,
-
-        role:role,
-
-        permissions:permissions,
-
-        status:"Active",
-
-        createdAt:
-            new Date().toLocaleString()
-
-    };
-
-
-    if(editingId){
-
-        staff =
-            staff.map(item =>
-                item.id === editingId
-                    ? staffData
-                    : item
-            );
-
-        editingId = null;
-
-        document.getElementById("saveBtn")
-            .textContent = "+ Add Staff";
-
-    }else{
-
-        staff.push(staffData);
-
-    }
-
-
-    localStorage.setItem(
-        "ffm_staff",
-        JSON.stringify(staff)
-    );
-
-
-    clearForm();
-
+<script type="module">
+import {apiRequest} from "./api-client.js";
+let staff=[];
+let busy=false;
+const $=id=>document.getElementById(id);
+const esc=value=>String(value??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+function goDashboard(){location.href="admin-panel.html";}
+function clearForm(){ $("staffName").value=""; $("email").value=""; }
+async function loadStaff(){
+  $("staffList").innerHTML='<div class="empty">Loading staff accounts…</div>';
+  try{
+    const result=await apiRequest("/api/staff");
+    staff=result.staff||[];
     renderStaff();
+  }catch(error){$("staffList").innerHTML='<div class="empty">'+esc(error.message||"Could not load staff accounts.")+'</div>';}
 }
-
-
-/* =========================
-   RENDER STAFF
-========================= */
-
 function renderStaff(){
-
-    const list =
-        document.getElementById("staffList");
-
-    list.innerHTML = "";
-
-
-    if(staff.length === 0){
-
-        list.innerHTML =
-            '<div class="empty">There are no staff members yet.</div>';
-
-        return;
-    }
-
-
-    staff.forEach(member => {
-
-        const div =
-            document.createElement("div");
-
-        div.className = "staff";
-
-
-        const permissionHTML =
-            member.permissions &&
-            member.permissions.length
-
-            ? member.permissions.map(permission => `
-                <span class="permission-tag">
-                    ${escapeHTML(permission)}
-                </span>
-              `).join("")
-
-            : `<span class="staff-info">
-                No permissions assigned
-               </span>`;
-
-
-        div.innerHTML = `
-
-            <div class="staff-top">
-
-                <div>
-
-                    <div class="staff-name">
-                        ${escapeHTML(member.name)}
-                    </div>
-
-                    <div class="staff-info">
-                        Username: ${escapeHTML(member.username)}
-                    </div>
-
-                    <div class="staff-info">
-                        Role: ${escapeHTML(member.role)}
-                    </div>
-
-                    ${
-                        member.email
-                        ? `<div class="staff-info">
-                            Email: ${escapeHTML(member.email)}
-                           </div>`
-                        : ""
-                    }
-
-                </div>
-
-                <div>
-
-                    <span class="badge ${
-                        member.status === "Active"
-                        ? "active"
-                        : "inactive"
-                    }">
-
-                        ${escapeHTML(member.status)}
-
-                    </span>
-
-                </div>
-
-            </div>
-
-
-            <div class="permissions-view">
-                ${permissionHTML}
-            </div>
-
-
-            <div class="actions">
-
-                <button
-                    class="edit"
-                    onclick="editStaff('${member.id}')">
-                    Edit
-                </button>
-
-                <button
-                    class="toggle"
-                    onclick="toggleStatus('${member.id}')">
-
-                    ${
-                        member.status === "Active"
-                        ? "Deactivate"
-                        : "Activate"
-                    }
-
-                </button>
-
-                <button
-                    class="delete"
-                    onclick="deleteStaff('${member.id}')">
-                    Delete
-                </button>
-
-            </div>
-
-        `;
-
-
-        list.appendChild(div);
-
-    });
+  if(!staff.length){$("staffList").innerHTML='<div class="empty">No staff accounts yet. Add an existing verified account above.</div>';return;}
+  $("staffList").innerHTML=staff.map(member=>{
+    const active=member.status!=="disabled";
+    return '<article class="staff"><div class="staff-top"><div><div class="staff-name">'+esc(member.name||"Staff member")+'</div><div class="staff-info">'+esc(member.email||"No email")+'</div><div class="staff-info">Account role: Staff</div><div class="staff-info">Added: '+esc(member.createdAt||"—")+'</div></div><span class="badge '+(active?"active":"inactive")+'">'+(active?"Active":"Disabled")+'</span></div><div class="actions"><button class="toggle" data-uid="'+esc(member.id||member.uid)+'" data-next="'+(active?"disabled":"active")+'">'+(active?"Deactivate":"Activate")+'</button></div></article>';
+  }).join("");
+  $("staffList").querySelectorAll("button[data-uid]").forEach(button=>button.addEventListener("click",async()=>{
+    if(busy)return;
+    const uid=button.dataset.uid,next=button.dataset.next;
+    if(!confirm((next==="disabled"?"Deactivate":"Activate")+" this staff account?"))return;
+    busy=true;button.disabled=true;
+    try{await apiRequest("/api/staff/"+encodeURIComponent(uid)+"/status",{method:"PATCH",body:JSON.stringify({status:next})});await loadStaff();}
+    catch(error){alert(error.message||"Could not update staff status.");button.disabled=false;}
+    finally{busy=false;}
+  }));
 }
-
-
-/* =========================
-   EDIT
-========================= */
-
-function editStaff(id){
-
-    const member =
-        staff.find(item => item.id === id);
-
-    if(!member) return;
-
-
-    editingId = id;
-
-
-    document.getElementById("staffName")
-        .value = member.name || "";
-
-    document.getElementById("username")
-        .value = member.username || "";
-
-    document.getElementById("email")
-        .value = member.email || "";
-
-    document.getElementById("role")
-        .value = member.role || "Form Operator";
-
-
-    document.querySelectorAll(
-        ".permissionBox"
-    ).forEach(box => {
-
-        box.checked =
-            member.permissions &&
-            member.permissions.includes(box.value);
-
-    });
-
-
-    document.getElementById("saveBtn")
-        .textContent = "Save Changes";
-
-
-    window.scrollTo({
-        top:0,
-        behavior:"smooth"
-    });
+async function saveStaff(){
+  if(busy)return;
+  const name=$("staffName").value.trim();
+  const email=$("email").value.trim().toLowerCase();
+  if(!email||!/^\S+@\S+\.\S+$/.test(email)){alert("Enter the email of an existing, verified Form Fill Mitra account.");return;}
+  busy=true;$("saveBtn").disabled=true;
+  try{
+    await apiRequest("/api/staff/assign-role",{method:"POST",body:JSON.stringify({email,name})});
+    clearForm();await loadStaff();alert("Staff role assigned. The user can sign in with their existing account.");
+  }catch(error){alert(error.message||"Could not assign staff role.");}
+  finally{busy=false;$("saveBtn").disabled=false;}
 }
-
-
-/* =========================
-   STATUS
-========================= */
-
-function toggleStatus(id){
-
-    staff =
-        staff.map(member => {
-
-            if(member.id === id){
-
-                member.status =
-                    member.status === "Active"
-                    ? "Inactive"
-                    : "Active";
-            }
-
-            return member;
-        });
-
-
-    localStorage.setItem(
-        "ffm_staff",
-        JSON.stringify(staff)
-    );
-
-
-    renderStaff();
-}
-
-
-/* =========================
-   DELETE
-========================= */
-
-function deleteStaff(id){
-
-    const member =
-        staff.find(item => item.id === id);
-
-    if(!member) return;
-
-
-    const confirmDelete =
-        confirm(
-            `Are you sure you want to delete ${member.name}?`
-        );
-
-
-    if(!confirmDelete) return;
-
-
-    staff =
-        staff.filter(
-            item => item.id !== id
-        );
-
-
-    localStorage.setItem(
-        "ffm_staff",
-        JSON.stringify(staff)
-    );
-
-
-    renderStaff();
-}
-
-
-/* =========================
-   CLEAR
-========================= */
-
-function clearForm(){
-
-    editingId = null;
-
-    document.getElementById("staffName")
-        .value = "";
-
-    document.getElementById("username")
-        .value = "";
-
-    document.getElementById("email")
-        .value = "";
-
-    document.getElementById("role")
-        .value = "Form Operator";
-
-
-    document.querySelectorAll(
-        ".permissionBox"
-    ).forEach(box => {
-
-        box.checked = false;
-
-    });
-
-
-    document.getElementById("saveBtn")
-        .textContent = "+ Add Staff";
-}
-
-
-/* =========================
-   ESCAPE HTML
-========================= */
-
-function escapeHTML(value){
-
-    return String(value)
-        .replace(/&/g,"&amp;")
-        .replace(/</g,"&lt;")
-        .replace(/>/g,"&gt;")
-        .replace(/"/g,"&quot;")
-        .replace(/'/g,"&#039;");
-}
-
-
-renderStaff();
-
+$("saveBtn").addEventListener("click",saveStaff);
+document.querySelector(".clear").addEventListener("click",clearForm);
+loadStaff();
+window.goDashboard=goDashboard;
 </script>
 
 </body>

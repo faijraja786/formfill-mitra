@@ -11,16 +11,42 @@
 <header style="padding:16px 22px"><strong>FormFill <span style="color:#1769e8">Mitra</span></strong><span>Personal · My Profile</span></header>
 <main class="page">
  <div style="display:flex;justify-content:space-between;align-items:center;gap:12px;margin-bottom:20px"><div><h1>My Profile</h1><p class="muted">Your applicant information saved with FormFill Mitra.</p></div><button class="btn" type="button" onclick="history.length>1?history.back():location.href='personal-dashboard.html'">← Back</button></div>
- <section class="profile-card"><div id="profileGrid" class="profile-grid"></div><p id="empty" class="muted" hidden style="margin-top:18px">Your applicant profile has not been created yet. Start an application to add your details.</p></section>
+ <section class="profile-card">
+  <form id="profileForm" class="profile-grid">
+    <label class="field"><small>Account name</small><input id="name" maxlength="120" autocomplete="name"></label>
+    <label class="field"><small>Email address</small><input id="email" type="email" readonly></label>
+    <label class="field"><small>Mobile number</small><input id="phone" type="tel" maxlength="30" autocomplete="tel"></label>
+    <label class="field"><small>Date of birth</small><input id="dateOfBirth" type="date" autocomplete="bday"></label>
+    <label class="field"><small>Education</small><input id="education" maxlength="300"></label>
+    <label class="field"><small>Address</small><textarea id="address" maxlength="1000" rows="3" autocomplete="street-address"></textarea></label>
+    <div style="grid-column:1/-1;display:flex;gap:12px;align-items:center;flex-wrap:wrap">
+      <button class="btn primary" id="saveProfile" type="submit">Save Profile</button>
+      <span id="profileMessage" class="muted" role="status"></span>
+    </div>
+  </form>
+</section>
 </main>
-<script>
-(function(){if(localStorage.getItem("isLoggedIn")!=="true"||localStorage.getItem("loginType")!=="personal"){location.replace("personal-login.html");}})();
-function read(key){try{return JSON.parse(localStorage.getItem(key)||"{}")||{};}catch(e){return {};}}
-function esc(v){return String(v??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));}
-const a=read("currentApplicant"),name=a.fullName||a.name||localStorage.getItem("personalName")||localStorage.getItem("userName")||"";
-const fields=[["Full name",name],["Date of birth",a.dob],["Mobile number",a.mobile],["Email",a.email],["Gender",a.gender],["Address",a.address||a.fullAddress],["State",a.state],["District",a.district],["PIN code",a.pin||a.pincode]];
-const populated=fields.filter(x=>String(x[1]||"").trim());
-document.getElementById("profileGrid").innerHTML=populated.map(x=>'<div class="field"><small>'+esc(x[0])+'</small><strong>'+esc(x[1])+'</strong></div>').join("");
-document.getElementById("empty").hidden=populated.length>0;
+<script type="module">
+import {apiRequest} from "./api-client.js";
+const $=id=>document.getElementById(id);
+const fields=["name","phone","dateOfBirth","education","address"];
+function message(text,error=false){$("profileMessage").textContent=text;$("profileMessage").style.color=error?"#b42318":"#1769e8";}
+async function loadProfile(){
+  try{
+    const result=await apiRequest("/api/me");
+    const profile=result.profile||{};
+    $("email").value=profile.email||"";
+    for(const key of fields)$(key).value=profile[key]||"";
+  }catch(error){message(error.message||"Could not load your profile.",true);}
+}
+$("profileForm").addEventListener("submit",async event=>{
+  event.preventDefault();
+  const button=$("saveProfile");button.disabled=true;message("Saving…");
+  const body={};for(const key of fields)body[key]=$(key).value.trim();
+  try{await apiRequest("/api/me",{method:"PATCH",body:JSON.stringify(body)});message("Profile saved successfully.");}
+  catch(error){message(error.message||"Could not save your profile.",true);}
+  finally{button.disabled=false;}
+});
+loadProfile();
 </script>
 </body></html>
