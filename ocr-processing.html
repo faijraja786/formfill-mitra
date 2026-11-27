@@ -462,6 +462,35 @@ function waitForSignedInUser(){
 /* ==============================
    START OCR THROUGH RENDER API
 ============================== */
+async function compressImageForAI(file){
+    if(!file || !/^image\\/(jpeg|png|webp)$/i.test(file.type) || file.size < 900 * 1024) return file;
+    if(typeof createImageBitmap !== "function") return file;
+    let bitmap;
+    try{
+        bitmap = await createImageBitmap(file);
+        const maxSide = 2200;
+        const scale = Math.min(1, maxSide / Math.max(bitmap.width, bitmap.height));
+        if(scale >= 1) return file;
+        const canvas = document.createElement("canvas");
+        canvas.width = Math.max(1, Math.round(bitmap.width * scale));
+        canvas.height = Math.max(1, Math.round(bitmap.height * scale));
+        const ctx = canvas.getContext("2d", {alpha:false});
+        if(!ctx) return file;
+        ctx.fillStyle = "#ffffff";
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+        ctx.drawImage(bitmap, 0, 0, canvas.width, canvas.height);
+        const blob = await new Promise(resolve => canvas.toBlob(resolve, "image/jpeg", 0.84));
+        if(!blob || blob.size >= file.size * 0.92) return file;
+        const baseName = String(file.name || "document").replace(/\\.[^.]+$/, "");
+        return new File([blob], baseName + "-optimized.jpg", {type:"image/jpeg", lastModified:Date.now()});
+    }catch(error){
+        console.warn("Image optimization skipped:", error);
+        return file;
+    }finally{
+        if(bitmap && typeof bitmap.close === "function") bitmap.close();
+    }
+}
+
 async function startOCR(){
     if(!document.getElementById("aiConsent").checked){
         setProgress(0, "Please agree to AI document reading first.");
@@ -530,10 +559,11 @@ async function startOCR(){
                             setProgress(Math.round((completed / keys.length) * 90), "Reading " + fileName + "...");
                             const token = await user.getIdToken();
                             const formData = new FormData();
-                            const uploadFile = file.type === expectedMime || !expectedMime
+                            const normalizedFile = file.type === expectedMime || !expectedMime
                                 ? file
                                 : new File([file], fileRecord.name, { type: expectedMime });
-                            formData.append("document", uploadFile, fileRecord.name);
+                            const uploadFile = await compressImageForAI(normalizedFile);
+                            formData.append("document", uploadFile, uploadFile.name || fileRecord.name);
                             formData.append("aiConsent", "true");
                             formData.append("documentLabel", String(uploadedDocuments[key]?.documentLabel || uploadedDocuments[key]?.documentKey || "Uploaded document").slice(0,120));
                             formData.append("formFields", JSON.stringify(
