@@ -1054,56 +1054,16 @@ window.ffmSetAdminForms = function(forms){
 };
 
 
-function getStaff(){
-
-    try{
-
-        return JSON.parse(
-            localStorage.getItem("ffm_staff")
-        ) || [];
-
-    }catch(e){
-
-        return [];
-
-    }
-
-}
-
-
-function getTasks(){
-
-    try{
-
-        return JSON.parse(
-            localStorage.getItem("ffm_tasks")
-        ) || [];
-
-    }catch(e){
-
-        return [];
-
-    }
-
-}
-
-
-function getActivities(){
-
-    try{
-
-        return JSON.parse(
-            localStorage.getItem("ffm_activity")
-        ) || [];
-
-    }catch(e){
-
-        return [];
-
-    }
-
-}
-
+let backendStaff = [], backendTasks = [], backendActivities = [];
+function getStaff(){ return backendStaff; }
+function getTasks(){ return backendTasks; }
+function getActivities(){ return backendActivities; }
+window.ffmSetAdminStats = function(data){
+    backendStaff = Array.isArray(data.staff) ? data.staff : [];
+    backendTasks = Array.isArray(data.tasks) ? data.tasks : [];
+    backendActivities = Array.isArray(data.activities) ? data.activities : [];
+    updateStats();
+};
 
 
 /* =====================================================
@@ -1191,40 +1151,7 @@ document.addEventListener("keydown",event=>{if(event.key==="Escape")closeAdminMe
    ACTIVITY
 ===================================================== */
 
-function logActivity(
-    action,
-    status="completed"
-){
-
-    const activities =
-        getActivities();
-
-    activities.unshift({
-
-        id:Date.now(),
-
-        staff:
-            localStorage.getItem(
-                "ffm_admin_user"
-            ) || "Admin",
-
-        action:action,
-
-        status:status,
-
-        time:
-            new Date().toLocaleString()
-
-    });
-
-
-    localStorage.setItem(
-        "ffm_activity",
-        JSON.stringify(activities)
-    );
-
-}
-
+function logActivity(){ /* Authoritative events are written by the backend. */ }
 
 
 /* =====================================================
@@ -2159,35 +2086,7 @@ function updateStats(){
    SUBSCRIPTION
 ===================================================== */
 
-function getSubscriptionSettings(){
-
-    try{
-
-        return JSON.parse(
-            localStorage.getItem(
-                "ffm_subscription_settings"
-            )
-        ) || {
-
-            enabled:false,
-
-            trialDays:180
-
-        };
-
-    }catch(e){
-
-        return {
-
-            enabled:false,
-
-            trialDays:180
-
-        };
-
-    }
-
-}
+function getSubscriptionSettings(){ return { enabled:false, trialDays:180, paymentsEnabled:false }; }
 
 
 
@@ -2323,7 +2222,17 @@ onAuthStateChanged(auth,async(user)=>{
    if (enabledField) enabledField.value = settings.enabled ? "true" : "false";
    if (trialField) trialField.value = String(settings.trialDays || 180);
    if (typeof window.updateSubscriptionBadge === "function") window.updateSubscriptionBadge(settings.enabled === true);
-   const data=await apiRequest("/api/forms");
+   const [data, staffData, taskData, activityData] = await Promise.all([
+     apiRequest("/api/forms"),
+     apiRequest("/api/staff"),
+     apiRequest("/api/tasks"),
+     apiRequest("/api/activity")
+   ]);
+   if(typeof window.ffmSetAdminStats==="function")window.ffmSetAdminStats({
+     staff: staffData.staff || [],
+     tasks: taskData.tasks || [],
+     activities: activityData.activities || []
+   });
    if(typeof window.ffmSetAdminForms==="function")window.ffmSetAdminForms(data.forms||[]);
    const count=document.getElementById("totalForms");
    if(count)count.textContent=(data.forms||[]).length;
