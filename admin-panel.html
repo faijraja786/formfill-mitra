@@ -1045,73 +1045,25 @@ textarea{
    STORAGE
 ===================================================== */
 
-function getForms(){
-
-    try{
-
-        return JSON.parse(
-            localStorage.getItem("ffm_admin_forms")
-        ) || [];
-
-    }catch(e){
-
-        return [];
-
-    }
-
-}
+let backendForms = [];
+function getForms(){ return backendForms; }
+window.ffmSetAdminForms = function(forms){
+    backendForms = Array.isArray(forms) ? forms.filter(form => form.status !== "archived") : [];
+    renderForms();
+    updateStats();
+};
 
 
-function getStaff(){
-
-    try{
-
-        return JSON.parse(
-            localStorage.getItem("ffm_staff")
-        ) || [];
-
-    }catch(e){
-
-        return [];
-
-    }
-
-}
-
-
-function getTasks(){
-
-    try{
-
-        return JSON.parse(
-            localStorage.getItem("ffm_tasks")
-        ) || [];
-
-    }catch(e){
-
-        return [];
-
-    }
-
-}
-
-
-function getActivities(){
-
-    try{
-
-        return JSON.parse(
-            localStorage.getItem("ffm_activity")
-        ) || [];
-
-    }catch(e){
-
-        return [];
-
-    }
-
-}
-
+let backendStaff = [], backendTasks = [], backendActivities = [];
+function getStaff(){ return backendStaff; }
+function getTasks(){ return backendTasks; }
+function getActivities(){ return backendActivities; }
+window.ffmSetAdminStats = function(data){
+    backendStaff = Array.isArray(data.staff) ? data.staff : [];
+    backendTasks = Array.isArray(data.tasks) ? data.tasks : [];
+    backendActivities = Array.isArray(data.activities) ? data.activities : [];
+    updateStats();
+};
 
 
 /* =====================================================
@@ -1199,40 +1151,7 @@ document.addEventListener("keydown",event=>{if(event.key==="Escape")closeAdminMe
    ACTIVITY
 ===================================================== */
 
-function logActivity(
-    action,
-    status="completed"
-){
-
-    const activities =
-        getActivities();
-
-    activities.unshift({
-
-        id:Date.now(),
-
-        staff:
-            localStorage.getItem(
-                "ffm_admin_user"
-            ) || "Admin",
-
-        action:action,
-
-        status:status,
-
-        time:
-            new Date().toLocaleString()
-
-    });
-
-
-    localStorage.setItem(
-        "ffm_activity",
-        JSON.stringify(activities)
-    );
-
-}
-
+function logActivity(){ /* Authoritative events are written by the backend. */ }
 
 
 /* =====================================================
@@ -1690,217 +1609,37 @@ function makeKey(value){
    FORM SAVE
 ===================================================== */
 
-function saveForm(){
-
-    const name =
-        document.getElementById(
-            "formName"
-        ).value.trim();
-
-
-    const category =
-        document.getElementById(
-            "category"
-        ).value.trim();
-
-
-    const link =
-        document.getElementById(
-            "formLink"
-        ).value.trim();
-
-
-    const description =
-        document.getElementById(
-            "description"
-        ).value.trim();
-
-
-    if(!name){
-
-        alert(
-            "Please enter Form Name."
-        );
-
-        return;
-
-    }
-
-
-    if(!category){
-
-        alert(
-            "Please enter Category."
-        );
-
-        return;
-
-    }
-
-
-    if(!link){
-
-        alert(
-            "Please enter Official Form Link."
-        );
-
-        return;
-
-    }
-
-
-    /*
-       Validate custom fields
-    */
-
-    const finalFields = [];
-
-
-    for(
-        const field
-        of builderFields
-    ){
-
-        if(
-            !field.label.trim()
-        ){
-
-            alert(
-                "Enter a label for every custom field."
-            );
-
-            return;
-
+async function saveForm(){
+    const name=document.getElementById("formName").value.trim();
+    const category=document.getElementById("category").value.trim();
+    const officialLink=document.getElementById("formLink").value.trim();
+    const description=document.getElementById("description").value.trim();
+    if(!name||!category||!officialLink){alert("Enter form name, category and official HTTPS link.");return;}
+    const finalFields=builderFields.map(field=>normalizeField(field));
+    if(!finalFields.length){alert("Add at least one form field before saving.");return;}
+    if(finalFields.some(field=>!field.label.trim()||!field.key.trim())){alert("Every form field needs a key and label.");return;}
+    const documents=[];
+    document.querySelectorAll('.documents input[type="checkbox"]:checked').forEach(input=>documents.push(input.value));
+    const forms=getForms();
+    const oldForm=editingIndex>=0?forms[editingIndex]:null;
+    const payload={name,category,officialLink,description,documents,fields:finalFields,status:"published"};
+    const button=document.getElementById("saveButton");
+    button.disabled=true;
+    try{
+        if(typeof window.ffmApiRequest!=="function")throw new Error("Secure form service is not ready. Refresh and try again.");
+        if(oldForm&&oldForm.id){
+            await window.ffmApiRequest("/api/forms/"+encodeURIComponent(oldForm.id),{method:"PATCH",body:JSON.stringify(payload)});
+        }else{
+            await window.ffmApiRequest("/api/forms",{method:"POST",body:JSON.stringify(payload)});
         }
-
-
-        if(
-            !field.key.trim()
-        ){
-
-            field.key =
-                makeKey(
-                    field.label
-                );
-
-        }
-
-
-        finalFields.push(
-            normalizeField(field)
-        );
-
-    }
-
-
-    /*
-       Documents
-    */
-
-    const docs = [];
-
-
-    document
-        .querySelectorAll(
-            '.documents input[type="checkbox"]:checked'
-        )
-        .forEach(
-            function(input){
-
-                docs.push(
-                    input.value
-                );
-
-            }
-        );
-
-
-    const forms =
-        getForms();
-
-
-    const oldForm =
-        editingIndex >= 0
-        ? forms[editingIndex]
-        : null;
-
-
-    const formData = {
-
-        id:
-            oldForm && oldForm.id
-            ? oldForm.id
-            : Date.now(),
-
-        name:name,
-
-        category:category,
-
-        link:link,
-
-        description:description,
-
-        documents:docs,
-
-        /*
-           New dynamic configuration
-        */
-
-        fields:finalFields,
-
-        updatedAt:
-            new Date().toISOString()
-
-    };
-
-
-    if(editingIndex >= 0){
-
-        forms[editingIndex] =
-            formData;
-
-        logActivity(
-            "Admin updated form: " + name
-        );
-
-    }else{
-
-        forms.unshift(
-            formData
-        );
-
-        logActivity(
-            "Admin added form: " + name
-        );
-
-    }
-
-
-    localStorage.setItem(
-        "ffm_admin_forms",
-        JSON.stringify(forms)
-    );
-
-
-    const wasEditing =
-        editingIndex >= 0;
-
-
-    clearForm();
-
-    renderForms();
-
-    updateStats();
-
-
-    alert(
-        wasEditing
-        ? "Form updated successfully."
-        : "Form added successfully."
-    );
-
+        const result=await window.ffmApiRequest("/api/forms");
+        window.ffmSetAdminForms(result.forms||[]);
+        const wasEditing=!!oldForm;
+        clearForm();
+        alert(wasEditing?"Form updated successfully.":"Form added successfully.");
+    }catch(error){alert(error.message||"Could not save the form.");}
+    finally{button.disabled=false;}
 }
-
 
 
 /* =====================================================
@@ -1941,7 +1680,7 @@ function editForm(index){
     document.getElementById(
         "formLink"
     ).value =
-        form.link || "";
+        form.officialLink || form.link || "";
 
 
     document.getElementById(
@@ -2012,56 +1751,16 @@ function editForm(index){
    DELETE
 ===================================================== */
 
-function deleteForm(index){
-
-    const forms =
-        getForms();
-
-
-    const form =
-        forms[index];
-
-
-    if(!form){
-        return;
-    }
-
-
-    if(
-        !confirm(
-            `Delete "${form.name}"?`
-        )
-    ){
-
-        return;
-
-    }
-
-
-    forms.splice(
-        index,
-        1
-    );
-
-
-    localStorage.setItem(
-        "ffm_admin_forms",
-        JSON.stringify(forms)
-    );
-
-
-    logActivity(
-        "Admin deleted form: "
-        + (form.name || "Unnamed")
-    );
-
-
-    renderForms();
-
-    updateStats();
-
+async function deleteForm(index){
+    const form=getForms()[index];
+    if(!form||!form.id)return;
+    if(!confirm('Archive "'+(form.name||"this form")+'"?'))return;
+    try{
+        await window.ffmApiRequest("/api/forms/"+encodeURIComponent(form.id),{method:"DELETE"});
+        const result=await window.ffmApiRequest("/api/forms");
+        window.ffmSetAdminForms(result.forms||[]);
+    }catch(error){alert(error.message||"Could not archive this form.");}
 }
-
 
 
 /* =====================================================
@@ -2080,7 +1779,7 @@ function openFormLink(index){
 
     if(
         !form ||
-        !form.link
+        !(form.officialLink || form.link)
     ){
 
         alert(
@@ -2093,7 +1792,7 @@ function openFormLink(index){
 
 
     window.open(
-        form.link,
+        (form.officialLink || form.link),
         "_blank",
         "noopener,noreferrer"
     );
@@ -2215,7 +1914,7 @@ function renderForms(){
 
                         Official Link:
                         ${escapeHTML(
-                            form.link || "-"
+                            form.officialLink || form.link || "-"
                         )}
 
                     </div>
@@ -2387,35 +2086,7 @@ function updateStats(){
    SUBSCRIPTION
 ===================================================== */
 
-function getSubscriptionSettings(){
-
-    try{
-
-        return JSON.parse(
-            localStorage.getItem(
-                "ffm_subscription_settings"
-            )
-        ) || {
-
-            enabled:false,
-
-            trialDays:180
-
-        };
-
-    }catch(e){
-
-        return {
-
-            enabled:false,
-
-            trialDays:180
-
-        };
-
-    }
-
-}
+function getSubscriptionSettings(){ return { enabled:false, trialDays:180, paymentsEnabled:false }; }
 
 
 
@@ -2483,69 +2154,27 @@ function updateSubscriptionBadge(
 
 
 
-function saveSubscription(){
-
-    const enabled =
-        document.getElementById(
-            "subscriptionEnabled"
-        ).value === "true";
-
-
-    let trialDays =
-        parseInt(
-            document.getElementById(
-                "trialDays"
-            ).value,
-            10
-        );
-
-
-    if(
-        !Number.isFinite(trialDays) ||
-        trialDays < 1
-    ){
-
-        trialDays =
-            180;
-
+async function saveSubscription(){
+    const enabled = document.getElementById("subscriptionEnabled").value === "true";
+    const trialDays = parseInt(document.getElementById("trialDays").value, 10);
+    if (!Number.isInteger(trialDays) || trialDays < 1 || trialDays > 3650) {
+        alert("Enter a trial period between 1 and 3650 days.");
+        return;
     }
-
-
-    const settings = {
-
-        enabled:enabled,
-
-        trialDays:trialDays,
-
-        updatedAt:
-            new Date().toISOString()
-
-    };
-
-
-    localStorage.setItem(
-        "ffm_subscription_settings",
-        JSON.stringify(settings)
-    );
-
-
-    updateSubscriptionBadge(
-        enabled
-    );
-
-
-    logActivity(
-        "Admin changed subscription status to "
-        + (enabled ? "ON" : "OFF")
-    );
-
-
-    alert(
-        enabled
-        ? "Subscription system has been enabled."
-        : "Subscription system has been disabled."
-    );
-
+    if (typeof window.ffmApiRequest !== "function") {
+        alert("Secure settings service is not ready. Refresh the page and try again.");
+        return;
+    }
+    try {
+        const result = await window.ffmApiRequest("/api/admin/subscription-settings", {
+            method: "PATCH",
+            body: JSON.stringify({ enabled, trialDays })
+        });
+        updateSubscriptionBadge(result.settings.enabled);
+        alert("Subscription availability settings saved. Online payments remain disabled.");
+    } catch (error) {
+        alert(error.message || "Could not save subscription settings.");
+    }
 }
 
 
@@ -2571,6 +2200,7 @@ loadSubscription();
 import { auth } from "./firebase-init.js";
 import { onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-auth.js";
 import { bootstrapProfile, apiRequest } from "./api-client.js";
+window.ffmApiRequest = apiRequest;
 const ADMIN_EMAIL="faijraja28@gmail.com";
 window.__ffmAdminSignOut=async()=>{await signOut(auth);["isLoggedIn","loginType","ffm_admin_user"].forEach(key=>localStorage.removeItem(key));window.location.replace("personal-login.html");};
 onAuthStateChanged(auth,async(user)=>{
@@ -2585,7 +2215,25 @@ onAuthStateChanged(auth,async(user)=>{
  const notice=document.getElementById("adminBackendNotice");
  try {
    await bootstrapProfile("admin", user.displayName || "");
-   const data=await apiRequest("/api/forms");
+   const subscription = await apiRequest("/api/subscription-settings");
+   const settings = subscription.settings || {};
+   const enabledField = document.getElementById("subscriptionEnabled");
+   const trialField = document.getElementById("trialDays");
+   if (enabledField) enabledField.value = settings.enabled ? "true" : "false";
+   if (trialField) trialField.value = String(settings.trialDays || 180);
+   if (typeof window.updateSubscriptionBadge === "function") window.updateSubscriptionBadge(settings.enabled === true);
+   const [data, staffData, taskData, activityData] = await Promise.all([
+     apiRequest("/api/forms"),
+     apiRequest("/api/staff"),
+     apiRequest("/api/tasks"),
+     apiRequest("/api/activity")
+   ]);
+   if(typeof window.ffmSetAdminStats==="function")window.ffmSetAdminStats({
+     staff: staffData.staff || [],
+     tasks: taskData.tasks || [],
+     activities: activityData.activities || []
+   });
+   if(typeof window.ffmSetAdminForms==="function")window.ffmSetAdminForms(data.forms||[]);
    const count=document.getElementById("totalForms");
    if(count)count.textContent=(data.forms||[]).length;
  } catch(error) {

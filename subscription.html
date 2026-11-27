@@ -32,17 +32,27 @@
 <div class="notice"><strong>Payment status:</strong> Online payment processing is not connected yet. No payment can be made from this page. Contact the service administrator for plan information.</div>
 </section>
 </main>
-<script>
-(function(){
- let settings={enabled:false,trialDays:180};
- try{const parsed=JSON.parse(localStorage.getItem("ffm_subscription_settings")||"{}");settings={...settings,...parsed};}catch(e){}
- const enabled=settings.enabled===true;
- document.getElementById("statusBadge").textContent=enabled?"Subscription Enabled":"Subscription Not Enabled";
- document.getElementById("planTitle").textContent=enabled?"Subscription is available":"Subscription is not currently available";
- document.getElementById("planDescription").textContent=enabled?"The administrator has enabled subscription settings for this workspace. The configured trial period is shown below.":"The administrator has not enabled subscription settings. You can continue using the features currently available to your account.";
- document.getElementById("subscriptionValue").textContent=enabled?"Enabled":"Not enabled";
- document.getElementById("trialValue").textContent=enabled?(Number(settings.trialDays)||180)+" days":"—";
-})();
+<script type="module">
+import {apiRequest} from "./api-client.js";
+const $=id=>document.getElementById(id);
+async function loadSubscription(){
+  try{
+    const result=await apiRequest("/api/subscription-settings");
+    const settings=result.settings||{},enabled=settings.enabled===true;
+    $("statusBadge").textContent=enabled?"Subscription Enabled":"Subscription Not Enabled";
+    $("planTitle").textContent=enabled?"Subscription is available":"Subscription is not currently available";
+    $("planDescription").textContent=enabled?"The administrator has enabled subscription availability. The configured trial period is shown below.":"The administrator has not enabled subscription availability. You can continue using the features currently available to your account.";
+    $("subscriptionValue").textContent=enabled?"Enabled":"Not enabled";
+    $("trialValue").textContent=enabled?(Number(settings.trialDays)||180)+" days":"—";
+  }catch(error){
+    $("statusBadge").textContent="Status unavailable";
+    $("planTitle").textContent="Could not load subscription status";
+    $("planDescription").textContent=error.message||"Refresh the page and try again.";
+    $("subscriptionValue").textContent="Unavailable";
+    $("trialValue").textContent="—";
+  }
+}
+loadSubscription();
 </script>
 </body>
 </html>
