@@ -39,6 +39,34 @@ jobs:
           if failed:
               sys.exit(1)
           PY
+      - name: Check backend-backed workflow contracts
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          import sys
+
+          checks = {
+              "staff-management.html": ["apiRequest(\"/api/staff\")", "/api/staff/assign-role", "/api/staff/"],
+              "task-management.html": ["apiRequest(\"/api/applications\")", "apiRequest(\"/api/tasks\")", "applicationId", "staffUid"],
+              "profile.html": ["apiRequest(\"/api/me\")", "method:\"PATCH\""],
+              "activity-monitoring.html": ["apiRequest(\"/api/activity\")", "refreshActivity"],
+              "server.js": ['app.get("/api/tasks"', 'app.post("/api/tasks"', 'app.patch("/api/tasks/:id"', 'app.delete("/api/tasks/:id"']
+          }
+          failed = False
+          for filename, needles in checks.items():
+              content = Path(filename).read_text(encoding="utf-8")
+              for needle in needles:
+                  if needle not in content:
+                      failed = True
+                      print(f"FAIL {filename}: missing {needle}")
+              if filename in ("staff-management.html", "task-management.html", "profile.html") and "localStorage" in content:
+                  failed = True
+                  print(f"FAIL {filename}: legacy browser-only data storage remains")
+              if not failed:
+                  print(f"PASS {filename}")
+          if failed:
+              sys.exit(1)
+          PY
       - name: Check inline JavaScript in all HTML pages
         run: |
           python3 - <<'PY'
