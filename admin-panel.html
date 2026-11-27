@@ -2483,69 +2483,27 @@ function updateSubscriptionBadge(
 
 
 
-function saveSubscription(){
-
-    const enabled =
-        document.getElementById(
-            "subscriptionEnabled"
-        ).value === "true";
-
-
-    let trialDays =
-        parseInt(
-            document.getElementById(
-                "trialDays"
-            ).value,
-            10
-        );
-
-
-    if(
-        !Number.isFinite(trialDays) ||
-        trialDays < 1
-    ){
-
-        trialDays =
-            180;
-
+async function saveSubscription(){
+    const enabled = document.getElementById("subscriptionEnabled").value === "true";
+    const trialDays = parseInt(document.getElementById("trialDays").value, 10);
+    if (!Number.isInteger(trialDays) || trialDays < 1 || trialDays > 3650) {
+        alert("Enter a trial period between 1 and 3650 days.");
+        return;
     }
-
-
-    const settings = {
-
-        enabled:enabled,
-
-        trialDays:trialDays,
-
-        updatedAt:
-            new Date().toISOString()
-
-    };
-
-
-    localStorage.setItem(
-        "ffm_subscription_settings",
-        JSON.stringify(settings)
-    );
-
-
-    updateSubscriptionBadge(
-        enabled
-    );
-
-
-    logActivity(
-        "Admin changed subscription status to "
-        + (enabled ? "ON" : "OFF")
-    );
-
-
-    alert(
-        enabled
-        ? "Subscription system has been enabled."
-        : "Subscription system has been disabled."
-    );
-
+    if (typeof window.ffmApiRequest !== "function") {
+        alert("Secure settings service is not ready. Refresh the page and try again.");
+        return;
+    }
+    try {
+        const result = await window.ffmApiRequest("/api/admin/subscription-settings", {
+            method: "PATCH",
+            body: JSON.stringify({ enabled, trialDays })
+        });
+        updateSubscriptionBadge(result.settings.enabled);
+        alert("Subscription availability settings saved. Online payments remain disabled.");
+    } catch (error) {
+        alert(error.message || "Could not save subscription settings.");
+    }
 }
 
 
@@ -2571,6 +2529,7 @@ loadSubscription();
 import { auth } from "./firebase-init.js";
 import { onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-auth.js";
 import { bootstrapProfile, apiRequest } from "./api-client.js";
+window.ffmApiRequest = apiRequest;
 const ADMIN_EMAIL="faijraja28@gmail.com";
 window.__ffmAdminSignOut=async()=>{await signOut(auth);["isLoggedIn","loginType","ffm_admin_user"].forEach(key=>localStorage.removeItem(key));window.location.replace("personal-login.html");};
 onAuthStateChanged(auth,async(user)=>{
@@ -2585,6 +2544,13 @@ onAuthStateChanged(auth,async(user)=>{
  const notice=document.getElementById("adminBackendNotice");
  try {
    await bootstrapProfile("admin", user.displayName || "");
+   const subscription = await apiRequest("/api/subscription-settings");
+   const settings = subscription.settings || {};
+   const enabledField = document.getElementById("subscriptionEnabled");
+   const trialField = document.getElementById("trialDays");
+   if (enabledField) enabledField.value = settings.enabled ? "true" : "false";
+   if (trialField) trialField.value = String(settings.trialDays || 180);
+   if (typeof window.updateSubscriptionBadge === "function") window.updateSubscriptionBadge(settings.enabled === true);
    const data=await apiRequest("/api/forms");
    const count=document.getElementById("totalForms");
    if(count)count.textContent=(data.forms||[]).length;
