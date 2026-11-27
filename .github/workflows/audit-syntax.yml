@@ -57,6 +57,8 @@ jobs:
               "document-vault.html": ["local-vault.js?v=privacy-local-1", "migrateBtn"],
               "local-vault.js": ["indexedDB.open(DB_NAME, 1)", "/api/my-documents", "migrateServerVault"],
               "form-details.html": ["localDocs(user.uid)", "selectedVaultDocumentIds"],
+              "professional-clients.html": ["professional-clients.js?v=privacy-local-1", "migrateClients"],
+              "professional-clients.js": ["indexedDB.open(DB,1)", "/api/clients", "migrateClients"],
               "final-review.html": ["localRecord.file instanceof Blob", "selectedLocalDocs"],
               "server.js": ["personalDataExpiresAt", "purgeExpiredApplicationData", "req.body.confirmed !== true", "return fail(res, 410"] ,
               "server.js": ['app.get("/api/tasks"', 'app.post("/api/tasks"', 'app.patch("/api/tasks/:id"', 'app.delete("/api/tasks/:id"']
