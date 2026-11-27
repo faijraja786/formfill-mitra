@@ -912,6 +912,11 @@ function renderApplications(){
                         }
 
 
+                        ${
+                            app.personalDataPurged === true || status === "completed"
+                            ? ""
+                            : `<button class="btn-secondary" onclick="completeSubmission('${escapeHTML(app.id)}')">I submitted on official portal — delete server data</button>`
+                        }
                         <button
                             class="btn-danger"
                             onclick="deleteApplication('${escapeHTML(app.id)}')">
@@ -930,6 +935,44 @@ function renderApplications(){
         .join("");
 }
 
+
+/* ---------------------------------------------------------
+   Confirm official submission and erase applicant data server-side
+--------------------------------------------------------- */
+async function completeSubmission(id){
+    const app=findApplication(id);
+    if(!app){alert("Application not found.");return;}
+    const confirmed=confirm("Only continue after you have submitted the application on the official portal. This permanently deletes applicant details, answers and uploaded application documents from FormFill Mitra's server. Your browser's local copy is not deleted. Continue?");
+    if(!confirmed)return;
+    try{
+        const [{auth},{onAuthStateChanged},{apiRequest}]=await Promise.all([
+            import("./firebase-init.js"),
+            import("https://www.gstatic.com/firebasejs/10.12.5/firebase-auth.js"),
+            import("./api-client.js")
+        ]);
+        if(!auth.currentUser){
+            await new Promise((resolve,reject)=>{
+                let stop=()=>{};
+                stop=onAuthStateChanged(auth,user=>{stop();user?resolve(user):reject(new Error("Please sign in again."));},reject);
+            });
+        }
+        if(!auth.currentUser)throw new Error("Please sign in again.");
+        const result=await apiRequest("/api/applications/"+encodeURIComponent(id)+"/complete-submission",{method:"POST",body:JSON.stringify({confirmed:true})});
+        if(!result||result.personalDataDeleted!==true)throw new Error("The server did not confirm data deletion.");
+        app.status="completed";
+        app.personalDataPurged=true;
+        delete app.applicant;
+        delete app.answers;
+        delete app.reviewNotes;
+        app.updatedAt=new Date().toISOString();
+        localStorage.setItem("ffm_applications",JSON.stringify(applications));
+        renderApplications();
+        alert("Server-side applicant data and temporary application documents were deleted. Your local browser copy remains available.");
+    }catch(error){
+        console.error("Application completion cleanup failed:",error);
+        alert(error.message||"Server data could not be deleted. Please retry.");
+    }
+}
 
 /* ---------------------------------------------------------
    Find application
