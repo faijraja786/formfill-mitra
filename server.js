@@ -707,6 +707,7 @@ app.get("/api/applications/:id", requireUser, requireProfile, async (req, res) =
 
 // Owner-confirmed official submission: remove applicant PII and temporary uploaded files.
 app.post("/api/applications/:id/complete-submission", requireUser, requireProfile, async (req, res) => {
+  if (!req.body || req.body.confirmed !== true) return fail(res, 400, "Confirm that the official portal submission is complete before deleting server data.");
   try {
     const application = await getAccessibleApplication(req, req.params.id);
     if (application === false) return fail(res, 403, "You do not have access to this application.");
