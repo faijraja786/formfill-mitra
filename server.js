@@ -705,6 +705,47 @@ app.get("/api/applications/:id", requireUser, requireProfile, async (req, res) =
   }
 });
 
+// Owner-confirmed official submission: remove applicant PII and temporary uploaded files.
+app.post("/api/applications/:id/complete-submission", requireUser, requireProfile, async (req, res) => {
+  try {
+    const application = await getAccessibleApplication(req, req.params.id);
+    if (application === false) return fail(res, 403, "You do not have access to this application.");
+    if (!application) return fail(res, 404, "Application not found.");
+    const data = application.data;
+    const isOwner = (req.profile.role === "personal" && data.userId === req.user.uid) ||
+      (req.profile.role === "professional" && data.professionalId === req.user.uid);
+    if (!isOwner) return fail(res, 403, "Only the applicant or the professional who owns this application can confirm completion.");
+    if (data.personalDataPurged === true) return res.json({ ok: true, status: "completed", personalDataDeleted: true });
+
+    const docsSnap = await application.ref.collection("documents").limit(500).get();
+    const paths = docsSnap.docs.map(doc => clean(doc.data().storagePath)).filter(Boolean);
+    if (paths.length && !supabaseStorage) return fail(res, 503, "Temporary document storage is unavailable; data was not marked as deleted.");
+    if (paths.length) {
+      for (let i = 0; i < paths.length; i += 100) {
+        const { error } = await supabaseStorage.storage.from("applicant-documents").remove(paths.slice(i, i + 100));
+        if (error) throw error;
+      }
+    }
+    const batch = db.batch();
+    docsSnap.docs.forEach(doc => batch.delete(doc.ref));
+    await batch.commit();
+    await application.ref.update({
+      applicant: admin.firestore.FieldValue.delete(),
+      answers: admin.firestore.FieldValue.delete(),
+      reviewNotes: admin.firestore.FieldValue.delete(),
+      personalDataPurged: true,
+      status: "completed",
+      completedAt: now(),
+      updatedAt: now()
+    });
+    await writeAudit(req.profile, "application.personal_data_purged", "application", req.params.id, { documentCount: docsSnap.size });
+    return res.json({ ok: true, status: "completed", personalDataDeleted: true, deletedDocuments: docsSnap.size });
+  } catch (error) {
+    console.error("Application personal-data cleanup failed:", error.message);
+    return fail(res, 500, "Application data could not be fully deleted. Please retry or contact support.");
+  }
+});
+
 app.patch("/api/applications/:id", requireUser, requireProfile, async (req, res) => {
   const body = req.body || {};
   const updates = {};
