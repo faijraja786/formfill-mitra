@@ -299,14 +299,13 @@ button{
 
         <button
             class="add"
-            id="saveBtn"
-            onclick="saveStaff()">
+            id="saveBtn">
             + Add Staff
         </button>
 
         <button
             class="clear"
-            onclick="clearForm()">
+            id="clearStaffForm">
             Clear
         </button>
 
@@ -378,7 +377,7 @@ async function saveStaff(){
   finally{busy=false;$("saveBtn").disabled=false;}
 }
 $("saveBtn").addEventListener("click",saveStaff);
-document.querySelector(".clear").addEventListener("click",clearForm);
+document.getElementById("clearStaffForm").addEventListener("click",clearForm);
 loadStaff();
 window.goDashboard=goDashboard;
 </script>
