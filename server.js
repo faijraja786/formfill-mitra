@@ -866,6 +866,113 @@ app.post("/api/staff/assign-role", requireUser, requireProfile, requireRole("adm
   }
 });
 
+
+// Staff account controls. Staff must first register and verify their own email account.
+app.patch("/api/staff/:uid/status", requireUser, requireProfile, requireRole("admin"), async (req, res) => {
+  const uid = clean(req.params.uid);
+  const status = clean(req.body && req.body.status).toLowerCase();
+  if (!uid || uid === req.user.uid) return fail(res, 400, "You cannot change your own account status.");
+  if (!["active", "disabled"].includes(status)) return fail(res, 400, "Choose a valid account status.");
+  try {
+    const ref = db.collection("profiles").doc(uid);
+    const snap = await ref.get();
+    if (!snap.exists || snap.data().role !== "staff") return fail(res, 404, "Staff account not found.");
+    await ref.set({ status, updatedAt: now() }, { merge: true });
+    await writeAudit(req.profile, "staff.status_updated", "profile", uid, { status });
+    return res.json({ ok: true, status });
+  } catch (error) {
+    console.error("Staff status update failed:", error.message);
+    return fail(res, 500, "Could not update staff status.");
+  }
+});
+
+// Tasks are stored centrally in Firestore and tied to real application and staff records.
+app.get("/api/tasks", requireUser, requireProfile, requireRole("admin"), async (_req, res) => {
+  try {
+    const snap = await db.collection("applicationTasks").limit(500).get();
+    const tasks = snap.docs.map(safeDoc).sort((a, b) => String(b.createdAt || "").localeCompare(String(a.createdAt || "")));
+    return res.json({ tasks });
+  } catch (error) {
+    console.error("Tasks read failed:", error.message);
+    return fail(res, 500, "Could not load application tasks.");
+  }
+});
+
+app.post("/api/tasks", requireUser, requireProfile, requireRole("admin"), async (req, res) => {
+  const applicationId = clean(req.body && req.body.applicationId);
+  const staffUid = clean(req.body && req.body.staffUid);
+  const note = clean(req.body && req.body.note).slice(0, 2000);
+  if (!applicationId || !staffUid) return fail(res, 400, "Choose an application and an active staff account.");
+  try {
+    const appRef = db.collection("applications").doc(applicationId);
+    const [appSnap, staffSnap] = await Promise.all([
+      appRef.get(),
+      db.collection("profiles").doc(staffUid).get()
+    ]);
+    if (!appSnap.exists) return fail(res, 404, "Application not found. Refresh the application list.");
+    if (!staffSnap.exists || staffSnap.data().role !== "staff" || staffSnap.data().status !== "active") return fail(res, 400, "Active staff account not found.");
+    const application = safeDoc(appSnap);
+    const active = await db.collection("applicationTasks")
+      .where("applicationId", "==", applicationId)
+      .where("status", "in", ["Pending", "Processing"]).limit(1).get();
+    if (!active.empty) return fail(res, 409, "This application already has an active task.");
+    const staffActive = await db.collection("applicationTasks")
+      .where("staffUid", "==", staffUid)
+      .where("status", "in", ["Pending", "Processing"]).limit(1).get();
+    if (!staffActive.empty) return fail(res, 409, "This staff member already has an active task.");
+    const data = {
+      applicationId, applicantName: clean(application.applicant && application.applicant.fullName) || "Applicant",
+      formName: clean(application.formName) || "Application",
+      staffUid, staffName: clean(staffSnap.data().name) || clean(staffSnap.data().email),
+      staffEmail: clean(staffSnap.data().email), note,
+      status: "Pending", createdBy: req.user.uid, createdAt: now(), updatedAt: now()
+    };
+    const ref = await db.collection("applicationTasks").add(data);
+    await appRef.update({ assignedStaffId: staffUid, assignedStaffEmail: data.staffEmail, updatedAt: now() });
+    await writeAudit(req.profile, "task.created", "application_task", ref.id, { applicationId, staffUid });
+    return res.status(201).json({ task: { id: ref.id, ...data } });
+  } catch (error) {
+    console.error("Task create failed:", error.message);
+    return fail(res, 500, "Could not create the task.");
+  }
+});
+
+app.patch("/api/tasks/:id", requireUser, requireProfile, async (req, res) => {
+  const status = clean(req.body && req.body.status);
+  const note = req.body && req.body.note !== undefined ? clean(req.body.note).slice(0, 2000) : undefined;
+  if (status && !["Pending", "Processing", "Completed", "Error"].includes(status)) return fail(res, 400, "Invalid task status.");
+  if (!status && note === undefined) return fail(res, 400, "No task changes were provided.");
+  try {
+    const ref = db.collection("applicationTasks").doc(clean(req.params.id));
+    const snap = await ref.get();
+    if (!snap.exists) return fail(res, 404, "Task not found.");
+    const task = safeDoc(snap);
+    if (req.profile.role !== "admin" && !(req.profile.role === "staff" && task.staffUid === req.user.uid)) return fail(res, 403, "You cannot update this task.");
+    if (req.profile.role === "staff" && status && !["Processing", "Completed", "Error"].includes(status)) return fail(res, 403, "Staff cannot reopen a task.");
+    const updates = { updatedAt: now(), ...(status ? { status } : {}), ...(note !== undefined ? { note } : {}) };
+    await ref.update(updates);
+    await writeAudit(req.profile, "task.updated", "application_task", ref.id, updates);
+    return res.json({ ok: true });
+  } catch (error) {
+    console.error("Task update failed:", error.message);
+    return fail(res, 500, "Could not update the task.");
+  }
+});
+
+app.delete("/api/tasks/:id", requireUser, requireProfile, requireRole("admin"), async (req, res) => {
+  try {
+    const ref = db.collection("applicationTasks").doc(clean(req.params.id));
+    const snap = await ref.get();
+    if (!snap.exists) return fail(res, 404, "Task not found.");
+    await ref.delete();
+    await writeAudit(req.profile, "task.deleted", "application_task", ref.id);
+    return res.json({ ok: true });
+  } catch (error) {
+    console.error("Task delete failed:", error.message);
+    return fail(res, 500, "Could not delete the task.");
+  }
+});
+
 app.get("/api/audit-logs", requireUser, requireProfile, requireRole("admin"), async (req, res) => {
   try {
     const snap = await db.collection("auditLogs").orderBy("createdAt", "desc").limit(300).get();
