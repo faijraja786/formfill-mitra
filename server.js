@@ -1558,7 +1558,7 @@ async function purgeExpiredApplicationData() {
   if (!db) return;
   const cutoff = Date.now();
   try {
-    const snap = await db.collection("applications").limit(1000).get();
+    const snap = await db.collection("applications").orderBy("createdAt", "asc").limit(1000).get();
     for (const appSnap of snap.docs) {
       const data = appSnap.data() || {};
       if (data.personalDataPurged === true) continue;
