@@ -135,7 +135,7 @@ button{
     }
 }
 </style>
-<link rel="stylesheet" href="professional-ui.css?v=20261124">
+<link rel="stylesheet" href="professional-ui.css?v=20261127-vaultfix">
 <script src="app-shell.js" defer></script>
 </head>
 
@@ -166,7 +166,7 @@ button{
         <div id="documentsContainer"></div>
         <section class="document" id="vaultSelection" style="display:none">
           <h3>My Documents</h3>
-          <p>Select saved documents to reuse in this Personal application. Only selected documents will be copied into this application.</p>
+          <p>Choose documents already saved to your account. Selected files will be copied into this application draft when you save or continue. Your originals remain in My Documents.</p>
           <div id="vaultDocumentList">Loading saved documents…</div>
           <div class="file-info" id="vaultSelectionInfo"></div>
         </section>
@@ -177,11 +177,7 @@ button{
 
         <div class="buttons">
 
-            <button
-                class="secondary"
-                onclick="goBack()">
-                ← Back
-            </button>
+            <button type="button" class="back-arrow-btn" onclick="goBack()" aria-label="Back" title="Back">←</button>
 
             <button
                 class="secondary"
@@ -727,8 +723,8 @@ import {apiRequest} from "./api-client.js";
 const section=document.getElementById("vaultSelection"),list=document.getElementById("vaultDocumentList"),info=document.getElementById("vaultSelectionInfo");
 const labels={identity_proof:"Identity Proof",address_proof:"Address Proof",photograph:"Photograph",signature:"Signature",education:"Education Document",caste_certificate:"Caste Certificate",income_proof:"Income Supporting Document",other:"Other Supporting Document"};
 const esc=v=>String(v??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
-function persist(){const ids=[...list.querySelectorAll("input[data-vault-id]:checked")].map(x=>x.dataset.vaultId);localStorage.setItem("selectedVaultDocumentIds",JSON.stringify(ids));info.textContent=ids.length+" saved document(s) selected. Review and consent will be required before reuse.";}
-onAuthStateChanged(auth,async user=>{if(!user)return;try{const me=await apiRequest("/api/me");if(me.profile.role!=="personal"){localStorage.removeItem("selectedVaultDocumentIds");return;}section.style.display="block";const r=await apiRequest("/api/my-documents"),docs=r.documents||[];if(!docs.length){list.textContent="No saved documents in your account yet. You can continue and upload documents for this application.";return;}const existing=JSON.parse(localStorage.getItem("selectedVaultDocumentIds")||"[]");const chosenForm=JSON.parse(localStorage.getItem("selectedForm")||"null");const requirements=Array.isArray(chosenForm?.documents)?chosenForm.documents:[];const aliases={income_support:"income_proof",education_proof:"education",caste_record:"caste_certificate",dob_proof:"identity_proof",residence_record:"address_proof",self_declaration:"other",bank_details:"other"};const requiredKeys=new Set(requirements.map(x=>typeof x==="string"?x:x.key).filter(Boolean).flatMap(k=>[k,aliases[k]].filter(Boolean)));list.innerHTML=docs.map(d=>'<label style="display:flex;gap:10px;align-items:flex-start;padding:10px;border:1px solid #dbe5f2;border-radius:9px;margin:8px 0;background:#fff"><input type="checkbox" data-vault-id="'+esc(d.id)+'" data-doc-key="'+esc(d.documentKey)+'" '+(existing.includes(d.id)||(!existing.length&&requiredKeys.has(d.documentKey))?'checked':'')+'><span><strong>'+esc(labels[d.documentKey]||d.documentKey)+'</strong><br><small>'+esc(d.name)+' · '+Math.max(1,Math.round((d.size||0)/1024))+' KB</small></span></label>').join("");list.querySelectorAll("input").forEach(x=>x.addEventListener("change",persist));persist();}catch(e){list.textContent="Saved documents could not be loaded. You can still continue and upload documents for this application.";console.error(e);}});
+function persist(){const checked=[...list.querySelectorAll("input[data-vault-id]:checked")];const ids=checked.map(x=>x.dataset.vaultId);const selected=checked.map(x=>({id:x.dataset.vaultId,documentKey:x.dataset.docKey,name:x.dataset.docName}));localStorage.setItem("selectedVaultDocumentIds",JSON.stringify(ids));localStorage.setItem("selectedVaultDocuments",JSON.stringify(selected));info.textContent=ids.length+" saved document(s) selected for this application."; }
+onAuthStateChanged(auth,async user=>{if(!user)return;try{const me=await apiRequest("/api/me");if(me.profile.role!=="personal"){section.style.display="none";localStorage.removeItem("selectedVaultDocumentIds");localStorage.removeItem("selectedVaultDocuments");localStorage.removeItem("selectedVaultFormId");return;}const formKey=String(selectedForm?.id||selectedForm?.name||"");if(localStorage.getItem("selectedVaultFormId")!==formKey){localStorage.removeItem("selectedVaultDocumentIds");localStorage.removeItem("selectedVaultDocuments");localStorage.setItem("selectedVaultFormId",formKey);}section.style.display="block";list.textContent="Loading your saved documents…";const r=await apiRequest("/api/my-documents"),docs=r.documents||[];if(!docs.length){list.textContent="No saved documents in your account yet. Add them from Document Vault, or upload a file below for this application.";persist();return;}const existing=JSON.parse(localStorage.getItem("selectedVaultDocumentIds")||"[]");const chosenForm=JSON.parse(localStorage.getItem("selectedForm")||"null");const requirements=Array.isArray(chosenForm?.documents)?chosenForm.documents:[];const aliases={income_support:"income_proof",education_proof:"education",caste_record:"caste_certificate",dob_proof:"identity_proof",residence_record:"address_proof",self_declaration:"other",bank_details:"other"};const requiredKeys=new Set(requirements.map(x=>typeof x==="string"?x:x.key).filter(Boolean).flatMap(k=>[k,aliases[k]].filter(Boolean)));list.innerHTML=docs.map(d=>'<label style="display:flex;gap:10px;align-items:flex-start;padding:12px;border:1px solid #dbe5f2;border-radius:10px;margin:8px 0;background:#fff"><input type="checkbox" data-vault-id="'+esc(d.id)+'" data-doc-key="'+esc(d.documentKey)+'" data-doc-name="'+esc(d.name)+'" '+(existing.includes(d.id)||(!existing.length&&requiredKeys.has(d.documentKey))?'checked':'')+'><span><strong>'+esc(labels[d.documentKey]||d.documentKey)+'</strong><br><small>'+esc(d.name)+' · '+Math.max(1,Math.round((d.size||0)/1024))+' KB</small></span></label>').join("");list.querySelectorAll("input").forEach(x=>x.addEventListener("change",persist));persist();}catch(e){section.style.display="block";list.textContent=(e.message||"Saved documents could not be loaded.")+" Open Document Vault to manage your saved files.";console.error(e);}});
 </script>
 </body>
 </html>

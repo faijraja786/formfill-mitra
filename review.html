@@ -202,7 +202,7 @@ button{
     }
 }
 </style>
-<link rel="stylesheet" href="professional-ui.css?v=20261124">
+<link rel="stylesheet" href="professional-ui.css?v=20261127-vaultfix">
 <script src="app-shell.js" defer></script>
 </head>
 
@@ -341,9 +341,7 @@ button{
 
         <div class="actions">
 
-            <button class="back" onclick="goBack()">
-                ← Back
-            </button>
+            <button type="button" class="back-arrow-btn" onclick="goBack()" aria-label="Back" title="Back">←</button>
 
             <button class="continue" onclick="continueToForm()">
                 Proceed to Form →

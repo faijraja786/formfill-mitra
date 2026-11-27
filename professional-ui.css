@@ -142,3 +142,10 @@ input,select,textarea{font-size:14px!important}
 /* Keep sign-out clear and compact, not a large navigation block */
 .fm-logout-item,.ffm-shell-bottom button{background:#27323b!important;color:#fff!important;border-radius:9px!important;padding:9px 12px!important;min-height:34px!important;font-size:12px!important}
 .fm-logout-item:hover,.ffm-shell-bottom button:hover{background:#111820!important}
+
+/* Compact arrow-only back control across application preparation pages */
+.back-arrow-btn{display:inline-grid!important;place-items:center!important;flex:0 0 42px!important;width:42px!important;height:42px!important;min-width:42px!important;min-height:42px!important;padding:0!important;border:1px solid #d5e5f8!important;border-radius:12px!important;background:#fff!important;color:#1769e8!important;font-size:27px!important;font-weight:500!important;line-height:1!important;box-shadow:none!important;cursor:pointer!important}
+.back-arrow-btn:hover{background:#edf5ff!important;border-color:#9dc5f7!important}
+.account-vault-list{display:grid;gap:9px}.account-vault-row{display:flex;align-items:center;gap:11px;padding:11px 12px;border:1px solid #e1eaf6;border-radius:11px;background:#fbfdff}.account-vault-icon{display:grid;place-items:center;width:34px;height:34px;flex:0 0 auto;border-radius:9px;background:#edf4ff}.account-vault-name{display:flex;flex-direction:column;gap:4px;min-width:0;flex:1}.account-vault-name strong{font-size:13px;overflow-wrap:anywhere;color:#1e3658}.account-vault-name small{font-size:11px;color:#6b7f99}.account-vault-status{font-size:11px;font-weight:700;color:#168a58;background:#eaf8f0;padding:5px 8px;border-radius:20px}
+.vault-manage-link{font-size:13px;font-weight:700;color:#1769e8;text-decoration:none;white-space:nowrap}.vault-manage-link:hover{text-decoration:underline}
+@media(max-width:600px){.back-arrow-btn{width:38px!important;height:38px!important;min-width:38px!important;min-height:38px!important;flex-basis:38px!important;font-size:25px!important}.account-vault-row{padding:10px}.account-vault-status{font-size:10px}}

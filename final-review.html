@@ -299,7 +299,7 @@ button:disabled{
     }
 }
 </style>
-<link rel="stylesheet" href="professional-ui.css?v=20261126-design2">
+<link rel="stylesheet" href="professional-ui.css?v=20261127-vaultfix">
 <script src="app-shell.js" defer></script>
 </head>
 
@@ -524,14 +524,7 @@ button:disabled{
 
         <div class="actions">
 
-            <button
-                type="button"
-                class="btn-secondary"
-                onclick="goBack()">
-
-                ← Back
-
-            </button>
+            <button type="button" class="back-arrow-btn" onclick="goBack()" aria-label="Back" title="Back">←</button>
 
 
             <button
@@ -926,7 +919,11 @@ function loadDocuments(){
         html += '<div class="doc"><div class="doc-name">No new files uploaded in this application.</div><span class="doc-status">Optional</span></div>';
     }
     if(selectedVaultIds.length){
+        const savedVault=getJSON("selectedVaultDocuments",[]);
         html += '<div class="doc"><div class="doc-name">Personal saved documents selected</div><span class="doc-status">'+selectedVaultIds.length+' selected</span></div>';
+        if(Array.isArray(savedVault)&&savedVault.length){
+            html += savedVault.map(doc=>'<div class="doc"><div><div class="doc-name">'+escapeHTML(doc.name||"Saved document")+'</div><div class="small">'+escapeHTML(doc.documentKey||"Document")+"</div></div><span class=\"doc-status\">Selected</span></div>").join("");
+        }
     }
     if(!html)html='<div class="empty">No documents listed. Check the official portal for required documents.</div>';
     container.innerHTML=html;

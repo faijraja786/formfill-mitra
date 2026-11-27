@@ -290,7 +290,7 @@ button{
     }
 }
 </style>
-<link rel="stylesheet" href="professional-ui.css?v=20261126-design2">
+<link rel="stylesheet" href="professional-ui.css?v=20261127-vaultfix">
 <script src="app-shell.js" defer></script>
 </head>
 
@@ -340,6 +340,8 @@ button{
     </div>
 
 
+    <section class="card" id="selectedVaultCard" style="display:none"><h2>Saved Documents for This Application</h2><p class="muted">These are the files you selected from your account. They will be attached to your private application draft when you save or continue.</p><div id="selectedVaultItems"></div><p style="margin-top:12px"><a href="document-vault.html">Manage My Documents</a></p></section>
+
     <!-- Dynamic form -->
     <div class="card">
 
@@ -355,12 +357,7 @@ button{
 
         <div class="actions">
 
-            <button
-                type="button"
-                class="btn-secondary"
-                onclick="goBack()">
-                ← Back
-            </button>
+            <button type="button" class="back-arrow-btn" onclick="goBack()" aria-label="Back" title="Back">←</button>
 
             <button
                 type="button"
@@ -490,6 +487,16 @@ let fields = [];
 /* ---------------------------------------------------------
    Safe JSON
 --------------------------------------------------------- */
+
+function renderSelectedVaultDocuments(){
+    const docs=getJSON("selectedVaultDocuments",[]);
+    const card=document.getElementById("selectedVaultCard");
+    const list=document.getElementById("selectedVaultItems");
+    if(!card||!list)return;
+    if(!Array.isArray(docs)||!docs.length){card.style.display="none";return;}
+    card.style.display="block";
+    list.innerHTML=docs.map(doc=>'<div style="display:flex;gap:10px;align-items:center;padding:10px 0;border-bottom:1px solid #e5edf7"><span aria-hidden="true">📄</span><div style="min-width:0"><strong>'+escapeHTML(doc.name||"Saved document")+'</strong><div class="muted" style="font-size:12px">'+escapeHTML(doc.documentKey||"Document")+"</div></div></div>").join("");
+}
 
 function getJSON(key, fallback){
 
@@ -981,6 +988,8 @@ function loadForm(){
     savedAnswers =
         getJSON("formData", {});
 
+    renderSelectedVaultDocuments();
+
 
     if(!selectedForm){
 
@@ -1363,14 +1372,21 @@ async function saveChanges(){
             localStorage.setItem("currentApplicationId", String(applicationId));
             localStorage.setItem("currentApplicationFormId", String(formId));
         }
+        const vaultIds=getJSON("selectedVaultDocumentIds",[]);
+        if(role==="personal"&&Array.isArray(vaultIds)&&vaultIds.length){
+            await apiRequest("/api/applications/"+encodeURIComponent(applicationId)+"/documents/from-vault",{method:"POST",body:JSON.stringify({documentIds:vaultIds})});
+        }
         localStorage.setItem("currentApplicant",JSON.stringify(applicant));
         localStorage.setItem("formData",JSON.stringify(data));
         localStorage.setItem("formFillingSaved","true");
         localStorage.setItem("draftStatus","saved");
-        showStatus("Draft saved securely to your account.","success");
+        const vaultDocs=getJSON("selectedVaultDocuments",[]);
+        showStatus("Draft saved securely to your account."+(role==="personal"&&vaultDocs.length?" "+vaultDocs.length+" saved document(s) included.":""),"success");
+        return true;
     } catch(error) {
         console.error("Draft save failed:",error);
         showStatus(error.message || "Draft could not be saved. Please try again.","error");
+        return false;
     }
 }
 
@@ -1391,7 +1407,7 @@ async function clearFormFields(){
    Continue
 --------------------------------------------------------- */
 
-function continueToFinalReview(){
+async function continueToFinalReview(){
 
     const errors =
         validateForm();
@@ -1458,12 +1474,11 @@ function continueToFinalReview(){
     );
 
 
-    /*
-       Final Review
-    */
+    const saved=await saveChanges();
+    if(!saved)return;
 
-    window.location.href =
-        "final-review.html";
+    /* Final Review */
+    window.location.href = "final-review.html";
 }
 
 

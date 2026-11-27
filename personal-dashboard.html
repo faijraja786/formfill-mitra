@@ -458,7 +458,7 @@ body{background:#f3f7ff;color:#172b4d}
 .ffm-app-header .brand{grid-column:3;grid-row:1;justify-self:end;white-space:nowrap}
 @media(max-width:600px){.ffm-app-header{grid-template-columns:42px minmax(0,1fr) auto!important;gap:8px!important}.ffm-app-header .brand h2{font-size:15px}.ffm-app-header .brand small{display:none}}
 </style>
-<link rel="stylesheet" href="professional-ui.css?v=20261126-design2">
+<link rel="stylesheet" href="professional-ui.css?v=20261127-vaultfix">
 <style id="ffm-header-layout">
 .ffm-app-header{display:grid!important;grid-template-columns:48px 1fr auto!important;align-items:center!important;gap:14px!important;padding:12px clamp(16px,4vw,42px)!important;min-height:76px!important}
 .ffm-app-header>.menu-trigger{grid-column:1;grid-row:1;justify-self:start!important}
@@ -562,7 +562,13 @@ body{background:#f3f7ff;color:#172b4d}
     </section>
 
 
-    <!-- Payment / Subscription section.
+    <section class="section" id="accountVaultSection">
+ <div class="section-head"><h2>My Saved Documents</h2><a href="document-vault.html" class="vault-manage-link">Manage documents →</a></div>
+ <p class="muted" style="color:#64748b;font-size:13px;margin-bottom:12px">Private documents saved to this signed-in account. Select them again while preparing an application.</p>
+ <div id="accountVaultList" class="account-vault-list"><div class="empty">Loading your saved documents…</div></div>
+</section>
+
+<!-- Payment / Subscription section.
          This appears only when enabled by an administrator. -->
     <section class="subscription" id="subscriptionSection">
 
@@ -717,6 +723,9 @@ function getApplications(){
 
 
 function getDocuments(){
+
+    const accountDocs = safeParse("ffm_account_vault_docs", null);
+    if(Array.isArray(accountDocs)) return accountDocs;
 
     const docs = safeParse("uploadedDocuments", []);
 
@@ -1194,5 +1203,15 @@ document.addEventListener("DOMContentLoaded",()=>{
 });
 </script>
 
+<script type="module">
+import {auth} from "./firebase-init.js";
+import {onAuthStateChanged} from "https://www.gstatic.com/firebasejs/10.12.5/firebase-auth.js";
+import {apiRequest} from "./api-client.js";
+const vaultList=document.getElementById("accountVaultList");
+const vaultCount=document.getElementById("documentsCount");
+const docLabels={identity_proof:"Identity Proof",address_proof:"Address Proof",photograph:"Photograph",signature:"Signature",education:"Education Document",caste_certificate:"Caste Certificate",income_proof:"Income Supporting Document",other:"Other Supporting Document"};
+const escVault=v=>String(v??"").replace(/[&<>"']/g,ch=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[ch]));
+onAuthStateChanged(auth,async user=>{if(!user){vaultList.innerHTML='<div class="empty">Sign in to view your saved documents.</div>';return;}try{const data=await apiRequest("/api/my-documents");const docs=data.documents||[];localStorage.setItem("ffm_account_vault_docs",JSON.stringify(docs));if(typeof updateStats==="function")updateStats();if(vaultCount)vaultCount.textContent=String(docs.length);if(!docs.length){vaultList.innerHTML='<div class="empty">No saved documents yet. Use Document Vault to add your first file.</div>';return;}vaultList.innerHTML=docs.slice(0,5).map(doc=>'<div class="account-vault-row"><span class="account-vault-icon" aria-hidden="true">📄</span><div class="account-vault-name"><strong>'+escVault(doc.name||"Saved document")+'</strong><small>'+escVault(docLabels[doc.documentKey]||doc.documentKey||"Document")+' · '+Math.max(1,Math.round((doc.size||0)/1024))+' KB</small></div><span class="account-vault-status">Saved</span></div>').join("")+(docs.length>5?'<p class="muted" style="color:#64748b;font-size:12px;margin-top:10px">+'+(docs.length-5)+' more saved document(s)</p>':"");}catch(error){vaultList.innerHTML='<div class="empty">'+escVault(error.message||"Saved documents could not be loaded.")+'</div>';console.error("Account vault preview failed",error);}});
+</script>
 </body>
 </html>
