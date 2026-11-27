@@ -13,7 +13,7 @@
   const redirect = (url) => location.replace(url);
 
   try {
-    const [{ auth }, { onAuthStateChanged, signOut }, { bootstrapProfile }] = await Promise.all([
+    const [{ auth }, { onAuthStateChanged, signOut }, { apiRequest, bootstrapProfile }] = await Promise.all([
       import("./firebase-init.js"),
       import("https://www.gstatic.com/firebasejs/10.12.5/firebase-auth.js"),
       import("./api-client.js")
@@ -34,8 +34,12 @@
 
     let profile;
     try {
-      const bootstrap = await bootstrapProfile(savedRole, user.displayName || "");
-      profile = bootstrap.profile;
+      try {
+        profile = (await apiRequest("/api/me")).profile;
+      } catch (error) {
+        if (!String(error.message || "").includes("Complete account setup")) throw error;
+        profile = (await bootstrapProfile(savedRole, user.displayName || "")).profile;
+      }
     } catch (error) {
       console.error("Workspace profile verification failed:", error);
       clearLocalSession();
