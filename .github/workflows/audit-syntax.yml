@@ -51,6 +51,8 @@ jobs:
           if failed:
               sys.exit(1)
           PY
+      - name: Test portal autofill field mapping and verification
+        run: node browser-extension/test-autofill.cjs
       - name: Check backend-backed workflow contracts
         run: |
           python3 - <<'PY'
