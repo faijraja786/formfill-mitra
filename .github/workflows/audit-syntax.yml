@@ -21,7 +21,7 @@ jobs:
           from pathlib import Path
           import subprocess, sys
 
-          files = [Path("server.js")] + list(Path(".").glob("*.js"))
+          files = [Path("server.js")] + list(Path(".").glob("*.js")) + list(Path("browser-extension").glob("*.js"))
           failed = False
           for path in sorted(set(files)):
               if not path.exists():
@@ -36,6 +36,18 @@ jobs:
                   print(f"FAIL {path}:\n{result.stderr}")
               else:
                   print(f"PASS {path}")
+          extension_manifest = Path("browser-extension/manifest.json")
+          if extension_manifest.exists():
+              import json
+              manifest = json.loads(extension_manifest.read_text(encoding="utf-8"))
+              if manifest.get("manifest_version") != 3:
+                  failed = True
+                  print("FAIL browser-extension/manifest.json: expected Manifest V3")
+              else:
+                  print("PASS browser-extension/manifest.json")
+          else:
+              failed = True
+              print("FAIL browser-extension/manifest.json: missing")
           if failed:
               sys.exit(1)
           PY
