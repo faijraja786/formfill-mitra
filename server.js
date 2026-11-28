@@ -57,6 +57,20 @@ const clean = value => String(value == null ? "" : value).trim();
 const fail = (res, status, message) => res.status(status).json({ error: message });
 const safeDoc = snap => ({ id: snap.id, ...snap.data() });
 
+async function getAllApplicationDocumentSnapshots(applicationRef) {
+  const snapshots = [];
+  let query = applicationRef.collection("documents")
+    .orderBy(admin.firestore.FieldPath.documentId())
+    .limit(100);
+  while (true) {
+    const page = await query.get();
+    snapshots.push(...page.docs);
+    if (page.size < 100) break;
+    query = query.startAfter(page.docs[page.docs.length - 1]);
+  }
+  return snapshots;
+}
+
 async function requireUser(req, res, next) {
   if (!firebaseReady || !db) return fail(res, 503, "Backend authentication is not configured. Ask the administrator to configure Firebase service credentials.");
   const match = (req.headers.authorization || "").match(/^Bearer\s+(.+)$/i);
@@ -631,14 +645,7 @@ app.post("/api/applications", requireUser, requireProfile, async (req, res) => {
     const form = safeDoc(formSnap);
     const professionalId = req.profile.role === "professional" ? req.user.uid : null;
     const clientId = req.profile.role === "professional" ? clean(body.clientId) : "";
-    if (req.profile.role === "professional" && !clientId) return fail(res, 400, "Select a client before starting a Professional application.");
     if (req.profile.role === "personal" && clean(body.clientId)) return fail(res, 400, "Personal applications cannot be linked to Professional client records.");
-    if (clientId) {
-      const clientSnap = await db.collection("clients").doc(clientId).get();
-      if (!clientSnap.exists || clientSnap.data().professionalId !== req.user.uid) {
-        return fail(res, 403, "The selected client does not belong to your professional account.");
-      }
-    }
     const data = {
       formId, formName: form.name, formVersion: form.version || 1,
       formSnapshot: {
@@ -665,6 +672,7 @@ app.post("/api/applications", requireUser, requireProfile, async (req, res) => {
       },
       answers,
       status: "preparation", assignedStaffId: null,
+      personalDataExpiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(),
       createdAt: now(), updatedAt: now()
     };
     if (req.profile.role === "staff") return fail(res, 403, "Staff cannot create unassigned applications.");
@@ -702,6 +710,50 @@ app.get("/api/applications/:id", requireUser, requireProfile, async (req, res) =
   } catch (error) {
     console.error("Application detail failed:", error.message);
     return fail(res, 500, "Could not load application.");
+  }
+});
+
+// Owner-confirmed official submission: remove applicant PII and temporary uploaded files.
+app.post("/api/applications/:id/complete-submission", requireUser, requireProfile, async (req, res) => {
+  if (!req.body || req.body.confirmed !== true) return fail(res, 400, "Confirm that the official portal submission is complete before deleting server data.");
+  try {
+    const application = await getAccessibleApplication(req, req.params.id);
+    if (application === false) return fail(res, 403, "You do not have access to this application.");
+    if (!application) return fail(res, 404, "Application not found.");
+    const data = application.data;
+    const isOwner = (req.profile.role === "personal" && data.userId === req.user.uid) ||
+      (req.profile.role === "professional" && data.professionalId === req.user.uid);
+    if (!isOwner) return fail(res, 403, "Only the applicant or the professional who owns this application can confirm completion.");
+    if (data.personalDataPurged === true) return res.json({ ok: true, status: "completed", personalDataDeleted: true });
+
+    const documentSnapshots = await getAllApplicationDocumentSnapshots(application.ref);
+    const paths = documentSnapshots.map(doc => clean(doc.data().storagePath)).filter(Boolean);
+    if (paths.length && !supabaseStorage) return fail(res, 503, "Temporary document storage is unavailable; data was not marked as deleted.");
+    if (paths.length) {
+      for (let i = 0; i < paths.length; i += 100) {
+        const { error } = await supabaseStorage.storage.from("applicant-documents").remove(paths.slice(i, i + 100));
+        if (error) throw error;
+      }
+    }
+    for (let i = 0; i < documentSnapshots.length; i += 400) {
+      const batch = db.batch();
+      documentSnapshots.slice(i, i + 400).forEach(doc => batch.delete(doc.ref));
+      await batch.commit();
+    }
+    await application.ref.update({
+      applicant: admin.firestore.FieldValue.delete(),
+      answers: admin.firestore.FieldValue.delete(),
+      reviewNotes: admin.firestore.FieldValue.delete(),
+      personalDataPurged: true,
+      status: "completed",
+      completedAt: now(),
+      updatedAt: now()
+    });
+    await writeAudit(req.profile, "application.personal_data_purged", "application", req.params.id, { documentCount: docsSnap.size });
+    return res.json({ ok: true, status: "completed", personalDataDeleted: true, deletedDocuments: documentSnapshots.length });
+  } catch (error) {
+    console.error("Application personal-data cleanup failed:", error.message);
+    return fail(res, 500, "Application data could not be fully deleted. Please retry or contact support.");
   }
 });
 
@@ -777,7 +829,7 @@ app.post("/api/applications/:id/assign", requireUser, requireProfile, requireRol
 app.get("/api/clients", requireUser, requireProfile, requireRole("professional"), async (req, res) => {
   try {
     const snap = await db.collection("clients").where("professionalId", "==", req.user.uid).limit(500).get();
-    return res.json({ clients: snap.docs.map(safeDoc).filter(client => client.status !== "archived") });
+    return res.json({ clients: snap.docs.map(safeDoc) });
   } catch (error) {
     console.error("Clients read failed:", error.message);
     return fail(res, 500, "Could not load clients.");
@@ -832,6 +884,24 @@ app.patch("/api/clients/:id", requireUser, requireProfile, requireRole("professi
     console.error("Client update failed:", error.message);
     return fail(res, 500, "Could not update client.");
   }
+});
+
+app.delete("/api/clients/:id", requireUser, requireProfile, requireRole("professional"), async (req, res) => {
+  try {
+    const ref = db.collection("clients").doc(req.params.id);
+    const snap = await ref.get();
+    if (!snap.exists || snap.data().professionalId !== req.user.uid) return fail(res, 404, "Client not found in your workspace.");
+    await ref.delete();
+    await writeAudit(req.profile, "client.deleted", "client", req.params.id, { localMigration: true });
+    return res.json({ ok: true });
+  } catch (error) {
+    console.error("Client deletion failed:", error.message);
+    return fail(res, 500, "Could not delete this client record.");
+  }
+});
+
+app.post("/api/clients", requireUser, requireProfile, requireRole("professional"), (_req, res) => {
+  return fail(res, 410, "Professional client records are now saved in your browser only. Use Clients & Applications to add clients locally.");
 });
 
 app.get("/api/staff", requireUser, requireProfile, requireRole("admin"), async (_req, res) => {
@@ -1108,29 +1178,8 @@ app.get("/api/my-documents", requireUser, requireProfile, requireRole("personal"
   }
 });
 
-app.post("/api/my-documents", requireUser, requireProfile, requireRole("personal"), documentUpload.single("document"), async (req, res) => {
-  if (!req.file) return fail(res, 400, "Choose one document to save.");
-  if (!supabaseStorage) return fail(res, 503, "Private document storage is not configured.");
-  const mimeType = detectDocumentMime(req.file.buffer);
-  if (!mimeType || mimeType !== req.file.mimetype) return fail(res, 415, "The file content does not match its declared type.");
-  const documentKey = clean(req.body && req.body.documentKey);
-  if (!/^[a-zA-Z0-9_-]{1,80}$/.test(documentKey)) return fail(res, 400, "Choose a valid document category.");
-  try {
-    const id = crypto.randomUUID();
-    const name = safeFileName(req.file.originalname);
-    const extension = mimeType === "application/pdf" ? "pdf" : mimeType.split("/")[1];
-    const storagePath = "personal-vault/" + req.user.uid + "/" + id + "." + extension;
-    const { error } = await supabaseStorage.storage.from("applicant-documents").upload(storagePath, req.file.buffer, { contentType: mimeType, cacheControl: "0", upsert: false });
-    if (error) throw error;
-    const metadata = { documentKey, name, mimeType, size: req.file.size, storagePath, uploadedBy: req.user.uid, createdAt: now() };
-    const ref = await db.collection("profiles").doc(req.user.uid).collection("personalDocuments").doc(id);
-    await ref.set(metadata);
-    await writeAudit(req.profile, "personal_document.saved", "personal_document", id, { documentKey });
-    return res.status(201).json({ document: publicDocument({ id, ...metadata }) });
-  } catch (error) {
-    console.error("Personal vault upload failed:", error.message);
-    return fail(res, 500, "Document could not be saved securely.");
-  }
+app.post("/api/my-documents", requireUser, requireProfile, requireRole("personal"), (_req, res) => {
+  return fail(res, 410, "The saved-document vault now stores files in your browser only. Open My Documents and save locally.");
 });
 
 app.get("/api/my-documents/:documentId/download", requireUser, requireProfile, requireRole("personal"), async (req, res) => {
@@ -1529,5 +1578,57 @@ app.use((error, _req, res, _next) => {
   console.error("Request failed:", error.message);
   return fail(res, 400, "Request could not be processed.");
 });
+
+// Temporary applicant data expires after 7 days if the user abandons an application.
+// Run at startup and periodically; the next startup catches missed runs after restarts.
+async function purgeExpiredApplicationData() {
+  if (!db) return;
+  const cutoff = Date.now();
+  try {
+    const snap = await db.collection("applications").orderBy("createdAt", "asc").limit(1000).get();
+    for (const appSnap of snap.docs) {
+      const data = appSnap.data() || {};
+      if (data.personalDataPurged === true) continue;
+      const expiresAt = Date.parse(data.personalDataExpiresAt || "") ||
+        (Date.parse(data.createdAt || "") ? Date.parse(data.createdAt) + 7 * 24 * 60 * 60 * 1000 : 0);
+      if (!expiresAt || expiresAt > cutoff) continue;
+      const documentSnapshots = await getAllApplicationDocumentSnapshots(appSnap.ref);
+      const paths = documentSnapshots.map(doc => clean(doc.data().storagePath)).filter(Boolean);
+      if (paths.length && !supabaseStorage) {
+        console.warn("Expired application cleanup deferred: storage is not configured", appSnap.id);
+        continue;
+      }
+      try {
+        for (let i = 0; i < paths.length; i += 100) {
+          const { error } = await supabaseStorage.storage.from("applicant-documents").remove(paths.slice(i, i + 100));
+          if (error) throw error;
+        }
+      } catch (storageError) {
+        console.error("Expired application file cleanup deferred:", appSnap.id, storageError.message);
+        continue;
+      }
+      for (let i = 0; i < documentSnapshots.length; i += 400) {
+        const batch = db.batch();
+        documentSnapshots.slice(i, i + 400).forEach(doc => batch.delete(doc.ref));
+        await batch.commit();
+      }
+      await appSnap.ref.update({
+        applicant: admin.firestore.FieldValue.delete(),
+        answers: admin.firestore.FieldValue.delete(),
+        reviewNotes: admin.firestore.FieldValue.delete(),
+        personalDataPurged: true,
+        personalDataExpired: true,
+        personalDataPurgedAt: now(),
+        updatedAt: now()
+      });
+      console.log("Expired application personal data purged:", appSnap.id, "files:", documentSnapshots.length);
+    }
+  } catch (error) {
+    console.error("Scheduled personal-data cleanup failed:", error.message);
+  }
+}
+
+setTimeout(() => purgeExpiredApplicationData().catch(error => console.error("Startup cleanup failed:", error.message)), 15000);
+setInterval(() => purgeExpiredApplicationData().catch(error => console.error("Periodic cleanup failed:", error.message)), 6 * 60 * 60 * 1000);
 
 app.listen(PORT, "0.0.0.0", () => console.log(`Form Fill Mitra API listening on port ${PORT}`));

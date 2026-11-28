@@ -54,7 +54,13 @@ jobs:
               "subscription.html": ["apiRequest(\"/api/subscription-settings\")"],
               "subscription-management.html": ["apiRequest(\"/api/subscription-settings\")", "/api/admin/subscription-settings"],
               "api-client.js": ["onAuthStateChanged(auth", "getIdToken()"],
-              "server.js": ['app.get("/api/tasks"', 'app.post("/api/tasks"', 'app.patch("/api/tasks/:id"', 'app.delete("/api/tasks/:id"']
+              "document-vault.html": ["local-vault.js?v=privacy-local-1", "migrateBtn"],
+              "local-vault.js": ["indexedDB.open(DB_NAME, 1)", "/api/my-documents", "migrateServerVault"],
+              "form-details.html": ["localDocs(user.uid)", "selectedVaultDocumentIds"],
+              "professional-clients.html": ["professional-clients.js?v=privacy-local-1", "migrateClients"],
+              "professional-clients.js": ["indexedDB.open(DB,1)", "/api/clients", "migrateClients"],
+              "final-review.html": ["localRecord.file instanceof Blob", "selectedLocalDocs"],
+              "server.js": ["personalDataExpiresAt", "purgeExpiredApplicationData", "getAllApplicationDocumentSnapshots", "req.body.confirmed !== true", "return fail(res, 410", 'app.get("/api/tasks"', 'app.post("/api/tasks"', 'app.patch("/api/tasks/:id"', 'app.delete("/api/tasks/:id"', 'app.delete("/api/clients/:id"']
           }
           failed = False
           for filename, needles in checks.items():

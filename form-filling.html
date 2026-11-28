@@ -1363,7 +1363,6 @@ async function saveChanges(){
                 method:"POST",
                 body:JSON.stringify({
                     formId,
-                    clientId:role === "professional" ? localStorage.getItem("currentClientId") || null : null,
                     applicant:applicantPayload,
                     answers:data
                 })
@@ -1373,15 +1372,14 @@ async function saveChanges(){
             localStorage.setItem("currentApplicationFormId", String(formId));
         }
         const vaultIds=getJSON("selectedVaultDocumentIds",[]);
-        if(role==="personal"&&Array.isArray(vaultIds)&&vaultIds.length){
-            await apiRequest("/api/applications/"+encodeURIComponent(applicationId)+"/documents/from-vault",{method:"POST",body:JSON.stringify({documentIds:vaultIds})});
-        }
+        // Saved vault files are local IndexedDB blobs. They are copied to the temporary application record only at final review, with consent.
+
         localStorage.setItem("currentApplicant",JSON.stringify(applicant));
         localStorage.setItem("formData",JSON.stringify(data));
         localStorage.setItem("formFillingSaved","true");
         localStorage.setItem("draftStatus","saved");
         const vaultDocs=getJSON("selectedVaultDocuments",[]);
-        showStatus("Draft saved securely to your account."+(role==="personal"&&vaultDocs.length?" "+vaultDocs.length+" saved document(s) included.":""),"success");
+        showStatus("Application details saved. "+(role==="personal"&&vaultDocs.length?vaultDocs.length+" local saved document(s) will be copied to temporary application storage at final review with your consent.":"")+" Review every field before continuing.","success");
         return true;
     } catch(error) {
         console.error("Draft save failed:",error);
