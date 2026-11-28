@@ -9,6 +9,25 @@
   }
   const norm = value => String(value ?? "").toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g,"").replace(/[^a-z0-9\u0900-\u097f]+/g," ").trim();
   const data = { ...(payload.applicant || {}), ...(payload.answers || {}) };
+  const canonicalAliases = {
+    full_name:["fullname","applicantname","candidatename","name"],
+    father_name:["fathername","guardianname","father"],
+    mother_name:["mothername","mother"],
+    husband_name:["husbandname","husband"],
+    mobile:["mobilenumber","mobile","phone","phonenumber","contactnumber"],
+    email:["emailaddress","email"],
+    dob:["dateofbirth","birthdate","birth_date"],
+    state:["statename"], district:["districtname"],
+    village:["villagecity","town","village"],
+    full_address:["fulladdress","completeaddress","permanentaddress","presentaddress"],
+    pin:["pincode","postalcode","zipcode"],
+    gender:["sex"], category:["castecategory","reservationcategory"]
+  };
+  const normalizedKeys = Object.keys(data).map(k => [norm(k), data[k]]);
+  for (const [canonical, variants] of Object.entries(canonicalAliases)) {
+    const found = normalizedKeys.find(([key]) => variants.includes(key) || key === norm(canonical));
+    if (found && found[1] != null && String(found[1]).trim()) data[canonical] = found[1];
+  }
   const aliases = {
     name:["name","applicant name","candidate name","full name","आवेदक का नाम","आवेदिका का नाम"],
     father:["father name","name of father","पिता का नाम","पिता"],
