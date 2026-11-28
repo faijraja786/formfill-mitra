@@ -78,6 +78,10 @@
     const prev = el.previousElementSibling; if(prev && /^(LABEL|SPAN|DIV|P)$/.test(prev.tagName)) labels.push(prev.innerText || prev.textContent || "");
     const text = norm(labels.join(" "));
     const candidates = [idname,text].filter(Boolean);
+    // Exact normalized profile/answer keys must win before broad alias matching.
+    for (const k of Object.keys(data)) {
+      if (candidates.includes(norm(k)) && data[k] != null && String(data[k]).trim()) return data[k];
+    }
     // Admin-defined field keys and labels have priority, then standard aliases.
     for (const def of fieldDefs) {
       const key = norm(def.key || def.name || "");
@@ -93,8 +97,6 @@
         if (value != null && String(value).trim()) return value;
       }
     }
-    // Conservative fallback: only exact normalized key/label matches.
-    for (const k of Object.keys(data)) if (candidates.includes(norm(k)) && data[k] != null && String(data[k]).trim()) return data[k];
     return undefined;
   }
   function setNativeValue(el,value) {
