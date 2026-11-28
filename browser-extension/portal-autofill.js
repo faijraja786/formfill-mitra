@@ -57,9 +57,9 @@
     return undefined;
   }
   const aliases = {
-    name:["name","applicant name","candidate name","full name","आवेदक का नाम","आवेदिका का नाम"],
-    father:["father name","name of father","पिता का नाम","पिता"],
-    mother:["mother name","name of mother","माता का नाम","माता"],
+    name:["applicant name","name of applicant","candidate name","name of candidate","full name","applicant full name","आवेदक का नाम","आवेदिका का नाम"],
+    father:["father name","name of father","father full name","पिता का नाम","पिता"],
+    mother:["mother name","name of mother","mother full name","माता का नाम","माता"],
     husband:["husband name","name of husband","पति का नाम"],
     mobile:["mobile","mobile number","phone","contact number","मोबाइल संख्या","मोबाइल नंबर"],
     email:["email","email address","ईमेल"],
