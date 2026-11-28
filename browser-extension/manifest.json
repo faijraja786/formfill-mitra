@@ -6,7 +6,8 @@
   "permissions": [
     "activeTab",
     "scripting",
-    "storage"
+    "storage",
+    "tabs"
   ],
   "host_permissions": [
     "https://form-fill-mitra.web.app/*",
@@ -27,5 +28,12 @@
   "action": {
     "default_popup": "popup.html",
     "default_title": "Form Fill Mitra Autofill"
+  },
+  "optional_host_permissions": [
+    "http://*/*",
+    "https://*/*"
+  ],
+  "background": {
+    "service_worker": "background.js"
   }
 }
