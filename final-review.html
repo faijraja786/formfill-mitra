@@ -1053,6 +1053,32 @@ function loadPortal(){
    Status
 --------------------------------------------------------- */
 
+async function handoffToAutofillExtension(portal){
+    const payload = {
+        formName: selectedForm && selectedForm.name || "Application",
+        officialLink: portal || "",
+        applicant: applicant || {},
+        answers: getJSON("formData", {}),
+        fields: Array.isArray(selectedForm && selectedForm.fields) ? selectedForm.fields : []
+    };
+    return new Promise(resolve => {
+        let finished = false;
+        const finish = status => {
+            if (finished) return;
+            finished = true;
+            window.removeEventListener("message", onAck);
+            resolve(status);
+        };
+        const onAck = event => {
+            if (event.source !== window || event.origin !== location.origin) return;
+            if (event.data && event.data.type === "FFM_AUTOFILL_ACK" && event.data.version === 1) finish(event.data.status);
+        };
+        window.addEventListener("message", onAck);
+        window.postMessage({ type: "FFM_AUTOFILL_HANDOFF", version: 1, payload }, location.origin);
+        setTimeout(() => finish("not-connected"), 900);
+    });
+}
+
 function showStatus(message,type){
 
     const box =
@@ -1243,7 +1269,15 @@ async function completeReview(){
         );
         const isPAN = selectedForm && /pan/i.test((selectedForm.id || "") + " " + (selectedForm.name || ""));
         const portal = isPAN ? "https://onlineservices.proteantech.in/paam/endUserRegisterContact.html" : (selectedForm.officialLink || selectedForm.link);
-        if (portal) { if (isPAN) { window.location.assign(portal); } else { window.open(portal, "_blank", "noopener,noreferrer"); } }
+        if (portal) {
+            const handoff = await handoffToAutofillExtension(portal);
+            if (handoff !== "stored") {
+                showStatus("Autofill helper is not connected in this browser. The official portal will open, but automatic field filling is not available until the Form Fill Mitra browser extension is installed and enabled.", "error");
+            }
+            // Same-tab navigation keeps the user on the portal; the extension's
+            // user-triggered action will read the saved handoff and verify fields.
+            window.location.assign(portal);
+        }
     } catch (error) {
         console.error("Application submission failed:", error);
         showStatus(error.message || "Application could not be submitted. Please try again.", "error");
