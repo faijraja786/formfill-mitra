@@ -1,0 +1,31 @@
+{
+  "manifest_version": 3,
+  "name": "Form Fill Mitra Portal Autofill",
+  "version": "1.0.0",
+  "description": "Transfers applicant details from Form Fill Mitra and fills matching fields on the official portal after user action.",
+  "permissions": [
+    "activeTab",
+    "scripting",
+    "storage"
+  ],
+  "host_permissions": [
+    "https://form-fill-mitra.web.app/*",
+    "https://form-fill-mitra.firebaseapp.com/*"
+  ],
+  "content_scripts": [
+    {
+      "matches": [
+        "https://form-fill-mitra.web.app/*",
+        "https://form-fill-mitra.firebaseapp.com/*"
+      ],
+      "js": [
+        "bridge.js"
+      ],
+      "run_at": "document_start"
+    }
+  ],
+  "action": {
+    "default_popup": "popup.html",
+    "default_title": "Form Fill Mitra Autofill"
+  }
+}
