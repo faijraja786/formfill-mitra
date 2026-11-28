@@ -24,9 +24,9 @@
     return entry ? entry[1] : undefined;
   };
   const aliasGroups = {
-    full_name:["full_name","fullname","name","applicant_name","candidate_name","आवेदक_का_नाम","आवेदिका_का_नाम"],
-    father_name:["father_name","fathername","guardian_name","पिता_का_नाम"],
-    mother_name:["mother_name","mothername","माता_का_नाम"],
+    full_name:["full_name","fullname","name","applicant_name","name_of_applicant","candidate_name","name_of_candidate","आवेदक_का_नाम","आवेदिका_का_नाम"],
+    father_name:["father_name","fathername","guardian_name","name_of_father","पिता_का_नाम"],
+    mother_name:["mother_name","mothername","name_of_mother","माता_का_नाम"],
     husband_name:["husband_name","husbandname","पति_का_नाम"],
     mobile:["mobile","mobile_number","phone","phone_number","contact_number","मोबाइल_नंबर","मोबाइल_संख्या"],
     email:["email","email_address","ईमेल"],
