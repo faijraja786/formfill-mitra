@@ -16,6 +16,18 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
+      - name: Package portal autofill extension for download
+        run: |
+          mkdir -p downloads
+          zip -j downloads/form-fill-mitra-autofill.zip \
+            browser-extension/manifest.json \
+            browser-extension/background.js \
+            browser-extension/bridge.js \
+            browser-extension/popup.html \
+            browser-extension/popup.js \
+            browser-extension/portal-autofill.js \
+            browser-extension/README.md
+
       - name: Deploy Hosting to Firebase
         uses: FirebaseExtended/action-hosting-deploy@v0
         with:
