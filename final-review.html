@@ -1053,6 +1053,32 @@ function loadPortal(){
    Status
 --------------------------------------------------------- */
 
+async function handoffToAutofillExtension(portal){
+    const payload = {
+        formName: selectedForm && selectedForm.name || "Application",
+        officialLink: portal || "",
+        applicant: applicant || {},
+        answers: getJSON("formData", {}),
+        fields: Array.isArray(selectedForm && selectedForm.fields) ? selectedForm.fields : []
+    };
+    return new Promise(resolve => {
+        let finished = false;
+        const finish = status => {
+            if (finished) return;
+            finished = true;
+            window.removeEventListener("message", onAck);
+            resolve(status);
+        };
+        const onAck = event => {
+            if (event.source !== window || event.origin !== location.origin) return;
+            if (event.data && event.data.type === "FFM_AUTOFILL_ACK" && event.data.version === 1) finish(event.data.status);
+        };
+        window.addEventListener("message", onAck);
+        window.postMessage({ type: "FFM_AUTOFILL_HANDOFF", version: 1, payload }, location.origin);
+        setTimeout(() => finish("not-connected"), 2500);
+    });
+}
+
 function showStatus(message,type){
 
     const box =
@@ -1080,7 +1106,33 @@ function showStatus(message,type){
    Final confirmation
 --------------------------------------------------------- */
 
+function checkRequiredFormFields(){
+    const answers = getJSON("formData", {});
+    const combined = { ...(applicant || {}), ...(answers || {}) };
+    const normalize = value => String(value ?? "")
+        .replace(/([a-z0-9])([A-Z])/g,"$1_$2")
+        .toLowerCase().normalize("NFD").replace(/[\\u0300-\\u036f]/g,"")
+        .replace(/[^a-z0-9\\u0900-\\u097f]+/g,"_").replace(/^_+|_+$/g,"");
+    const entries = Object.entries(combined).map(([key,value])=>[normalize(key),value]);
+    const missing = [];
+    for(const field of (Array.isArray(fields)?fields:[])){
+        if(!(field.required===true || field.required==="true")) continue;
+        const candidates = [field.key,field.autofill,field.autofillKey,field.label,field.name].map(normalize).filter(Boolean);
+        const value = entries.find(([key])=>candidates.includes(key));
+        if(!value || value[1]==null || !String(value[1]).trim()){
+            missing.push(field.label || field.name || field.key || "Required field");
+        }
+    }
+    return missing;
+}
+
 async function completeReview(){
+
+    const missingFields = checkRequiredFormFields();
+    if(missingFields.length){
+        showStatus("Please complete these required fields in Form Fill Mitra before continuing: " + missingFields.slice(0,8).join(", ") + (missingFields.length>8 ? " and " + (missingFields.length-8) + " more." : "."), "error");
+        return;
+    }
 
     const isPAN = selectedForm && /pan/i.test((selectedForm.id || "") + " " + (selectedForm.name || ""));
     if (isPAN && !["physical", "epan"].includes(localStorage.getItem("panOutputPreference"))) {
@@ -1243,7 +1295,17 @@ async function completeReview(){
         );
         const isPAN = selectedForm && /pan/i.test((selectedForm.id || "") + " " + (selectedForm.name || ""));
         const portal = isPAN ? "https://onlineservices.proteantech.in/paam/endUserRegisterContact.html" : (selectedForm.officialLink || selectedForm.link);
-        if (portal) { if (isPAN) { window.location.assign(portal); } else { window.open(portal, "_blank", "noopener,noreferrer"); } }
+        if (portal) {
+            const handoff = await handoffToAutofillExtension(portal);
+            if (handoff !== "stored") {
+                const proceed = confirm("Form Fill Mitra could not hand this application to the browser autofill extension. The official portal will open WITHOUT automatic filling. Continue anyway?");
+                if (!proceed) return;
+            }
+            // Same-tab navigation keeps the user on the portal. If this origin
+            // was already granted to the extension, its background worker fills
+            // and verifies after the portal finishes loading.
+            window.location.assign(portal);
+        }
     } catch (error) {
         console.error("Application submission failed:", error);
         showStatus(error.message || "Application could not be submitted. Please try again.", "error");
