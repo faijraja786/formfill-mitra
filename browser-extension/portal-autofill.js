@@ -3,6 +3,11 @@
   if (window.__FFM_AUTOFILL_RUNNING__) return;
   window.__FFM_AUTOFILL_RUNNING__ = true;
   const { ffmPendingAutofill: payload } = await chrome.storage.local.get("ffmPendingAutofill");
+  if (payload && (!payload.createdAt || Date.now() - payload.createdAt > 3 * 60 * 60 * 1000)) {
+    await chrome.storage.local.remove("ffmPendingAutofill");
+    alert("Form Fill Mitra: This application handoff expired for privacy. Return to Final Review and create a fresh handoff.");
+    window.__FFM_AUTOFILL_RUNNING__ = false; return;
+  }
   if (!payload || !payload.applicant || !payload.answers) {
     alert("Form Fill Mitra: No saved application data. Return to Form Fill Mitra and complete Final Review.");
     window.__FFM_AUTOFILL_RUNNING__ = false; return;
@@ -91,7 +96,7 @@
       const desired=norm(value);
       const optionText=norm(el.value+" "+(el.labels?.[0]?.innerText||""));
       if (desired === norm("true") || desired === norm("yes") || desired === norm("1") || desired===optionText || optionText.includes(desired)) {
-        el.checked=true; el.dispatchEvent(new Event("input",{bubbles:true})); el.dispatchEvent(new Event("change",{bubbles:true})); filled++; matched.push(el);
+        el.checked=true; el.dispatchEvent(new Event("input",{bubbles:true})); el.dispatchEvent(new Event("change",{bubbles:true})); filled++; matched.push({el, expected: true});
       } else { unmatched++; }
     } else if (el.tagName === "SELECT") {
       const wanted=norm(value);
@@ -107,7 +112,7 @@
         await new Promise(resolve=>setTimeout(resolve,250));
         option=findOption();
       }
-      if(option){setNativeValue(el,option.value);filled++;matched.push(el);await new Promise(resolve=>setTimeout(resolve,120));} else if(el.required) unmatched++;
+      if(option){setNativeValue(el,option.value);filled++;matched.push({el, expected: option.value});await new Promise(resolve=>setTimeout(resolve,120));} else if(el.required) unmatched++;
     } else {
       let val=String(value);
       if(el.type==="date" && !/^\d{4}-\d{2}-\d{2}$/.test(val)) {
@@ -115,15 +120,20 @@
       }
       setNativeValue(el,val);
       if(el.checkValidity && !el.checkValidity()) invalid++;
-      filled++; matched.push(el);
+      filled++; matched.push({el, expected: val});
     }
   }
   // Re-check the actual DOM values after events; never submit or bypass security steps.
-  const verified=matched.filter(el=>el.type==="checkbox"||el.type==="radio"?el.checked:String(el.value||"").trim()!=="").length;
+  const verified=matched.filter(({el,expected})=>{
+    if(el.type==="checkbox"||el.type==="radio") return el.checked === Boolean(expected);
+    return norm(el.value) === norm(expected);
+  }).length;
+  const mismatched=matched.length-verified;
   const report=document.createElement("section");
   report.style.cssText="position:fixed;z-index:2147483647;top:12px;right:12px;max-width:min(360px,92vw);background:#fff;color:#172033;border:2px solid #2563eb;border-radius:12px;padding:14px;box-shadow:0 8px 32px #0003;font:14px Arial;max-height:70vh;overflow:auto";
-  report.innerHTML="<strong>Form Fill Mitra — Portal Check</strong><p>Fields filled: "+filled+"<br>Values verified in page: "+verified+"<br>Required fields unmatched: "+unmatched+"<br>Browser validation warnings: "+invalid+"</p><p>Review every field. Dependent dropdowns may need manual selection. CAPTCHA, OTP, payment and submit are never automated.</p><button type='button' style='padding:8px 12px'>Close report</button>";
+  report.innerHTML="<strong>Form Fill Mitra — Portal Check</strong><p>Fields filled: "+filled+"<br>Values verified in page: "+verified+"<br>Values mismatched after re-read: "+mismatched+"<br>Required fields unmatched: "+unmatched+"<br>Browser validation warnings: "+invalid+"</p><p>Review every field. Dependent dropdowns may need manual selection. CAPTCHA, OTP, payment and submit are never automated.</p><button type='button' style='padding:8px 12px'>Close report</button>";
   report.querySelector("button").onclick=()=>report.remove();
   document.body.appendChild(report);
+  window.__FFM_AUTOFILL_DONE__=true;
   window.__FFM_AUTOFILL_RUNNING__=false;
 })();
