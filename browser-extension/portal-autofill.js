@@ -94,9 +94,20 @@
         el.checked=true; el.dispatchEvent(new Event("input",{bubbles:true})); el.dispatchEvent(new Event("change",{bubbles:true})); filled++; matched.push(el);
       } else { unmatched++; }
     } else if (el.tagName === "SELECT") {
-      const wanted=norm(value); let option=[...el.options].find(o=>norm(o.value)===wanted || norm(o.text)===wanted);
-      if(!option) option=[...el.options].find(o=>norm(o.text).includes(wanted) || wanted.includes(norm(o.text)) && norm(o.text).length>1);
-      if(option){setNativeValue(el,option.value);filled++;matched.push(el);} else if(el.required) unmatched++;
+      const wanted=norm(value);
+      const findOption=()=> {
+        let option=[...el.options].find(o=>norm(o.value)===wanted && norm(o.value));
+        if(!option) option=[...el.options].find(o=>norm(o.text)===wanted && norm(o.text));
+        if(!option && wanted.length>1) option=[...el.options].find(o=>norm(o.text).length>1 && (norm(o.text).includes(wanted) || wanted.includes(norm(o.text))));
+        return option;
+      };
+      let option=findOption();
+      // Some portals load District/Block options after the parent selection.
+      for(let retry=0;!option && retry<8 && el.required;retry++){
+        await new Promise(resolve=>setTimeout(resolve,250));
+        option=findOption();
+      }
+      if(option){setNativeValue(el,option.value);filled++;matched.push(el);await new Promise(resolve=>setTimeout(resolve,120));} else if(el.required) unmatched++;
     } else {
       let val=String(value);
       if(el.type==="date" && !/^\d{4}-\d{2}-\d{2}$/.test(val)) {
