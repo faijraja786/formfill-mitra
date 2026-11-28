@@ -1075,7 +1075,7 @@ async function handoffToAutofillExtension(portal){
         };
         window.addEventListener("message", onAck);
         window.postMessage({ type: "FFM_AUTOFILL_HANDOFF", version: 1, payload }, location.origin);
-        setTimeout(() => finish("not-connected"), 900);
+        setTimeout(() => finish("not-connected"), 2500);
     });
 }
 
@@ -1298,10 +1298,12 @@ async function completeReview(){
         if (portal) {
             const handoff = await handoffToAutofillExtension(portal);
             if (handoff !== "stored") {
-                showStatus("Autofill helper is not connected in this browser. The official portal will open, but automatic field filling is not available until the Form Fill Mitra browser extension is installed and enabled.", "error");
+                const proceed = confirm("Form Fill Mitra could not hand this application to the browser autofill extension. The official portal will open WITHOUT automatic filling. Continue anyway?");
+                if (!proceed) return;
             }
-            // Same-tab navigation keeps the user on the portal; the extension's
-            // user-triggered action will read the saved handoff and verify fields.
+            // Same-tab navigation keeps the user on the portal. If this origin
+            // was already granted to the extension, its background worker fills
+            // and verifies after the portal finishes loading.
             window.location.assign(portal);
         }
     } catch (error) {
