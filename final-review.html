@@ -1106,7 +1106,33 @@ function showStatus(message,type){
    Final confirmation
 --------------------------------------------------------- */
 
+function checkRequiredFormFields(){
+    const answers = getJSON("formData", {});
+    const combined = { ...(applicant || {}), ...(answers || {}) };
+    const normalize = value => String(value ?? "")
+        .replace(/([a-z0-9])([A-Z])/g,"$1_$2")
+        .toLowerCase().normalize("NFD").replace(/[\\u0300-\\u036f]/g,"")
+        .replace(/[^a-z0-9\\u0900-\\u097f]+/g,"_").replace(/^_+|_+$/g,"");
+    const entries = Object.entries(combined).map(([key,value])=>[normalize(key),value]);
+    const missing = [];
+    for(const field of (Array.isArray(fields)?fields:[])){
+        if(!(field.required===true || field.required==="true")) continue;
+        const candidates = [field.key,field.autofill,field.autofillKey,field.label,field.name].map(normalize).filter(Boolean);
+        const value = entries.find(([key])=>candidates.includes(key));
+        if(!value || value[1]==null || !String(value[1]).trim()){
+            missing.push(field.label || field.name || field.key || "Required field");
+        }
+    }
+    return missing;
+}
+
 async function completeReview(){
+
+    const missingFields = checkRequiredFormFields();
+    if(missingFields.length){
+        showStatus("Please complete these required fields in Form Fill Mitra before continuing: " + missingFields.slice(0,8).join(", ") + (missingFields.length>8 ? " and " + (missingFields.length-8) + " more." : "."), "error");
+        return;
+    }
 
     const isPAN = selectedForm && /pan/i.test((selectedForm.id || "") + " " + (selectedForm.name || ""));
     if (isPAN && !["physical", "epan"].includes(localStorage.getItem("panOutputPreference"))) {
