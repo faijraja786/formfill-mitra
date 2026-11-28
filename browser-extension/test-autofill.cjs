@@ -46,7 +46,7 @@ async function run() {
     setTimeout,clearTimeout,console
   };
   vm.runInNewContext(fs.readFileSync("browser-extension/portal-autofill.js","utf8"),context);
-  await new Promise(resolve=>setTimeout(resolve,30));
+  await new Promise(resolve=>setTimeout(resolve,350));
   assert.equal(controls[0].value,"Asha Kumari","camelCase fullName should fill applicant name");
   assert.equal(controls[1].value,"Ramesh Kumar","fatherName alias should fill father field");
   assert.equal(controls[2].value,"Ramesh Kumar","admin autofill key should map profile value");
