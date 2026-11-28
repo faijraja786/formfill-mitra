@@ -12,26 +12,49 @@
     alert("Form Fill Mitra: No saved application data. Return to Form Fill Mitra and complete Final Review.");
     window.__FFM_AUTOFILL_RUNNING__ = false; return;
   }
-  const norm = value => String(value ?? "").toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g,"").replace(/[^a-z0-9\u0900-\u097f]+/g," ").trim();
+  const norm = value => String(value ?? "")
+    .replace(/([a-z0-9])([A-Z])/g,"$1_$2")
+    .toLowerCase().normalize("NFD").replace(/[\\u0300-\\u036f]/g,"")
+    .replace(/[^a-z0-9\\u0900-\\u097f]+/g,"_").replace(/^_+|_+$/g,"");
   const data = { ...(payload.applicant || {}), ...(payload.answers || {}) };
-  const canonicalAliases = {
-    full_name:["fullname","applicantname","candidatename","name"],
-    father_name:["fathername","guardianname","father"],
-    mother_name:["mothername","mother"],
-    husband_name:["husbandname","husband"],
-    mobile:["mobilenumber","mobile","phone","phonenumber","contactnumber"],
-    email:["emailaddress","email"],
-    dob:["dateofbirth","birthdate","birth_date"],
-    state:["statename"], district:["districtname"],
-    village:["villagecity","town","village"],
-    full_address:["fulladdress","completeaddress","permanentaddress","presentaddress"],
-    pin:["pincode","postalcode","zipcode"],
-    gender:["sex"], category:["castecategory","reservationcategory"]
+  const dataEntries = Object.entries(data).map(([key,value]) => [norm(key),value]);
+  const lookupData = key => {
+    const normalized = norm(key);
+    const entry = dataEntries.find(([candidate]) => candidate === normalized);
+    return entry ? entry[1] : undefined;
   };
-  const normalizedKeys = Object.keys(data).map(k => [norm(k), data[k]]);
-  for (const [canonical, variants] of Object.entries(canonicalAliases)) {
-    const found = normalizedKeys.find(([key]) => variants.includes(key) || key === norm(canonical));
-    if (found && found[1] != null && String(found[1]).trim()) data[canonical] = found[1];
+  const aliasGroups = {
+    full_name:["full_name","fullname","name","applicant_name","candidate_name","आवेदक_का_नाम","आवेदिका_का_नाम"],
+    father_name:["father_name","fathername","guardian_name","पिता_का_नाम"],
+    mother_name:["mother_name","mothername","माता_का_नाम"],
+    husband_name:["husband_name","husbandname","पति_का_नाम"],
+    mobile:["mobile","mobile_number","phone","phone_number","contact_number","मोबाइल_नंबर","मोबाइल_संख्या"],
+    email:["email","email_address","ईमेल"],
+    dob:["dob","date_of_birth","dateofbirth","birth_date","birthdate","जन्म_तिथि"],
+    state:["state","state_name","राज्य"], district:["district","district_name","जिला"],
+    subdivision:["subdivision","sub_division","अनुमंडल"], block:["block","प्रखंड","खंड"],
+    ward:["ward","ward_no","वार्ड_संख्या"], village:["village","town","village_town","ग्राम","मोहल्ला"],
+    post:["post_office","डाकघर"], police:["police_station","थाना"],
+    pincode:["pin","pincode","pin_code","postal_code","पिन_कोड"],
+    gender:["gender","sex","लिंग"], category:["category","caste_category","श्रेणी"],
+    address:["address","full_address","complete_address","permanent_address","present_address","पता"]
+  };
+  function resolveProfileValue(key, label, autofill) {
+    for (const candidate of [key,autofill,label]) {
+      const direct = lookupData(candidate);
+      if (direct != null && String(direct).trim()) return direct;
+    }
+    const normalizedCandidates = [norm(key),norm(autofill),norm(label)].filter(Boolean);
+    for (const [group,aliases] of Object.entries(aliasGroups)) {
+      const normalizedAliases = aliases.map(norm);
+      if (normalizedCandidates.some(candidate => normalizedAliases.includes(candidate) || candidate === norm(group))) {
+        for (const alias of [group,...aliases]) {
+          const value = lookupData(alias);
+          if (value != null && String(value).trim()) return value;
+        }
+      }
+    }
+    return undefined;
   }
   const aliases = {
     name:["name","applicant name","candidate name","full name","आवेदक का नाम","आवेदिका का नाम"],
@@ -60,17 +83,14 @@
       const key = norm(def.key || def.name || "");
       const label = norm(def.label || def.name || "");
       if (candidates.some(c => c === key || c === label || (key && c.includes(key)) || (label && c.includes(label)))) {
-        const val = data[def.key] ?? data[def.name] ?? data[key];
+        const val = resolveProfileValue(def.key || def.name, def.label || def.name, def.autofill || def.autofillKey || "");
         if (val != null && String(val).trim()) return val;
       }
     }
     for (const [group,names] of Object.entries(aliases)) {
       if (names.some(a => candidates.some(c => c === norm(a) || c.includes(norm(a))))) {
-        const keys = Object.keys(data);
-        const direct = keys.find(k => norm(k) === norm(group) || names.some(a => norm(k) === norm(a)));
-        if (direct && data[direct] != null && String(data[direct]).trim()) return data[direct];
-        const related = keys.find(k => names.some(a => norm(k).includes(norm(a))) || norm(k).includes(norm(group)));
-        if (related && data[related] != null && String(data[related]).trim()) return data[related];
+        const value = resolveProfileValue(group, text, "");
+        if (value != null && String(value).trim()) return value;
       }
     }
     // Conservative fallback: only exact normalized key/label matches.
